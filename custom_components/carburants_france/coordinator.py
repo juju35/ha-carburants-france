@@ -60,8 +60,8 @@ def community_entry(station: dict[str, Any], names: dict[str, dict[str, str]] | 
 
 
 def station_brand(stored: dict[str, Any], names: dict[str, dict[str, str]] | None = None) -> str | None:
-    """Brand from OpenStreetMap (it comes with the logo), else from the community file."""
-    return stored.get(ST_BRAND) or community_entry(stored, names).get("brand") or None
+    """Brand from the community file, the main source, else from OpenStreetMap."""
+    return community_entry(stored, names).get("brand") or stored.get(ST_BRAND) or None
 
 
 def station_title(stored: dict[str, Any], names: dict[str, dict[str, str]] | None = None) -> str:

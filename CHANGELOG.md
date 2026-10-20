@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.1
+
+### Changements
+- Le fichier communautaire devient aussi la source principale de l'enseigne ; OpenStreetMap ne sert plus que de repli, et pour le logo.
+
 ## 0.7.0
 
 ### Nouveautés

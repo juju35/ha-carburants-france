@@ -622,3 +622,13 @@ async def test_names_downloaded_weekly_and_cached(hass, aioclient_mock, hass_sto
     with freeze_time(dt_util.utcnow() + timedelta(days=8)):
         assert await async_get_names(hass) == names
     assert aioclient_mock.call_count == 1
+
+
+async def test_community_brand_first(hass, aioclient_mock, entry, community_names):
+    """The community file wins over OpenStreetMap for the brand too; the logo stays OSM's."""
+    community_names["35000013"] = {"name": "", "brand": "Total Access"}
+    await _setup(hass, aioclient_mock, entry)
+    stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert stations[35000013]["brand"] == "Total Access"
+    assert stations[35000013]["station_name"] == "Total Access Rennes"
+    assert stations[35000013]["logo"] == "https://logo"
