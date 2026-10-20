@@ -120,10 +120,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: CarburantsConfigEntry) -
 
 
 def _needs_brand_lookup(station: dict) -> bool:
-    """OpenStreetMap was unreachable at setup, or the logo predates the current logo choice."""
-    if not station.get(ST_BRAND_CHECKED):
-        return True
-    return bool(station.get("wikidata")) and station.get(ST_LOGO_VERSION) != LOGO_VERSION
+    """OpenStreetMap was unreachable at setup, or the stored data predates the current lookup."""
+    return not station.get(ST_BRAND_CHECKED) or station.get(ST_LOGO_VERSION) != LOGO_VERSION
 
 
 async def _async_retry_brands(hass: HomeAssistant, entry: CarburantsConfigEntry) -> None:
@@ -134,6 +132,7 @@ async def _async_retry_brands(hass: HomeAssistant, entry: CarburantsConfigEntry)
         return  # Still unreachable: try again at the next start.
     for station in pending:
         station[ST_BRAND_CHECKED] = True
+        station[ST_LOGO_VERSION] = LOGO_VERSION
     hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_STATIONS: stations})
 
 

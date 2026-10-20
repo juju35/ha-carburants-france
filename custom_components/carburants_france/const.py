@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "carburants_france"
-VERSION: Final = "0.4.3"
+VERSION: Final = "0.5.0"
 USER_AGENT: Final = f"ha-carburants-france/{VERSION} (+https://github.com/juju35/ha-carburants-france)"
 
 API_RECORDS: Final = (
@@ -51,9 +51,12 @@ ST_NAME: Final = "name"
 ST_BRAND: Final = "brand"
 ST_LOGO: Final = "logo"
 ST_BRAND_CHECKED: Final = "brand_checked"
-# Bumped when the logo choice changes, so stored logos are looked up again.
+# Station name from OpenStreetMap; ST_NAME stays for a name set by the user.
+ST_OSM_NAME: Final = "osm_name"
+# Bumped when what is looked up in OpenStreetMap / Wikidata changes, so stored
+# stations are looked up again once (3: OSM station name).
 ST_LOGO_VERSION: Final = "logo_version"
-LOGO_VERSION: Final = 2
+LOGO_VERSION: Final = 3
 
 SERVICE_REFRESH: Final = "refresh"
 ATTR_CONFIG_ENTRY_ID: Final = "config_entry_id"

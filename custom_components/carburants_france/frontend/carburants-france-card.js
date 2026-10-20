@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.4.3';
+var CARBURANTS_CARD_VERSION = '0.5.0';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -711,7 +711,7 @@ if (!customElements.get('carburants-france-card')) {
 // ── carburants-france-map-card ────────────────────────────────────────────────
 // Leaflet ships with the integration: no CDN, only the map tiles come from the network.
 var CARBURANTS_STATIC = '/carburants_france_static';
-var CARBURANTS_MAP_DEFAULTS = { height: 400, show_home: true, show_logo: true, map_style: 'osm', theme: 'auto', hide_out_of_stock_stations: true };
+var CARBURANTS_MAP_DEFAULTS = { height: 400, show_home: true, show_logo: true, show_name: true, map_style: 'osm', theme: 'auto', hide_out_of_stock_stations: true };
 
 var CARBURANTS_OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
 var CARBURANTS_IGN_WMTS = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}';
@@ -773,6 +773,7 @@ var CarburantsMapI18n = {
       tile_attribution: 'Attribution des tuiles',
       show_home: 'Domicile',
       show_logo: 'Logos des enseignes',
+      show_name: 'Nom des stations sur les repères',
       hide_out_of_stock_stations: 'Masquer les stations en rupture',
     },
     themes: { auto: 'Selon le thème', light: 'Clair', dark: 'Sombre' },
@@ -802,6 +803,7 @@ var CarburantsMapI18n = {
       tile_attribution: 'Tile attribution',
       show_home: 'Home',
       show_logo: 'Brand logos',
+      show_name: 'Station names on markers',
       hide_out_of_stock_stations: 'Hide out of stock stations',
     },
     themes: { auto: 'Follow theme', light: 'Light', dark: 'Dark' },
@@ -1072,7 +1074,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       this._map.setView(this._bounds.getCenter(), this._config.zoom);
     } else if (this._bounds) {
       // Pins sit above their point and are ~120 px wide: leave room on top and on the sides.
-      this._map.fitBounds(this._bounds, { paddingTopLeft: [80, 70], paddingBottomRight: [80, 30], maxZoom: 15 });
+      var side = this._config.show_name ? 110 : 80;
+      this._map.fitBounds(this._bounds, { paddingTopLeft: [side, 80], paddingBottomRight: [side, 30], maxZoom: 15 });
     }
     this._fitted = true;
   }
@@ -1120,7 +1123,11 @@ class CarburantsFranceMapCard extends HTMLElement {
       }
       var icon = L.divIcon({
         className: 'carb-marker',
-        html: '<div class="pin ' + state + '" title="' + carbEsc(s.station_name + ' · ' + fuelName) + '">' + logo + '<span class="price">' + carbEsc(label) + '</span></div>',
+        html: '<div class="pin ' + state + '" title="' + carbEsc(s.station_name + ' · ' + fuelName) + '">' + logo +
+          (self._config.show_name
+            ? '<span class="ptext"><span class="pname-pin">' + carbEsc(s.station_name) + '</span><span class="price">' + carbEsc(label) + '</span></span>'
+            : '<span class="price">' + carbEsc(label) + '</span>') +
+          '</div>',
         iconSize: null,
         iconAnchor: [0, 0],
       });
@@ -1182,6 +1189,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.leaflet-container { font: inherit; }',
       '.map.dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }',
       '.carb-marker { background: none; border: none; }',
+      '.ptext { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }',
+      '.pname-pin { max-width: 130px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--primary-text-color, #212121); }',
       '.pin { position: absolute; transform: translate(-50%, calc(-100% - 7px)); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
       '.pin::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--secondary-text-color, #727272); }',
       '.pin.best { border-color: var(--success-color, #43a047); color: var(--success-color, #43a047); }',
@@ -1267,6 +1276,7 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
           { name: 'zoom', selector: { number: { min: 5, max: 18, mode: 'box' } } },
           { name: 'show_home', selector: { boolean: {} } },
           { name: 'show_logo', selector: { boolean: {} } },
+          { name: 'show_name', selector: { boolean: {} } },
           { name: 'hide_out_of_stock_stations', selector: { boolean: {} } },
         ],
       },

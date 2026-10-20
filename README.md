@@ -135,6 +135,7 @@ fuel: gazole
 | `tile_attribution` | — | Avec `map_style: custom` : attribution affichée en bas de la carte |
 | `show_home` | `true` | Afficher le domicile |
 | `show_logo` | `true` | Logo de l'enseigne sur les repères |
+| `show_name` | `true` | Nom de la station sur les repères, au-dessus du prix |
 | `hide_out_of_stock_stations` | `true` | Masquer les stations où tous les carburants suivis sont en rupture (bouton en haut à droite pour les afficher) |
 
 Chaque repère affiche le logo et le prix : vert pour le meilleur prix, orange en cas de rupture. Cliquez sur un repère pour voir tous les prix, l'ouverture et l'itinéraire. Le zoom à la molette est désactivé pour ne pas gêner le défilement du tableau de bord (utilisez les boutons ou le pincement).
@@ -190,9 +191,9 @@ actions:
       message: Rupture de gazole chez Leclerc Rennes
 ```
 
-## Enseignes et logos
+## Noms, enseignes et logos
 
-Le flux de l'État ne donne pas l'enseigne des stations. L'intégration la retrouve dans [OpenStreetMap](https://www.openstreetmap.org) (tag `ref:FR:prix-carburants`, sinon la station la plus proche à moins de 120 m), puis le logo de l'enseigne sur [Wikidata](https://www.wikidata.org) / Wikimedia Commons. La recherche est faite une fois, à l'ajout de la station ; si OpenStreetMap est injoignable, elle est retentée au démarrage suivant. Sans enseigne connue, la carte affiche une icône de station.
+Le flux de l'État ne donne ni le nom ni l'enseigne des stations. L'intégration la retrouve dans [OpenStreetMap](https://www.openstreetmap.org) (tag `ref:FR:prix-carburants`, sinon la station la plus proche à moins de 120 m), puis le logo de l'enseigne sur [Wikidata](https://www.wikidata.org) / Wikimedia Commons. Le nom de la station vient aussi d'OpenStreetMap ; s'il manque, ou s'il se limite à « Station-service » ou au nom de l'enseigne, la station est nommée d'après son enseigne et sa ville. La recherche est faite une fois, à l'ajout de la station ; si OpenStreetMap est injoignable, elle est retentée au démarrage suivant. Sans enseigne connue, la carte affiche une icône de station.
 
 ## Données
 

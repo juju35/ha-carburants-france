@@ -15,7 +15,7 @@ from urllib.parse import quote
 import aiohttp
 
 from .api import distance_km
-from .const import COMMONS_FILE_URL, LOGO_VERSION, OVERPASS_URL, ST_LOGO_VERSION, USER_AGENT, WIKIDATA_URL
+from .const import COMMONS_FILE_URL, OVERPASS_URL, ST_OSM_NAME, USER_AGENT, WIKIDATA_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -153,7 +153,7 @@ async def async_enrich(
             continue
         station["brand"] = info["brand"]
         station["wikidata"] = info.get("wikidata")
+        station[ST_OSM_NAME] = info.get("name")
         if logos is not None:
             station["logo"] = logos.get(info.get("wikidata") or "")
-            station[ST_LOGO_VERSION] = LOGO_VERSION
     return ok

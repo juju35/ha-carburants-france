@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+
+### Nouveautés
+- Les stations portent leur vrai nom, tiré d'OpenStreetMap (par exemple « TotalEnergies Access Rennes Saint-Malo »), sur les deux cartes, dans le formulaire de recherche et pour les appareils. Si OpenStreetMap n'a pas de nom, ou seulement « Station-service » ou le nom de l'enseigne, l'enseigne et la ville restent affichées.
+- Carte géographique : le nom de la station s'affiche sur chaque repère, au-dessus du prix (option `show_name`, activée par défaut).
+- Les stations déjà configurées récupèrent leur nom une fois, au prochain démarrage. Les identifiants d'entités ne changent pas.
+
 ## 0.4.3
 
 ### Améliorations

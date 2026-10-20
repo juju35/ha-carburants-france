@@ -23,6 +23,7 @@ from .const import (
     ST_ID,
     ST_LOGO,
     ST_NAME,
+    ST_OSM_NAME,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,10 +36,29 @@ def pretty_city(city: str) -> str:
     return city.title() if city.isupper() else city
 
 
+GENERIC_NAMES = {"station", "station service", "stationservice", "carburant", "carburants", "essence", "fuel"}
+
+
+def _key(text: str) -> str:
+    return "".join(ch for ch in text.lower() if ch.isalnum() or ch == " ").replace("  ", " ").strip()
+
+
+def useful_osm_name(name: str | None, brand: str | None) -> str | None:
+    """The OpenStreetMap name, unless it only repeats the brand or says "Station-service"."""
+    if not name:
+        return None
+    key = _key(name.replace("-", " "))
+    if key in GENERIC_NAMES or (brand and key.replace(" ", "") == _key(brand.replace("-", " ")).replace(" ", "")):
+        return None
+    return name.strip()
+
+
 def station_title(stored: dict[str, Any]) -> str:
-    """Name shown for a station: custom name, else brand + town, else address."""
+    """Name shown for a station: custom name, else its OSM name, else brand + town, else address."""
     if stored.get(ST_NAME):
         return stored[ST_NAME]
+    if osm_name := useful_osm_name(stored.get(ST_OSM_NAME), stored.get(ST_BRAND)):
+        return osm_name
     city = pretty_city(stored.get("city") or "")
     if stored.get(ST_BRAND):
         return f"{stored[ST_BRAND]} {city}".strip()

@@ -11,6 +11,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 
 from custom_components.carburants_france.api import parse_station
+from custom_components.carburants_france.coordinator import station_title, useful_osm_name
 from custom_components.carburants_france.const import API_RECORDS, DOMAIN, OVERPASS_URL, WIKIDATA_URL
 
 # Two real records from the feed (Rennes, October 2026), horaires shortened.
@@ -52,9 +53,9 @@ OVERPASS = {
     "elements": [
         {"type": "node", "id": 1, "lat": 48.12601, "lon": -1.68502,
          "tags": {"amenity": "fuel", "brand": "TotalEnergies", "brand:wikidata": "Q154037",
-                  "ref:FR:prix-carburants": "35000013"}},
+                  "name": "TotalEnergies Access Rennes Saint-Malo", "ref:FR:prix-carburants": "35000013"}},
         {"type": "way", "id": 2, "center": {"lat": 48.0989, "lon": -1.6541},
-         "tags": {"amenity": "fuel", "brand": "Leclerc", "brand:wikidata": "Q1273376"}},
+         "tags": {"amenity": "fuel", "brand": "Leclerc", "name": "Leclerc", "brand:wikidata": "Q1273376"}},
     ]
 }
 WIKIDATA = {
@@ -75,7 +76,7 @@ def _stored(record, brand=None, logo=None):
     return {
         "id": s["id"], "address": s["address"], "postcode": s["postcode"], "city": s["city"],
         "latitude": s["latitude"], "longitude": s["longitude"],
-        "brand": brand, "wikidata": None, "logo": logo, "brand_checked": True,
+        "brand": brand, "wikidata": None, "logo": logo, "brand_checked": True, "logo_version": 3,
     }
 
 
@@ -214,7 +215,9 @@ async def test_config_flow(hass, aioclient_mock):
     search_call = [c for c in aioclient_mock.mock_calls if str(c[1]).startswith(API_RECORDS)][0]
     assert "within_distance(geom, geom'POINT(-1.68 48.11)', 5.0km)" == search_call[1].query["where"]
     labels = {o["value"]: o["label"] for o in result["data_schema"].schema["stations"].config["options"]}
-    assert labels["35000013"].startswith("TotalEnergies · 238 Rue Saint-Malo, 35000 Rennes — Gazole 2,399 € · SP98 2,300 €")
+    assert labels["35000013"].startswith(
+        "TotalEnergies Access Rennes Saint-Malo · 238 Rue Saint-Malo, 35000 Rennes — Gazole 2,399 € · SP98 2,300 €"
+    )
     assert "SP98 ✕" in labels["35000025"]
     assert "Leclerc" in labels["35000025"]
 
@@ -314,7 +317,7 @@ async def test_config_flow_unexpected_error(hass, aioclient_mock):
 async def test_old_logos_looked_up_again(hass, aioclient_mock, entry):
     options = dict(entry.options)
     options["stations"] = [
-        {**options["stations"][0], "wikidata": "Q154037", "logo": "https://old-logo"},
+        {**options["stations"][0], "wikidata": "Q154037", "logo": "https://old-logo", "logo_version": 1},
         options["stations"][1],
     ]
     hass.config_entries.async_update_entry(entry, options=options)
@@ -324,9 +327,43 @@ async def test_old_logos_looked_up_again(hass, aioclient_mock, entry):
     await hass.async_block_till_done()
     total = {s["id"]: s for s in entry.options["stations"]}[35000013]
     assert total["logo"].endswith("/TotalEnergies_logo.svg?width=96")
-    assert total["logo_version"] == 2
+    assert total["logo_version"] == 3
     # Done once: no lookup at the next start.
     calls = aioclient_mock.call_count
     await hass.config_entries.async_reload(entry.entry_id)
     await hass.async_block_till_done()
     assert not [c for c in aioclient_mock.mock_calls[calls:] if str(c[1]).startswith(OVERPASS_URL)]
+
+
+@pytest.mark.parametrize(
+    ("osm_name", "brand", "expected"),
+    [
+        pytest.param("TotalEnergies Access Rennes Saint-Malo", "TotalEnergies", "TotalEnergies Access Rennes Saint-Malo", id="real-name"),
+        pytest.param("Station-service", "Esso", "Esso Rennes", id="generic"),
+        pytest.param("E. Leclerc", "E.Leclerc", "E.Leclerc Rennes", id="repeats-brand"),
+        pytest.param(None, None, "238 Rue Saint-Malo Rennes", id="nothing-known"),
+    ],
+)
+def test_station_title(osm_name, brand, expected):
+    stored = {"address": "238 Rue Saint-Malo", "city": "RENNES", "brand": brand, "osm_name": osm_name}
+    assert station_title(stored) == expected
+    assert station_title({**stored, "name": "Ma station"}) == "Ma station"
+    assert useful_osm_name("  Total Access  ", "TotalEnergies") == "Total Access"
+
+
+async def test_osm_names_looked_up_for_existing_stations(hass, aioclient_mock, entry):
+    """Stations set up before names were kept get their OSM name once, at startup."""
+    options = dict(entry.options)
+    options["stations"] = [{**s, "logo_version": 2} for s in options["stations"]]
+    hass.config_entries.async_update_entry(entry, options=options)
+    aioclient_mock.post(OVERPASS_URL, json=OVERPASS)
+    aioclient_mock.get(WIKIDATA_URL, json=WIKIDATA)
+    await _setup(hass, aioclient_mock, entry)
+    await hass.async_block_till_done()
+    stations = {s["id"]: s for s in entry.options["stations"]}
+    assert stations[35000013]["osm_name"] == "TotalEnergies Access Rennes Saint-Malo"
+    state = hass.states.get("sensor.carburants_stations")
+    names = {s["station_id"]: s["station_name"] for s in state.attributes["stations"]}
+    assert names[35000013] == "TotalEnergies Access Rennes Saint-Malo"
+    # OSM only says "Leclerc": brand and town are clearer.
+    assert names[35000025] == "Leclerc Rennes"

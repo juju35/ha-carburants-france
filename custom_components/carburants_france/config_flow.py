@@ -44,9 +44,10 @@ from .const import (
     ST_ID,
     ST_LOGO,
     ST_LOGO_VERSION,
+    ST_OSM_NAME,
     LOGO_VERSION,
 )
-from .coordinator import pretty_city
+from .coordinator import pretty_city, useful_osm_name
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -119,7 +120,7 @@ class StationPickerMixin:
         return self.async_show_form(step_id="search", data_schema=schema, errors=errors)
 
     def _label(self, station: dict[str, Any]) -> str:
-        head = station.get(ST_BRAND) or "Station"
+        head = useful_osm_name(station.get(ST_OSM_NAME), station.get(ST_BRAND)) or station.get(ST_BRAND) or "Station"
         place = f"{station.get('address', '')}, {station.get('postcode', '')} {pretty_city(station.get('city', ''))}"
         parts = [f"{head} · {place.strip(', ')}"]
         prices = []
@@ -145,9 +146,12 @@ class StationPickerMixin:
                     found = self._found[station_id]
                     stored = {ST_ID: station_id, **{k: found.get(k) for k in STORED_KEYS}}
                     stored[ST_BRAND] = found.get(ST_BRAND)
+                    stored[ST_OSM_NAME] = found.get(ST_OSM_NAME)
                     stored["wikidata"] = found.get("wikidata")
                     stored[ST_LOGO] = None
                     stored[ST_BRAND_CHECKED] = found.get(ST_BRAND_CHECKED, False)
+                    if stored[ST_BRAND_CHECKED]:
+                        stored[ST_LOGO_VERSION] = LOGO_VERSION
                     selected[station_id] = stored
             self._selected = selected
             if user_input.get(CONF_SEARCH_AGAIN):
