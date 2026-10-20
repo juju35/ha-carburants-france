@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.4
+
+### Corrections
+- Carte géographique : un repère affichait « Rupture » dès que le premier carburant suivi l'était, même si un autre était disponible (Relais Rennes Alma : SP98 en rupture, E10 à 1,990 €). Sans carburant choisi dans l'éditeur, chaque repère affiche maintenant le carburant disponible le moins cher, avec son nom ; « Rupture » ne s'affiche que si tous les carburants suivis sont en rupture.
+- Les deux cartes se redessinent immédiatement après un changement d'option, sans attendre la mise à jour suivante de Home Assistant.
+
 ## 0.9.3
 
 ### Améliorations

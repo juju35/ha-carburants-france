@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.9.3';
+var CARBURANTS_CARD_VERSION = '0.9.4';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -287,7 +287,8 @@ class CarburantsFranceCard extends HTMLElement {
     this._config = Object.assign({}, CARBURANTS_DEFAULTS, config || {});
     // Only one station is expanded at a time.
     this._expandedId = this._expandedId || null;
-    this._lastState = null;
+    // Read the current state now: a config change must redraw at once, not at the next hass update.
+    this._lastState = this._hass && this._entityId() ? this._hass.states[this._entityId()] || null : null;
     if (this._hass) this._render();
   }
 
@@ -807,7 +808,7 @@ var CarburantsMapI18n = {
     editor: {
       entity: 'Capteur Stations',
       title: 'Titre (vide pour aucun)',
-      fuel: 'Carburant affiché sur les repères',
+      fuel: 'Carburant affiché sur les repères (vide = le moins cher disponible)',
       height: 'Hauteur (px)',
       zoom: 'Zoom (vide = ajusté aux stations)',
       map_style: 'Fond de carte',
@@ -838,7 +839,7 @@ var CarburantsMapI18n = {
     editor: {
       entity: 'Stations sensor',
       title: 'Title (empty for none)',
-      fuel: 'Fuel shown on markers',
+      fuel: 'Fuel shown on markers (empty = cheapest in stock)',
       height: 'Height (px)',
       zoom: 'Zoom (empty = fit the stations)',
       map_style: 'Base map',
@@ -898,7 +899,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       this._tiles = null;
       this._loadTiles(window.L);
     }
-    this._lastState = null;
+    // Read the current state now: a config change must redraw at once, not at the next hass update.
+    this._lastState = this._hass && this._entityId() ? this._hass.states[this._entityId()] || null : null;
     this._fitted = false;
     if (this._hass) this._update();
   }
@@ -1130,10 +1132,28 @@ class CarburantsFranceMapCard extends HTMLElement {
     this._fitted = true;
   }
 
+  // The fuel chosen in the editor, or null: each marker then shows its cheapest fuel in stock.
   _fuelKey(fuels) {
     var wanted = this._config.fuel;
-    if (wanted && fuels.some(function (f) { return f.key === wanted; })) return wanted;
-    return fuels[0] && fuels[0].key;
+    return wanted && fuels.some(function (f) { return f.key === wanted; }) ? wanted : null;
+  }
+
+  // The fuel a marker shows: the chosen one, else the cheapest in stock, else the most telling
+  // unavailable one (shortage before no price), so "Rupture" only shows when nothing is in stock.
+  _markerFuel(s, fuels, key) {
+    if (key) return { key: key, fuel: s.fuels && s.fuels[key] };
+    var cheapest = null;
+    var fallback = null;
+    fuels.forEach(function (f) {
+      var fuel = s.fuels && s.fuels[f.key];
+      if (!fuel || fuel.rupture === 'definitive') return;
+      if (fuel.available) {
+        if (!cheapest || fuel.price < cheapest.fuel.price) cheapest = { key: f.key, fuel: fuel };
+      } else if (!fallback || (fuel.rupture && !fallback.fuel.rupture)) {
+        fallback = { key: f.key, fuel: fuel };
+      }
+    });
+    return cheapest || fallback || { key: null, fuel: null };
   }
 
   _drawMarkers(L) {
@@ -1150,7 +1170,8 @@ class CarburantsFranceMapCard extends HTMLElement {
     var toggle = this._toggle.getContainer();
     toggle.hidden = !hidden;
     toggle.textContent = carbToggleLabel(t, this._showAll, hidden);
-    var fuelName = (fuels.filter(function (f) { return f.key === key; })[0] || {}).name || '';
+    var names = {};
+    fuels.forEach(function (f) { names[f.key] = f.name; });
     var self = this;
     var now = new Date();
     var points = [];
@@ -1160,12 +1181,16 @@ class CarburantsFranceMapCard extends HTMLElement {
 
     this._layer.clearLayers();
     stations.forEach(function (s) {
-      var fuel = s.fuels && s.fuels[key];
+      var shown = self._markerFuel(s, fuels, key);
+      var fuel = shown.fuel;
+      var fuelName = names[shown.key] || '';
       var state = !fuel || fuel.rupture === 'definitive' ? 'none'
         : !fuel.available ? (fuel.rupture ? 'out' : 'nodata')
-        : best[key] === fuel.price && stations.length > 1 ? 'best' : 'ok';
+        : best[shown.key] === fuel.price && stations.length > 1 ? 'best' : 'ok';
       var label = state === 'ok' || state === 'best' ? self._price(fuel.price)
         : state === 'out' ? t.out_of_stock : state === 'nodata' ? t.no_price : '—';
+      // Without a chosen fuel, say which one the price is for.
+      var priceHtml = (!key && fuelName && (state === 'ok' || state === 'best') ? '<span class="pfuel">' + carbEsc(fuelName) + '</span> ' : '') + carbEsc(label);
       var logo = '';
       if (self._config.show_logo) {
         var name = s.brand || s.station_name || '';
@@ -1179,8 +1204,8 @@ class CarburantsFranceMapCard extends HTMLElement {
         className: 'carb-marker',
         html: '<div class="pin ' + state + '" title="' + carbEsc(s.station_name + ' · ' + fuelName) + '">' + logo +
           (self._config.show_name
-            ? '<span class="ptext"><span class="pname-pin">' + carbEsc(s.station_name) + '</span><span class="price">' + carbEsc(label) + '</span></span>'
-            : '<span class="price">' + carbEsc(label) + '</span>') +
+            ? '<span class="ptext"><span class="pname-pin">' + carbEsc(s.station_name) + '</span><span class="price">' + priceHtml + '</span></span>'
+            : '<span class="price">' + priceHtml + '</span>') +
           '</div>',
         iconSize: null,
         iconAnchor: [0, 0],
@@ -1250,6 +1275,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.map.dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }',
       '.carb-marker { background: none; border: none; }',
       '.ptext { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }',
+      '.pfuel { font-size: 10px; font-weight: 600; opacity: .75; }',
       '.pname-pin { max-width: 130px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--primary-text-color, #212121); }',
       '.pin { position: absolute; transform: translate(-50%, calc(-100% - 7px)); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
       '.pin::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--secondary-text-color, #727272); }',
