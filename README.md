@@ -109,7 +109,7 @@ type: custom:carburants-france-card
 | `show_refresh` | `true` | Bouton d'actualisation |
 | `hide_out_of_stock_stations` | `true` | Masquer les stations où tous les carburants affichés sont en rupture |
 
-Cliquez sur une station pour voir ses horaires de la semaine, ses services et un bouton d'itinéraire. Une seule station est dépliée à la fois ; un clic en dehors de la carte la replie.
+Cliquez sur une station pour voir ses horaires de la semaine, ses services et un bouton d'itinéraire. Une seule station est dépliée à la fois ; un clic en dehors de la carte la replie et masque à nouveau les stations en rupture.
 
 Les stations où **tous les carburants affichés sont en rupture** sont masquées : le bouton **Afficher les stations en rupture**, en bas de la carte, les fait réapparaître.
 

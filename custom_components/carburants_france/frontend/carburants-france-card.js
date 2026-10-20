@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.4.2';
+var CARBURANTS_CARD_VERSION = '0.4.3';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -170,7 +170,8 @@ function carbToggleLabel(t, showAll, hidden) {
   return hidden === 1 ? t.show_all_one : t.show_all.replace('{n}', hidden);
 }
 
-// Calls onOutside for a pointer press anywhere outside the element (shadow DOM aware).
+// Calls onOutside for a click anywhere outside the element (shadow DOM aware). A click, not a
+// pointerdown: collapsing on press would shift the layout under the pointer before the click.
 function carbOutsideListener(element, onOutside) {
   return function (ev) {
     var path = ev.composedPath ? ev.composedPath() : [];
@@ -277,17 +278,19 @@ class CarburantsFranceCard extends HTMLElement {
     // Opening status and price ages move with the clock.
     var self = this;
     this._timer = setInterval(function () { self._render(); }, 60000);
+    // A click elsewhere collapses the station and hides the out of stock ones again.
     this._onOutside = this._onOutside || carbOutsideListener(this, function () {
-      if (self._expandedId === null) return;
+      if (self._expandedId === null && !self._showAll) return;
       self._expandedId = null;
+      self._showAll = false;
       self._render();
     });
-    document.addEventListener('pointerdown', this._onOutside, true);
+    document.addEventListener('click', this._onOutside, true);
   }
 
   disconnectedCallback() {
     clearInterval(this._timer);
-    document.removeEventListener('pointerdown', this._onOutside, true);
+    document.removeEventListener('click', this._onOutside, true);
   }
 
   getCardSize() {
@@ -865,10 +868,16 @@ class CarburantsFranceMapCard extends HTMLElement {
 
   connectedCallback() {
     var self = this;
+    // A click elsewhere closes the popup and hides the out of stock stations again.
     this._onOutside = this._onOutside || carbOutsideListener(this, function () {
-      if (self._map) self._map.closePopup();
+      if (!self._map) return;
+      self._map.closePopup();
+      if (self._showAll) {
+        self._showAll = false;
+        self._drawMarkers(window.L);
+      }
     });
-    document.addEventListener('pointerdown', this._onOutside, true);
+    document.addEventListener('click', this._onOutside, true);
     if (!this._map) return;
     if (this._resizeObserver) this._resizeObserver.observe(this._root.querySelector('.map'));
     this._scheduleTokenRefresh();
@@ -882,7 +891,7 @@ class CarburantsFranceMapCard extends HTMLElement {
   disconnectedCallback() {
     if (this._resizeObserver) this._resizeObserver.disconnect();
     clearInterval(this._tokenTimer);
-    document.removeEventListener('pointerdown', this._onOutside, true);
+    document.removeEventListener('click', this._onOutside, true);
   }
 
   getCardSize() {

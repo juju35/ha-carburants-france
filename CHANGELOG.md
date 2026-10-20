@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.3
+
+### Améliorations
+- Un clic en dehors d'une carte masque à nouveau les stations en rupture qui avaient été affichées, sur la carte liste comme sur la carte géographique.
+- Le repli au clic extérieur se fait une fois le clic terminé : il ne décale plus la page sous le doigt quand plusieurs cartes sont empilées.
+
 ## 0.4.2
 
 ### Améliorations
