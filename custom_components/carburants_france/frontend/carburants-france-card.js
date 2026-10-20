@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.9.5';
+var CARBURANTS_CARD_VERSION = '0.10.0';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -755,7 +755,7 @@ if (!customElements.get('carburants-france-card')) {
 // ── carburants-france-map-card ────────────────────────────────────────────────
 // Leaflet ships with the integration: no CDN, only the map tiles come from the network.
 var CARBURANTS_STATIC = '/carburants_france_static';
-var CARBURANTS_MAP_DEFAULTS = { height: 400, show_icon: true, show_home: true, show_logo: true, show_name: true, map_style: 'osm', theme: 'auto', hide_out_of_stock_stations: true };
+var CARBURANTS_MAP_DEFAULTS = { height: 400, show_icon: true, show_home: true, show_logo: true, show_name: true, map_style: 'ha', theme: 'auto', hide_out_of_stock_stations: true };
 
 var CARBURANTS_OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
 var CARBURANTS_IGN_WMTS = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}';
@@ -763,6 +763,8 @@ var CARBURANTS_IGN_WMTS = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTi
 // Base maps that need no API key. "osm" goes through Home Assistant (see _tileUrl).
 // photo: aerial imagery, never darkened by the dark theme.
 var CARBURANTS_MAP_STYLES = {
+  // Home Assistant's own map: OpenStreetMap vector tiles and the style its map card uses (2026.9+).
+  ha: { vector: true, maxZoom: 20, attribution: CARBURANTS_OSM_ATTRIBUTION },
   osm: { maxZoom: 19, attribution: CARBURANTS_OSM_ATTRIBUTION },
   osm_fr: {
     url: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
@@ -823,6 +825,7 @@ var CarburantsMapI18n = {
     },
     themes: { auto: 'Selon le thème', light: 'Clair', dark: 'Sombre' },
     styles: {
+      ha: 'Home Assistant',
       osm: 'OpenStreetMap',
       osm_fr: 'OpenStreetMap France',
       ign: 'Plan IGN',
@@ -854,6 +857,7 @@ var CarburantsMapI18n = {
     },
     themes: { auto: 'Follow theme', light: 'Light', dark: 'Dark' },
     styles: {
+      ha: 'Home Assistant',
       osm: 'OpenStreetMap',
       osm_fr: 'OpenStreetMap France',
       ign: 'IGN map',
@@ -881,6 +885,37 @@ function carbLoadLeaflet() {
   return carbLeafletPromise;
 }
 
+// MapLibre GL draws Home Assistant's vector map; the adapter puts it in Leaflet, as the native
+// map card does. Both ship with the integration, at the versions Home Assistant uses.
+var carbMaplibrePromise = null;
+function carbLoadMaplibre() {
+  if (!carbMaplibrePromise) {
+    carbMaplibrePromise = import(CARBURANTS_STATIC + '/maplibre/maplibre-gl.mjs?v=6.14.0').then(function (module) {
+      window.maplibregl = window.maplibregl || module;
+      if (window.MaplibreGLLeaflet && window.MaplibreGLLeaflet.maplibreGL) return window.MaplibreGLLeaflet.maplibreGL;
+      return new Promise(function (resolve, reject) {
+        var script = document.createElement('script');
+        script.src = CARBURANTS_STATIC + '/maplibre/leaflet-maplibre-gl.js?v=0.1.4';
+        script.onload = function () { resolve(window.MaplibreGLLeaflet.maplibreGL); };
+        script.onerror = function () { reject(new Error('MapLibre adapter could not be loaded')); };
+        document.head.appendChild(script);
+      });
+    }).catch(function (err) {
+      carbMaplibrePromise = null;
+      throw err;
+    });
+  }
+  return carbMaplibrePromise;
+}
+
+function carbSupportsWebGL2() {
+  try {
+    return !!document.createElement('canvas').getContext('webgl2');
+  } catch (err) {
+    return false;
+  }
+}
+
 class CarburantsFranceMapCard extends HTMLElement {
   static getConfigElement() {
     return document.createElement('carburants-france-map-card-editor');
@@ -894,11 +929,8 @@ class CarburantsFranceMapCard extends HTMLElement {
   setConfig(config) {
     var previous = this._config;
     this._config = Object.assign({}, CARBURANTS_MAP_DEFAULTS, config || {});
-    if (previous && this._map && this._tilesKey(previous) !== this._tilesKey(this._config)) {
-      if (this._tiles) this._map.removeLayer(this._tiles);
-      this._tiles = null;
-      this._loadTiles(window.L);
-    }
+    if (previous && this._tilesKey(previous) !== this._tilesKey(this._config)) this._vectorFailed = false;
+    this._reloadTilesIfNeeded();
     // Read the current state now: a config change must redraw at once, not at the next hass update.
     this._lastState = this._hass && this._entityId() ? this._hass.states[this._entityId()] || null : null;
     this._fitted = false;
@@ -912,6 +944,10 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (st !== this._lastState || !this._map) {
       this._lastState = st;
       this._update();
+    } else if (this._root) {
+      // Theme switched in Home Assistant: dark filter and light / dark vector style follow.
+      this._root.querySelector('.map').classList.toggle('dark', this._darkTiles());
+      this._reloadTilesIfNeeded();
     }
   }
 
@@ -931,7 +967,9 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (this._resizeObserver) this._resizeObserver.observe(this._root.querySelector('.map'));
     this._scheduleTokenRefresh();
     // The token may have expired while the card was detached.
-    if (this._tiles && this._tiles._url.indexOf('/api/map_tiles/') === 0) {
+    if (this._tiles && this._tiles.getMaplibreMap) {
+      this._hass.callWS({ type: 'map_tiles/access_token' }).then(function (res) { self._mapToken = res.token; }, function () {});
+    } else if (this._tiles && this._tiles._url.indexOf('/api/map_tiles/') === 0) {
       this._tileUrl().then(function (url) { if (self._tiles) self._tiles.setUrl(url); });
     }
     setTimeout(this._invalidate.bind(this), 0);
@@ -963,9 +1001,10 @@ class CarburantsFranceMapCard extends HTMLElement {
     return (this._hass && this._hass.locale && this._hass.locale.language) || navigator.language || 'fr';
   }
 
-  _dark() {
-    if (this._config.theme === 'dark') return true;
-    if (this._config.theme === 'light') return false;
+  _dark(config) {
+    var theme = (config || this._config).theme;
+    if (theme === 'dark') return true;
+    if (theme === 'light') return false;
     return !!(this._hass && this._hass.themes && this._hass.themes.darkMode);
   }
 
@@ -975,13 +1014,16 @@ class CarburantsFranceMapCard extends HTMLElement {
     return CARBURANTS_MAP_STYLES[style] ? style : 'osm';
   }
 
+  // What the base layer depends on; the vector style also has a light and a dark version.
   _tilesKey(config) {
-    return [config.map_style, config.tile_url, config.tile_attribution].join('|');
+    var vector = (CARBURANTS_MAP_STYLES[config.map_style || CARBURANTS_MAP_DEFAULTS.map_style] || {}).vector;
+    return [config.map_style, config.tile_url, config.tile_attribution, vector && this._dark(config)].join('|');
   }
 
-  // Aerial imagery is never darkened.
+  // Raster tiles are darkened with a filter; aerial imagery and the vector style (dark version) are not.
   _darkTiles() {
-    return this._dark() && !CARBURANTS_MAP_STYLES[this._style()].photo;
+    var spec = CARBURANTS_MAP_STYLES[this._style()];
+    return this._dark() && !spec.photo && !spec.vector && !this._vectorFailed;
   }
 
   _ensureShell() {
@@ -989,6 +1031,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     this._root = this.attachShadow({ mode: 'open' });
     this._root.innerHTML =
       '<link rel="stylesheet" href="' + CARBURANTS_STATIC + '/leaflet/leaflet.css?v=1.9.4">' +
+      '<link rel="stylesheet" href="' + CARBURANTS_STATIC + '/maplibre/maplibre-gl.css?v=6.14.0">' +
       '<style>' + CarburantsFranceMapCard._styles() + '</style>' +
       '<ha-card><div class="header" hidden></div><div class="message" hidden></div><div class="map"></div></ha-card>';
   }
@@ -1010,6 +1053,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     mapEl.style.height = Math.max(150, Number(this._config.height) || 400) + 'px';
     // Follows the Home Assistant theme live when theme is auto.
     mapEl.classList.toggle('dark', this._darkTiles());
+    this._reloadTilesIfNeeded();
     var message = this._root.querySelector('.message');
     if (!this._lastState) {
       message.hidden = false;
@@ -1073,6 +1117,16 @@ class CarburantsFranceMapCard extends HTMLElement {
     var options = { maxZoom: spec.maxZoom, attribution: spec.attribution };
     if (spec.maxNativeZoom) options.maxNativeZoom = spec.maxNativeZoom;
     var key = this._tilesKey(this._config);
+    this._tilesLoadedKey = key;
+    if (spec.vector && !this._vectorFailed) {
+      this._loadVector(L, map, key);
+      return;
+    }
+    if (spec.vector) {
+      style = 'osm';
+      spec = CARBURANTS_MAP_STYLES.osm;
+      options = { maxZoom: spec.maxZoom, attribution: spec.attribution };
+    }
     var url;
     if (style === 'osm') {
       url = this._tileUrl();
@@ -1092,10 +1146,78 @@ class CarburantsFranceMapCard extends HTMLElement {
     });
   }
 
+  // Home Assistant's style, fetched from the instance like its map card does: /static/map/light.json
+  // or dark.json, tiles and glyphs through /api/map_tiles with the rotating token in a header.
+  // Anything missing (WebGL2, Home Assistant before 2026.9) falls back to raster OpenStreetMap.
+  // The base layer no longer matches the config or the theme (light / dark vector style): swap it.
+  _reloadTilesIfNeeded() {
+    if (!this._map || this._tilesLoadedKey === this._tilesKey(this._config)) return;
+    if (this._tiles) this._map.removeLayer(this._tiles);
+    this._tiles = null;
+    this._loadTiles(window.L);
+  }
+
+  _loadVector(L, map, key) {
+    var self = this;
+    var dark = this._dark();
+    var hass = this._hass;
+    var fallback = function (err) {
+      if (self._map !== map || self._tilesKey(self._config) !== key) return;
+      // eslint-disable-next-line no-console
+      console.info('carburants-france-map-card: Home Assistant map style unavailable, using raster tiles', err);
+      self._vectorFailed = true;
+      self._loadTiles(L);
+    };
+    if (!carbSupportsWebGL2()) {
+      fallback(new Error('WebGL2 not supported'));
+      return;
+    }
+    Promise.all([
+      carbLoadMaplibre(),
+      hass.callWS({ type: 'map_tiles/access_token' }),
+      fetch('/static/map/' + (dark ? 'dark' : 'light') + '.json').then(function (resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.json();
+      }),
+    ]).then(function (results) {
+      if (self._map !== map || self._tilesKey(self._config) !== key) return;
+      var maplibreGL = results[0];
+      var style = results[2];
+      self._mapToken = results[1].token;
+      var absolute = function (url) { return new URL(url, location.href).href; };
+      if (typeof style.sprite === 'string') style.sprite = absolute(style.sprite);
+      else if (Array.isArray(style.sprite)) {
+        style.sprite = style.sprite.map(function (sprite) { return Object.assign({}, sprite, { url: absolute(sprite.url) }); });
+      }
+      self._tiles = maplibreGL({
+        style: style,
+        attributionControl: { customAttribution: CARBURANTS_OSM_ATTRIBUTION },
+        // Same as the native map card: the token in a header keeps tile URLs, and the cache, stable.
+        transformRequest: function (url) {
+          var full = new URL(url, location.href);
+          if (full.origin === location.origin && full.pathname.indexOf('/api/map_tiles/') === 0) {
+            return { url: full.href, headers: { 'X-Map-Tiles-Token': self._mapToken } };
+          }
+          return { url: full.href };
+        },
+      });
+      self._tiles.addTo(map);
+      self._scheduleTokenRefresh();
+    }).catch(fallback);
+  }
+
   _scheduleTokenRefresh() {
     clearInterval(this._tokenTimer);
-    if (!this._tiles || this._tiles._url.indexOf('/api/map_tiles/') !== 0) return;
+    if (!this._tiles) return;
     var self = this;
+    if (this._tiles.getMaplibreMap) {
+      // Vector: the request hook reads the current token.
+      this._tokenTimer = setInterval(function () {
+        self._hass.callWS({ type: 'map_tiles/access_token' }).then(function (res) { self._mapToken = res.token; }, function () {});
+      }, 20 * 60 * 1000);
+      return;
+    }
+    if (this._tiles._url.indexOf('/api/map_tiles/') !== 0) return;
     this._tokenTimer = setInterval(function () {
       self._tileUrl().then(function (url) {
         // No redraw: tiles already shown stay, new ones use the new token.
@@ -1111,6 +1233,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     this._map = null;
     this._layer = null;
     this._tiles = null;
+    this._tilesLoadedKey = null;
   }
 
   _invalidate() {

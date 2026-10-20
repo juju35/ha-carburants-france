@@ -133,7 +133,7 @@ type: custom:carburants-france-map-card
 | `fuel` | le moins cher | Carburant affiché sur les repères. Sans valeur, chaque repère affiche le carburant disponible le moins cher de la station, avec son nom (« E10 1,990 € ») |
 | `height` | `400` | Hauteur de la carte en pixels |
 | `zoom` | ajusté | Zoom fixe ; par défaut, la carte s'ajuste pour montrer toutes les stations |
-| `map_style` | `osm` | Fond de carte, voir ci-dessous |
+| `map_style` | `ha` | Fond de carte, voir ci-dessous |
 | `theme` | `auto` | Thème du fond de carte : `auto` (selon le thème de Home Assistant), `light` ou `dark` (assombri, sauf photos aériennes) |
 | `tile_url` | — | Avec `map_style: custom` : URL des tuiles avec `{z}`, `{x}`, `{y}` (et `{s}` si besoin) |
 | `tile_attribution` | — | Avec `map_style: custom` : attribution affichée en bas de la carte |
@@ -148,7 +148,8 @@ Fonds de carte disponibles, tous sans clé d'API :
 
 | `map_style` | Fond |
 |---|---|
-| `osm` | OpenStreetMap, servi par Home Assistant lui-même (intégration intégrée **Map tiles**, 2026.9 et plus) comme la carte native ; directement depuis OpenStreetMap avant la 2026.9 |
+| `ha` | **Home Assistant** : le fond de la carte native de Home Assistant (2026.9 et plus), tuiles vectorielles OpenStreetMap avec son style clair ou sombre. Sans WebGL2, ou avant la 2026.9, la carte passe automatiquement sur `osm` |
+| `osm` | OpenStreetMap en tuiles raster, servi par Home Assistant lui-même (intégration intégrée **Map tiles**, 2026.9 et plus) ; directement depuis OpenStreetMap avant la 2026.9 |
 | `osm_fr` | [OpenStreetMap France](https://www.openstreetmap.fr) |
 | `ign` | Plan IGN ([Géoplateforme](https://geoservices.ign.fr)) |
 | `ign_photo` | Photos aériennes IGN (France uniquement) |
@@ -164,7 +165,7 @@ tile_url: https://tuiles.example.fr/{z}/{x}/{y}.png
 tile_attribution: © OpenStreetMap contributors
 ```
 
-La carte utilise [Leaflet](https://leafletjs.com), fourni avec l'intégration. En thème sombre, le fond de carte est assombri, sauf les photos aériennes.
+La carte utilise [Leaflet](https://leafletjs.com) et, pour le fond `ha`, [MapLibre GL](https://maplibre.org) avec son adaptateur Leaflet, aux mêmes versions que Home Assistant ; tout est fourni avec l'intégration, sans CDN. Le fond `ha` reprend le style servi par votre instance (`/static/map/light.json` ou `dark.json`) et suit le thème clair ou sombre. Pour les autres fonds, le thème sombre assombrit les tuiles, sauf les photos aériennes.
 
 ## Automatisations
 

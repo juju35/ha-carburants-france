@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0
+
+### Nouveautés
+- Carte géographique : nouveau fond **Home Assistant** (`map_style: ha`), désormais par défaut. C'est le fond de la carte native de Home Assistant 2026.9 et plus : tuiles vectorielles OpenStreetMap et style clair ou sombre servis par votre instance, qui suivent le thème en direct.
+- Sans WebGL2, ou avec une version de Home Assistant antérieure à 2026.9, la carte passe automatiquement sur les tuiles OpenStreetMap raster.
+- MapLibre GL 6.14.0 et son adaptateur Leaflet 0.1.4 (les versions de Home Assistant) sont fournis avec l'intégration.
+
 ## 0.9.5
 
 ### Corrections

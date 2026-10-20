@@ -188,6 +188,10 @@ async def test_card_served(hass, aioclient_mock, entry, hass_client):
     assert resp.status == 200
     resp = await client.get("/carburants_france_static/leaflet/leaflet.css")
     assert resp.status == 200
+    # MapLibre and its Leaflet adapter, for Home Assistant's vector base map; the worker sits next to it.
+    for path in ("maplibre-gl.mjs", "maplibre-gl-worker.mjs", "maplibre-gl.css", "leaflet-maplibre-gl.js"):
+        resp = await client.get(f"/carburants_france_static/maplibre/{path}")
+        assert resp.status == 200, path
 
 
 async def test_card_added_to_resources(hass, aioclient_mock, entry, stub_frontend):
