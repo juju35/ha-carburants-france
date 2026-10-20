@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.2
+
+### Changements
+- Retrait des étiquettes de sous-enseigne (CONTACT, EXPRESS, MARKET, CITY) sur les logos et les repères. Le logo Total Access et l'enseigne écrite en toutes lettres restent.
+- Captures d'écran du README mises à jour.
+
 ## 0.9.1
 
 ### Améliorations

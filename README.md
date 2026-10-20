@@ -8,7 +8,7 @@
 
 Intégration Home Assistant pour les [prix des carburants en France](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/) : suivez les prix et la disponibilité des carburants dans vos stations, avec une carte Lovelace incluse qui affiche les logos des enseignes.
 
-<img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/carburants-france-card-0.3.0.png" alt="carburants-france-card" width="380"> <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/carburants-france-card-dark-0.3.0.png" alt="carburants-france-card, thème sombre, station dépliée" width="380">
+<img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/carburants-france-card-0.9.2.png" alt="carburants-france-card" width="380"> <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/carburants-france-card-dark-0.9.2.png" alt="carburants-france-card, thème sombre, station dépliée" width="380">
 
 ## Fonctionnalités
 
@@ -206,7 +206,7 @@ Pour les stations absentes de ce fichier, l'intégration cherche dans [OpenStree
 
 Ordre de priorité du nom : nom personnalisé (option **Renommer les stations**), fichier communautaire, OpenStreetMap, enseigne et ville, adresse.
 
-Les sous-enseignes partagent souvent le logo de leur réseau dans Wikidata. Total Access a son propre logo, intégré aux cartes. Pour les autres (Intermarché Contact, Esso Express, Carrefour Market…), les cartes ajoutent une étiquette **CONTACT**, **EXPRESS**, **MARKET** ou **CITY** sur le logo et sur les repères.
+Total Access partage le logo TotalEnergies dans Wikidata : son propre logo est intégré aux cartes. L'enseigne est aussi écrite en toutes lettres sur la carte liste et dans la bulle de la carte géographique.
 
 Le **logo** vient de l'enseigne trouvée dans OpenStreetMap, via [Wikidata](https://www.wikidata.org) / Wikimedia Commons. La recherche est faite une fois, à l'ajout de la station ; si OpenStreetMap est injoignable, elle est retentée au démarrage suivant. Sans logo connu, la carte affiche les initiales de l'enseigne.
 
