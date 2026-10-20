@@ -8,7 +8,7 @@
 
 Intégration Home Assistant pour les [prix des carburants en France](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/) : suivez les prix et la disponibilité des carburants dans vos stations, avec une carte Lovelace incluse qui affiche les logos des enseignes.
 
-<img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/carburants-france-card-0.1.0.png" alt="carburants-france-card" width="380"> <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/carburants-france-card-dark-0.1.0.png" alt="carburants-france-card, thème sombre, station dépliée" width="380">
+<img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/carburants-france-card-0.3.0.png" alt="carburants-france-card" width="380"> <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/carburants-france-card-dark-0.3.0.png" alt="carburants-france-card, thème sombre, station dépliée" width="380">
 
 ## Fonctionnalités
 
