@@ -7,8 +7,8 @@ from typing import Any
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, FUELS, ST_BRAND
-from .coordinator import CarburantsCoordinator, pretty_city, station_title
+from .const import DOMAIN, FUELS
+from .coordinator import CarburantsCoordinator, pretty_city, station_brand, station_title
 
 
 def entry_device(coordinator: CarburantsCoordinator) -> DeviceInfo:
@@ -39,8 +39,8 @@ class StationFuelEntity(CoordinatorEntity[CarburantsCoordinator]):
         city = pretty_city(stored.get("city") or live.get("city") or "")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, str(station_id))},
-            name=station_title(stored or live),
-            manufacturer=stored.get(ST_BRAND) or "Station-service",
+            name=station_title(stored or live, coordinator.names),
+            manufacturer=station_brand(stored or live, coordinator.names) or "Station-service",
             model=f"{address}, {stored.get('postcode') or live.get('postcode') or ''} {city}".strip(", "),
             serial_number=str(station_id),
         )

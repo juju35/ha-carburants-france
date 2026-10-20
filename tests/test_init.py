@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
+from homeassistant.util import dt as dt_util
 
 from custom_components.carburants_france.api import parse_station
 from custom_components.carburants_france.coordinator import station_title, useful_osm_name
@@ -523,3 +524,101 @@ async def test_options_flow_sets_ai_entity(hass, aioclient_mock, entry):
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     assert entry.options["ai_task_entity"] == "ai_task.google_ai_task"
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        pytest.param("RELAIS LES TROIS MARCHES", "Relais les Trois Marches", id="caps"),
+        pytest.param("RELAIS DE VERN SUR SEICHE", "Relais de Vern sur Seiche", id="small-words"),
+        pytest.param("STATION D'ARGENTRE RN12", "Station d'Argentre RN12", id="apostrophe-road"),
+        pytest.param("SARL ABR - GARAGE MACE", "SARL Abr - Garage Mace", id="company"),
+        pytest.param("Total La Brosse", "Total La Brosse", id="already-mixed"),
+    ],
+)
+def test_pretty_name(raw, expected):
+    from custom_components.carburants_france.names import pretty_name
+
+    assert pretty_name(raw) == expected
+
+
+async def test_community_names_first(hass, aioclient_mock, entry, community_names):
+    community_names.update({
+        "35000013": {"name": "RELAIS SAINT-MALO", "brand": "Total Access"},
+        "99999999": {"name": "Ailleurs", "brand": "Esso"},
+    })
+    await _setup(hass, aioclient_mock, entry)
+    stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert stations[35000013]["station_name"] == "Relais Saint-Malo"
+    # Not in the file: OpenStreetMap / brand + town as before.
+    assert stations[35000025]["station_name"] == "Leclerc Rennes"
+    # The device follows; entity ids keep the name they were created with.
+    from homeassistant.helpers import device_registry as dr
+
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "35000013")})
+    assert device.name == "Relais Saint-Malo"
+    assert hass.states.get("sensor.relais_saint_malo_gazole") is not None
+
+
+async def test_community_brand_when_osm_has_none(hass, aioclient_mock, entry, community_names):
+    options = dict(entry.options)
+    stations = [dict(s) for s in options["stations"]]
+    stations[1]["brand"] = None
+    hass.config_entries.async_update_entry(entry, options={**options, "stations": stations})
+    community_names["35000025"] = {"name": "", "brand": "Total"}
+    await _setup(hass, aioclient_mock, entry)
+    stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert stations[35000025]["brand"] == "Total"
+    assert stations[35000025]["station_name"] == "Total Rennes"
+
+
+async def test_custom_name_beats_community(hass, aioclient_mock, entry, community_names):
+    options = dict(entry.options)
+    stations = [{**s, "name": "Ma station"} if s["id"] == 35000013 else s for s in options["stations"]]
+    hass.config_entries.async_update_entry(entry, options={**options, "stations": stations})
+    community_names["35000013"] = {"name": "RELAIS SAINT-MALO", "brand": "Total"}
+    await _setup(hass, aioclient_mock, entry)
+    stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert stations[35000013]["station_name"] == "Ma station"
+
+
+async def test_no_ai_when_community_name(hass, aioclient_mock, entry, community_names):
+    options = dict(entry.options)
+    hass.config_entries.async_update_entry(entry, options={**options, "ai_task_entity": "ai_task.google_ai_task"})
+    community_names["35000013"] = {"name": "RELAIS SAINT-MALO", "brand": "Total"}
+    calls = _fake_ai(hass, {35000025: "INCONNU"})
+    await _setup(hass, aioclient_mock, entry)
+    await hass.async_block_till_done()
+    assert [c["task_name"][-8:] for c in calls] == ["35000025"]
+
+
+@pytest.mark.real_names_download
+async def test_names_downloaded_weekly_and_cached(hass, aioclient_mock, hass_storage):
+    """Real download path: GitHub once, then the copy in .storage, also when GitHub is down."""
+    from datetime import timedelta
+
+    from freezegun import freeze_time
+
+    from custom_components.carburants_france.names import DATA_NAMES, STATIONS_NAME_URL, async_get_names
+
+    aioclient_mock.get(
+        STATIONS_NAME_URL, json={"35132004": {"name": "RELAIS LES TROIS MARCHES", "brand": "Total Access"}, "1": "bad"}
+    )
+    names = await async_get_names(hass)
+    assert names == {"35132004": {"name": "Relais les Trois Marches", "brand": "Total Access"}}
+    assert aioclient_mock.call_count == 1
+    await hass.async_block_till_done()
+    assert hass_storage["carburants_france.stations_name"]["data"]["names"] == names
+
+    # Same week: memory, no download.
+    hass.data.pop(DATA_NAMES)
+    assert await async_get_names(hass) == names
+    assert aioclient_mock.call_count == 1
+
+    # A week later GitHub is down: the cached copy is kept.
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(STATIONS_NAME_URL, status=503)
+    hass.data.pop(DATA_NAMES)
+    with freeze_time(dt_util.utcnow() + timedelta(days=8)):
+        assert await async_get_names(hass) == names
+    assert aioclient_mock.call_count == 1

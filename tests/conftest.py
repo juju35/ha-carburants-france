@@ -19,3 +19,20 @@ def stub_frontend():
         patch("custom_components.carburants_france.add_extra_js_url") as add_js,
     ):
         yield add_js
+
+
+@pytest.fixture(autouse=True)
+def community_names(request):
+    """The community station names file; empty unless a test fills it."""
+    names: dict = {}
+    if request.node.get_closest_marker("real_names_download"):
+        yield names
+        return
+
+    async def download(hass):
+        from custom_components.carburants_france.names import _parse
+
+        return _parse(names)
+
+    with patch("custom_components.carburants_france.names._async_download", side_effect=download):
+        yield names

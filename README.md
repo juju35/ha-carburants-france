@@ -195,7 +195,12 @@ actions:
 
 ## Noms, enseignes et logos
 
-Le flux de l'État ne donne ni le nom ni l'enseigne des stations. L'intégration la retrouve dans [OpenStreetMap](https://www.openstreetmap.org) (tag `ref:FR:prix-carburants`, sinon la station la plus proche à moins de 300 m), puis le logo de l'enseigne sur [Wikidata](https://www.wikidata.org) / Wikimedia Commons. Le nom de la station vient aussi d'OpenStreetMap ; s'il manque, ou s'il se limite à « Station-service » ou au nom de l'enseigne, la station est nommée d'après son enseigne et sa ville, ou à défaut son adresse. Vous pouvez toujours imposer votre propre nom avec l'option **Renommer les stations**.
+Le flux de l'État ne donne ni le nom ni l'enseigne des stations.
+
+Le nom vient d'abord du fichier communautaire [`stations_name.json`](https://github.com/Aohzan/hass-prixcarburant/blob/master/custom_components/prix_carburant/stations_name.json) du projet [hass-prixcarburant](https://github.com/Aohzan/hass-prixcarburant) d'Aohzan (environ 9 200 stations, licence Apache 2.0), mis à jour chaque semaine et corrigé par ses utilisateurs. Il est téléchargé au plus une fois par semaine et gardé en cache. Pour corriger ou ajouter le nom d'une station pour tout le monde, proposez une modification de ce fichier sur son dépôt.
+
+Ordre de priorité du nom : nom personnalisé (option **Renommer les stations**), fichier communautaire, OpenStreetMap, IA (si configurée), enseigne et ville, adresse.
+ L'intégration la retrouve dans [OpenStreetMap](https://www.openstreetmap.org) (tag `ref:FR:prix-carburants`, sinon la station la plus proche à moins de 300 m), puis le logo de l'enseigne sur [Wikidata](https://www.wikidata.org) / Wikimedia Commons. Le nom de la station vient aussi d'OpenStreetMap ; s'il manque, ou s'il se limite à « Station-service » ou au nom de l'enseigne, la station est nommée d'après son enseigne et sa ville, ou à défaut son adresse. Vous pouvez toujours imposer votre propre nom avec l'option **Renommer les stations**.
 
 ### Noms par IA
 
@@ -204,11 +209,12 @@ Si une intégration IA est configurée dans Home Assistant (par exemple [Google 
 - Chaque station n'est demandée qu'**une fois** ; le nom est enregistré. Changer d'entité IA redemande les stations restées sans nom.
 - Une réponse incertaine, ou qui ressemble à une phrase, est ignorée : la station garde son nom automatique.
 - Pour des noms vérifiés plutôt que devinés, activez **Google Search** dans les options de l'entité Gemini, si votre version le propose.
-- Ordre de priorité : nom personnalisé, OpenStreetMap, IA, enseigne et ville, adresse. La recherche est faite une fois, à l'ajout de la station ; si OpenStreetMap est injoignable, elle est retentée au démarrage suivant. Sans enseigne connue, la carte affiche une icône de station.
+- L'IA n'est interrogée que pour les stations absentes du fichier communautaire et d'OpenStreetMap. La recherche est faite une fois, à l'ajout de la station ; si OpenStreetMap est injoignable, elle est retentée au démarrage suivant. Sans enseigne connue, la carte affiche une icône de station.
 
 ## Données
 
 - Prix et stations : Ministère de l'Économie, [flux instantané v2](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/), Licence Ouverte
+- Noms des stations : fichier communautaire [hass-prixcarburant](https://github.com/Aohzan/hass-prixcarburant) (Aohzan et contributeurs), Apache 2.0
 - Enseignes : © contributeurs [OpenStreetMap](https://www.openstreetmap.org/copyright), ODbL
 - Logos : Wikimedia Commons, via Wikidata
 - Fonds de carte : © contributeurs OpenStreetMap, OpenStreetMap France, IGN, OpenTopoMap, CyclOSM, Esri selon le fond choisi

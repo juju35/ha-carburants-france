@@ -55,7 +55,8 @@ from .const import (
     ST_OSM_NAME,
     LOGO_VERSION,
 )
-from .coordinator import pretty_city, station_title, useful_osm_name
+from .coordinator import pretty_city, station_title
+from .names import async_get_names
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,6 +87,8 @@ class StationPickerMixin:
     _query: str = ""
     _radius: float = DEFAULT_RADIUS
 
+    _names: dict[str, dict[str, str]] | None = None
+
     def _init_picker(self, fuels: list[str], selected: list[dict[str, Any]]) -> None:
         self._fuels = fuels
         self._selected = {int(s[ST_ID]): dict(s) for s in selected}
@@ -97,6 +100,7 @@ class StationPickerMixin:
             self._query = (user_input.get(CONF_QUERY) or "").strip()
             self._radius = float(user_input.get(CONF_RADIUS, DEFAULT_RADIUS))
             session = async_get_clientsession(self.hass)
+            self._names = await async_get_names(self.hass)
             try:
                 found = await CarburantsApi(session).search(
                     self._query, self.hass.config.latitude, self.hass.config.longitude, self._radius
@@ -128,7 +132,7 @@ class StationPickerMixin:
         return self.async_show_form(step_id="search", data_schema=schema, errors=errors)
 
     def _label(self, station: dict[str, Any]) -> str:
-        head = useful_osm_name(station.get(ST_OSM_NAME), station.get(ST_BRAND)) or station.get(ST_BRAND) or "Station"
+        head = station_title({**station, ST_NAME: None, "city": ""}, self._names)
         place = f"{station.get('address', '')}, {station.get('postcode', '')} {pretty_city(station.get('city', ''))}"
         parts = [f"{head} · {place.strip(', ')}"]
         prices = []
@@ -261,6 +265,7 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
     _ai_entity: str | None = None
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        self._names = await async_get_names(self.hass)
         options = self.config_entry.options
         current = list(options.get(CONF_STATIONS, []))
         errors: dict[str, str] = {}
@@ -308,10 +313,9 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
         )
         return self.async_show_form(step_id="init", data_schema=schema, errors=errors)
 
-    @staticmethod
-    def _name_field(station: dict[str, Any]) -> str:
+    def _name_field(self, station: dict[str, Any]) -> str:
         """Form field for one station: the field name is its label, the station id ends it."""
-        automatic = station_title({**station, ST_NAME: None})
+        automatic = station_title({**station, ST_NAME: None}, self._names)
         place = f"{station.get('address') or ''}, {pretty_city(station.get('city') or '')}".strip(", ")
         return f"{automatic} — {place} [{station[ST_ID]}]"
 

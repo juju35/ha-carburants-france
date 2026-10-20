@@ -10,6 +10,7 @@ Ships its own Lovelace card (`frontend/carburants-france-card.js`), served by th
 custom_components/carburants_france/
 ├── __init__.py        # Setup, card registration, refresh service, background brand retry
 ├── api.py             # aiohttp client for the ODS records API + record parsing
+├── names.py           # Community names file (Aohzan/hass-prixcarburant stations_name.json), weekly, .storage cache
 ├── ai_naming.py       # Optional names from an AI Task entity (ai_task.generate_data), plain text answer
 ├── brands.py          # Brand (OpenStreetMap Overpass) and logo (Wikidata P154) lookup, best effort
 ├── coordinator.py     # DataUpdateCoordinator: every followed station in one request
@@ -32,7 +33,7 @@ custom_components/carburants_france/
 
 ## Brands and logos
 - Overpass: `nwr["amenity"="fuel"](around:300,lat,lon)` per station (feed coordinates are rounded to ~100 m), matched on `ref:FR:prix-carburants`, else nearest branded station. Gives `brand`, `brand:wikidata`, `name` (stored as `osm_name`).
-- Station title (`coordinator.station_title`): user `name` (options step `names`, one field per station whose name ends with `[id]`), else `osm_name` unless generic or just the brand (`useful_osm_name`), else `ai_name`, else brand + town, else address.
+- Station title (`coordinator.station_title(stored, names)`): user `name` (options step `names`, one field per station whose name ends with `[id]`), else the community file name (`names.py`, all-caps names prettified), else `osm_name` unless generic or just the brand (`useful_osm_name`), else `ai_name`, else brand + town, else address.
 - AI names: option `ai_task_entity`. At setup a background task runs the OSM lookup, then `ai_task.generate_data` (return_response) for stations without a useful OSM name, sequentially, then saves options once (saving reloads the entry). Plain text answer, `INCONNU` when unsure, validated by `clean_answer`; no structured output, as Gemini rejects a response schema together with its Google Search tool. `ai_checked` marks a station asked; changing the entity clears it for unnamed stations. Computed server side, so both cards get it as `station_name`.
 - Wikidata `wbgetentities` claims P154, current logo = preferred rank, else no P582 end time, else last → `https://commons.wikimedia.org/wiki/Special:FilePath/<file>?width=96`.
 - Done in the config flow (brand at search, logo once stations are chosen) and stored in the entry options per station (`brand`, `wikidata`, `logo`, `brand_checked`). Stations with `brand_checked: false`, or a `logo_version` below `LOGO_VERSION` (bump it when the logo choice changes), are looked up again at startup.

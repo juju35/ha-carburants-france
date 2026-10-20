@@ -38,7 +38,8 @@ from .const import (
     ST_OSM_NAME,
     LOGO_VERSION,
 )
-from .coordinator import CarburantsConfigEntry, CarburantsCoordinator, useful_osm_name
+from .coordinator import CarburantsConfigEntry, CarburantsCoordinator, community_entry, useful_osm_name
+from .names import async_get_names
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -116,13 +117,14 @@ async def _async_register_card(hass: HomeAssistant) -> None:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: CarburantsConfigEntry) -> bool:
-    coordinator = CarburantsCoordinator(hass, entry, CarburantsApi(async_get_clientsession(hass)))
+    names = await async_get_names(hass)
+    coordinator = CarburantsCoordinator(hass, entry, CarburantsApi(async_get_clientsession(hass)), names)
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload))
     stations = entry.options.get(CONF_STATIONS, [])
-    if any(_needs_brand_lookup(s) for s in stations) or any(_needs_ai_name(entry, s) for s in stations):
+    if any(_needs_brand_lookup(s) for s in stations) or any(_needs_ai_name(entry, s, names) for s in stations):
         entry.async_create_background_task(hass, _async_lookup_names(hass, entry), "carburants_france_names")
     return True
 
@@ -132,12 +134,13 @@ def _needs_brand_lookup(station: dict) -> bool:
     return not station.get(ST_BRAND_CHECKED) or station.get(ST_LOGO_VERSION) != LOGO_VERSION
 
 
-def _needs_ai_name(entry: CarburantsConfigEntry, station: dict) -> bool:
-    """An AI is set and the station has neither a name of its own nor a useful OpenStreetMap one."""
+def _needs_ai_name(entry: CarburantsConfigEntry, station: dict, names: dict) -> bool:
+    """An AI is set and no name is known: not the user's, the community file's or OpenStreetMap's."""
     return (
         bool(entry.options.get(CONF_AI_TASK_ENTITY))
         and not station.get(ST_AI_CHECKED)
         and not station.get(ST_NAME)
+        and not community_entry(station, names).get("name")
         and station.get(ST_BRAND_CHECKED)
         and not useful_osm_name(station.get(ST_OSM_NAME), station.get(ST_BRAND))
     )
@@ -159,7 +162,7 @@ async def _async_lookup_names(hass: HomeAssistant, entry: CarburantsConfigEntry)
         changed = True
 
     ai_entity = entry.options.get(CONF_AI_TASK_ENTITY)
-    unnamed = [s for s in stations if _needs_ai_name(entry, s)]
+    unnamed = [s for s in stations if _needs_ai_name(entry, s, entry.runtime_data.names)]
     if unnamed and not hass.is_running:
         # The AI integration may still be loading.
         await _async_wait_started(hass)

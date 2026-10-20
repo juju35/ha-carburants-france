@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0
+
+### Nouveautés
+- Les stations prennent leur nom officiel depuis le fichier communautaire `stations_name.json` du projet [hass-prixcarburant](https://github.com/Aohzan/hass-prixcarburant) (environ 9 200 stations, mis à jour chaque semaine) : par exemple « Relais les Trois Marches » au lieu de « Route de Lorient Vezin-le-Coquet ». Les noms en majuscules sont mis en forme.
+- Le fichier est téléchargé au plus une fois par semaine et gardé en cache : sans accès à GitHub, la copie en cache est utilisée.
+- Ordre des noms : nom personnalisé, fichier communautaire, OpenStreetMap, IA, enseigne et ville, adresse. L'IA n'est plus interrogée pour les stations présentes dans le fichier.
+- L'enseigne du fichier est utilisée quand OpenStreetMap n'en donne pas.
+
 ## 0.6.0
 
 ### Nouveautés

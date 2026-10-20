@@ -54,17 +54,29 @@ def useful_osm_name(name: str | None, brand: str | None) -> str | None:
     return name.strip()
 
 
-def station_title(stored: dict[str, Any]) -> str:
-    """Name shown: custom name, else OSM name, else AI name, else brand + town, else address."""
+def community_entry(station: dict[str, Any], names: dict[str, dict[str, str]] | None) -> dict[str, str]:
+    """The station's line in the community names file (see names.py), or {}."""
+    return (names or {}).get(str(station.get(ST_ID, station.get("station_id", ""))), {})
+
+
+def station_brand(stored: dict[str, Any], names: dict[str, dict[str, str]] | None = None) -> str | None:
+    """Brand from OpenStreetMap (it comes with the logo), else from the community file."""
+    return stored.get(ST_BRAND) or community_entry(stored, names).get("brand") or None
+
+
+def station_title(stored: dict[str, Any], names: dict[str, dict[str, str]] | None = None) -> str:
+    """Name shown: custom, community file, OpenStreetMap, AI, then brand + town, then address."""
     if stored.get(ST_NAME):
         return stored[ST_NAME]
+    if community_name := community_entry(stored, names).get("name"):
+        return community_name
     if osm_name := useful_osm_name(stored.get(ST_OSM_NAME), stored.get(ST_BRAND)):
         return osm_name
     if stored.get(ST_AI_NAME):
         return stored[ST_AI_NAME]
     city = pretty_city(stored.get("city") or "")
-    if stored.get(ST_BRAND):
-        return f"{stored[ST_BRAND]} {city}".strip()
+    if brand := station_brand(stored, names):
+        return f"{brand} {city}".strip()
     return f"{stored.get('address') or 'Station'} {city}".strip()
 
 
@@ -73,7 +85,13 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
 
     config_entry: CarburantsConfigEntry
 
-    def __init__(self, hass: HomeAssistant, entry: CarburantsConfigEntry, api: CarburantsApi) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: CarburantsConfigEntry,
+        api: CarburantsApi,
+        names: dict[str, dict[str, str]] | None = None,
+    ) -> None:
         minutes = max(MIN_SCAN_INTERVAL, int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)))
         super().__init__(
             hass,
@@ -83,6 +101,8 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
             update_interval=timedelta(minutes=minutes),
         )
         self.api = api
+        # Community station names, {id: {name, brand}} (names.py).
+        self.names = names or {}
         self.fuels: list[str] = list(entry.options.get(CONF_FUELS, DEFAULT_FUELS))
         self.stations: dict[int, dict[str, Any]] = {
             int(s[ST_ID]): s for s in entry.options.get(CONF_STATIONS, [])
@@ -99,8 +119,8 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
         for station_id, station in data.items():
             station["distance"] = distance_km(home[0], home[1], station["latitude"], station["longitude"])
             stored = self.stations.get(station_id, {})
-            station["name"] = station_title(stored or station)
-            station["brand"] = stored.get(ST_BRAND)
+            station["name"] = station_title(stored or station, self.names)
+            station["brand"] = station_brand(stored or station, self.names)
             station["logo"] = stored.get(ST_LOGO)
         return data
 
