@@ -130,6 +130,7 @@ type: custom:carburants-france-map-card
 | `entity` | détectée | Capteur Stations à afficher (utile avec plusieurs entrées) |
 | `title` | « Carte des stations » | Titre de la carte, `""` pour le masquer |
 | `show_icon` | `true` | Icône à côté du titre, qui ouvre la page des données sur data.economie.gouv.fr |
+| `show_fullscreen` | `true` | Bouton plein écran, sous les boutons de zoom |
 | `fuel` | le moins cher | Carburant affiché sur les repères. Sans valeur, chaque repère affiche le carburant disponible le moins cher de la station, avec son nom (« E10 1,990 € ») |
 | `height` | `400` | Hauteur de la carte en pixels |
 | `zoom` | ajusté | Zoom fixe ; par défaut, la carte s'ajuste pour montrer toutes les stations |
@@ -142,7 +143,7 @@ type: custom:carburants-france-map-card
 | `show_name` | `true` | Nom de la station sur les repères, au-dessus du prix |
 | `hide_out_of_stock_stations` | `true` | Masquer les stations où tous les carburants suivis sont en rupture (bouton en haut à droite pour les afficher) |
 
-Chaque repère affiche le logo et le prix : vert pour le meilleur prix de ce carburant, orange quand tous les carburants suivis sont en rupture. Cliquez sur un repère pour voir tous les prix, l'ouverture et l'itinéraire. Le zoom à la molette est désactivé pour ne pas gêner le défilement du tableau de bord (utilisez les boutons ou le pincement).
+Chaque repère affiche le logo et le prix : vert pour le meilleur prix de ce carburant, orange quand tous les carburants suivis sont en rupture. Cliquez sur un repère pour voir tous les prix, l'ouverture et l'itinéraire. Le bouton plein écran agrandit la carte sur tout l'écran (sur iPhone, où le plein écran n'est pas possible, elle recouvre la page) ; Échap ou le même bouton la referment. Le zoom à la molette est désactivé pour ne pas gêner le défilement du tableau de bord (utilisez les boutons ou le pincement).
 
 Fonds de carte disponibles, tous sans clé d'API :
 

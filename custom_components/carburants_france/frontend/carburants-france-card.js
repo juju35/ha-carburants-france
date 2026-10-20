@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.10.0';
+var CARBURANTS_CARD_VERSION = '0.11.0';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -755,7 +755,7 @@ if (!customElements.get('carburants-france-card')) {
 // ── carburants-france-map-card ────────────────────────────────────────────────
 // Leaflet ships with the integration: no CDN, only the map tiles come from the network.
 var CARBURANTS_STATIC = '/carburants_france_static';
-var CARBURANTS_MAP_DEFAULTS = { height: 400, show_icon: true, show_home: true, show_logo: true, show_name: true, map_style: 'ha', theme: 'auto', hide_out_of_stock_stations: true };
+var CARBURANTS_MAP_DEFAULTS = { height: 400, show_icon: true, show_fullscreen: true, show_home: true, show_logo: true, show_name: true, map_style: 'ha', theme: 'auto', hide_out_of_stock_stations: true };
 
 var CARBURANTS_OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
 var CARBURANTS_IGN_WMTS = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}';
@@ -807,6 +807,8 @@ var CarburantsMapI18n = {
   fr: {
     default_title: 'Carte des stations',
     home: 'Domicile',
+    fullscreen: 'Plein écran',
+    exit_fullscreen: 'Quitter le plein écran',
     editor: {
       entity: 'Capteur Stations',
       title: 'Titre (vide pour aucun)',
@@ -818,6 +820,7 @@ var CarburantsMapI18n = {
       tile_url: 'URL des tuiles ({z}, {x}, {y})',
       tile_attribution: 'Attribution des tuiles',
       show_icon: 'Icône',
+      show_fullscreen: 'Bouton plein écran',
       show_home: 'Domicile',
       show_logo: 'Logos des enseignes',
       show_name: 'Nom des stations sur les repères',
@@ -839,6 +842,8 @@ var CarburantsMapI18n = {
   en: {
     default_title: 'Stations map',
     home: 'Home',
+    fullscreen: 'Full screen',
+    exit_fullscreen: 'Exit full screen',
     editor: {
       entity: 'Stations sensor',
       title: 'Title (empty for none)',
@@ -850,6 +855,7 @@ var CarburantsMapI18n = {
       tile_url: 'Tile URL ({z}, {x}, {y})',
       tile_attribution: 'Tile attribution',
       show_icon: 'Icon',
+      show_fullscreen: 'Full screen button',
       show_home: 'Home',
       show_logo: 'Brand logos',
       show_name: 'Station names on markers',
@@ -979,6 +985,13 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (this._resizeObserver) this._resizeObserver.disconnect();
     clearInterval(this._tokenTimer);
     document.removeEventListener('click', this._onOutside, true);
+    if (this._onFsChange) {
+      document.removeEventListener('fullscreenchange', this._onFsChange);
+      document.removeEventListener('webkitfullscreenchange', this._onFsChange);
+      document.removeEventListener('keydown', this._onFsKey);
+      this._onFsChange = null;
+    }
+    this._pseudoFs = false;
   }
 
   getCardSize() {
@@ -1092,6 +1105,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       },
     });
     this._toggle = new Toggle({ position: 'topright' }).addTo(this._map);
+    if (this._config.show_fullscreen) this._addFullscreenControl(L);
     this._fitted = false;
     if (window.ResizeObserver) {
       this._resizeObserver = new ResizeObserver(function () { self._invalidate(); });
@@ -1234,6 +1248,96 @@ class CarburantsFranceMapCard extends HTMLElement {
     this._layer = null;
     this._tiles = null;
     this._tilesLoadedKey = null;
+  }
+
+  // Real full screen where the browser allows it on an element; elsewhere (iPhone Safari and
+  // the iOS app) the card covers the window instead.
+  _addFullscreenControl(L) {
+    var self = this;
+    var mt = CarburantsMapI18n[carbLang(this._hass)];
+    var Fullscreen = L.Control.extend({
+      onAdd: function () {
+        var bar = L.DomUtil.create('div', 'leaflet-bar carb-fs');
+        var link = L.DomUtil.create('a', '', bar);
+        link.href = '#';
+        link.setAttribute('role', 'button');
+        L.DomEvent.disableClickPropagation(bar);
+        L.DomEvent.on(link, 'click', function (ev) {
+          L.DomEvent.preventDefault(ev);
+          self._toggleFullscreen();
+        });
+        self._fsLink = link;
+        self._updateFullscreenButton(mt);
+        return bar;
+      },
+    });
+    new Fullscreen({ position: 'topleft' }).addTo(this._map);
+    if (!this._onFsChange) {
+      this._onFsChange = function () { self._fullscreenChanged(); };
+      this._onFsKey = function (ev) { if (ev.key === 'Escape' && self._pseudoFs) self._toggleFullscreen(); };
+      document.addEventListener('fullscreenchange', this._onFsChange);
+      document.addEventListener('webkitfullscreenchange', this._onFsChange);
+      document.addEventListener('keydown', this._onFsKey);
+    }
+  }
+
+  _isFullscreen() {
+    return this._pseudoFs || (document.fullscreenElement || document.webkitFullscreenElement) === this;
+  }
+
+  _toggleFullscreen() {
+    if (this._pseudoFs) {
+      this._pseudoFs = false;
+      this._fullscreenChanged();
+      return;
+    }
+    if (this._isFullscreen()) {
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      return;
+    }
+    var request = this.requestFullscreen || this.webkitRequestFullscreen;
+    var self = this;
+    var pseudo = function () {
+      self._pseudoFs = true;
+      self._fullscreenChanged();
+    };
+    if (!request) {
+      pseudo();
+      return;
+    }
+    try {
+      var result = request.call(this);
+      if (result && result.catch) result.catch(pseudo);
+    } catch (err) {
+      pseudo();
+    }
+  }
+
+  _fullscreenChanged() {
+    var on = this._isFullscreen();
+    var card = this._root && this._root.querySelector('ha-card');
+    if (!card) return;
+    card.classList.toggle('fullscreen', on);
+    card.classList.toggle('pseudo', !!this._pseudoFs);
+    this._updateFullscreenButton(CarburantsMapI18n[carbLang(this._hass)]);
+    var self = this;
+    // Leaflet and MapLibre resize to the new box, then the stations are fitted again.
+    setTimeout(function () {
+      self._fitted = false;
+      self._invalidate();
+    }, 50);
+  }
+
+  _updateFullscreenButton(mt) {
+    if (!this._fsLink) return;
+    var on = this._isFullscreen();
+    var label = on ? mt.exit_fullscreen : mt.fullscreen;
+    var path = on
+      ? 'M14,14H19V16H16V19H14V14M5,14H10V19H8V16H5V14M8,5H10V10H5V8H8V5M19,8V10H14V5H16V8H19Z'
+      : 'M5,5H10V7H7V10H5V5M14,5H19V10H17V7H14V5M17,14H19V19H14V17H17V14M10,17V19H5V14H7V17H10Z';
+    this._fsLink.title = label;
+    this._fsLink.setAttribute('aria-label', label);
+    this._fsLink.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="' + path + '"/></svg>';
   }
 
   _invalidate() {
@@ -1394,6 +1498,12 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.header[hidden], .message[hidden] { display: none; }',
       '.message { padding: 12px 16px; color: var(--secondary-text-color); }',
       '.map { width: 100%; background: var(--secondary-background-color, #e5e5e5); z-index: 0; }',
+      // Full screen: the card fills the screen, the map takes what the title leaves.
+      ':host(:fullscreen) { background: var(--card-background-color, #fff); }',
+      'ha-card.fullscreen { display: flex !important; flex-direction: column; width: 100%; height: 100vh; height: 100dvh; border-radius: 0; box-sizing: border-box; }',
+      'ha-card.fullscreen .map { flex: 1; height: auto !important; }',
+      'ha-card.pseudo { position: fixed; inset: 0; z-index: 9999; height: 100vh; height: 100dvh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }',
+      '.carb-fs a { display: flex; align-items: center; justify-content: center; color: #333; cursor: pointer; }',
       '.leaflet-container { font: inherit; }',
       '.map.dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }',
       '.carb-marker { background: none; border: none; }',
@@ -1487,6 +1597,7 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
           { name: 'height', selector: { number: { min: 150, max: 1200, step: 10, mode: 'box', unit_of_measurement: 'px' } } },
           { name: 'zoom', selector: { number: { min: 5, max: 18, mode: 'box' } } },
           { name: 'show_icon', selector: { boolean: {} } },
+          { name: 'show_fullscreen', selector: { boolean: {} } },
           { name: 'show_home', selector: { boolean: {} } },
           { name: 'show_logo', selector: { boolean: {} } },
           { name: 'show_name', selector: { boolean: {} } },

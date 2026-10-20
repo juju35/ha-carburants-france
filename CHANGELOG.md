@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.0
+
+### Nouveautés
+- Carte géographique : bouton **plein écran**, sous les boutons de zoom (option `show_fullscreen`, activée par défaut). Sur iPhone, où Safari et l'application ne permettent pas le plein écran d'un élément, la carte recouvre toute la page. Échap ou le même bouton la referment ; les stations sont recadrées à chaque changement de taille.
+
 ## 0.10.0
 
 ### Nouveautés
