@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.4.1';
+var CARBURANTS_CARD_VERSION = '0.4.2';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -170,6 +170,14 @@ function carbToggleLabel(t, showAll, hidden) {
   return hidden === 1 ? t.show_all_one : t.show_all.replace('{n}', hidden);
 }
 
+// Calls onOutside for a pointer press anywhere outside the element (shadow DOM aware).
+function carbOutsideListener(element, onOutside) {
+  return function (ev) {
+    var path = ev.composedPath ? ev.composedPath() : [];
+    if (path.indexOf(element) === -1) onOutside();
+  };
+}
+
 function carbMinutes(hhmm) {
   var p = String(hhmm).split(':');
   return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10);
@@ -248,7 +256,8 @@ class CarburantsFranceCard extends HTMLElement {
 
   setConfig(config) {
     this._config = Object.assign({}, CARBURANTS_DEFAULTS, config || {});
-    this._expanded = this._expanded || {};
+    // Only one station is expanded at a time.
+    this._expandedId = this._expandedId || null;
     this._lastState = null;
     if (this._hass) this._render();
   }
@@ -268,10 +277,17 @@ class CarburantsFranceCard extends HTMLElement {
     // Opening status and price ages move with the clock.
     var self = this;
     this._timer = setInterval(function () { self._render(); }, 60000);
+    this._onOutside = this._onOutside || carbOutsideListener(this, function () {
+      if (self._expandedId === null) return;
+      self._expandedId = null;
+      self._render();
+    });
+    document.addEventListener('pointerdown', this._onOutside, true);
   }
 
   disconnectedCallback() {
     clearInterval(this._timer);
+    document.removeEventListener('pointerdown', this._onOutside, true);
   }
 
   getCardSize() {
@@ -428,7 +444,7 @@ class CarburantsFranceCard extends HTMLElement {
   _renderStation(s, fuels, best, t, now) {
     var cfg = this._config;
     var id = String(s.station_id);
-    var expanded = !!this._expanded[id];
+    var expanded = this._expandedId === id;
     var opening = cfg.show_hours ? carbOpening(s, t, now) : null;
     var self = this;
 
@@ -499,11 +515,12 @@ class CarburantsFranceCard extends HTMLElement {
   }
 
   _onListClick(ev) {
-    if (ev.target.closest('a')) return;
+    // Links, and reading the expanded details, never toggle the station.
+    if (ev.target.closest('a') || ev.target.closest('.details')) return;
     var item = ev.target.closest('.station');
     if (!item) return;
     var id = item.getAttribute('data-id');
-    this._expanded[id] = !this._expanded[id];
+    this._expandedId = this._expandedId === id ? null : id;
     this._render();
   }
 
@@ -847,11 +864,15 @@ class CarburantsFranceMapCard extends HTMLElement {
   }
 
   connectedCallback() {
+    var self = this;
+    this._onOutside = this._onOutside || carbOutsideListener(this, function () {
+      if (self._map) self._map.closePopup();
+    });
+    document.addEventListener('pointerdown', this._onOutside, true);
     if (!this._map) return;
     if (this._resizeObserver) this._resizeObserver.observe(this._root.querySelector('.map'));
     this._scheduleTokenRefresh();
     // The token may have expired while the card was detached.
-    var self = this;
     if (this._tiles && this._tiles._url.indexOf('/api/map_tiles/') === 0) {
       this._tileUrl().then(function (url) { if (self._tiles) self._tiles.setUrl(url); });
     }
@@ -861,6 +882,7 @@ class CarburantsFranceMapCard extends HTMLElement {
   disconnectedCallback() {
     if (this._resizeObserver) this._resizeObserver.disconnect();
     clearInterval(this._tokenTimer);
+    document.removeEventListener('pointerdown', this._onOutside, true);
   }
 
   getCardSize() {

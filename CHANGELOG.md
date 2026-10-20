@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.2
+
+### Améliorations
+- Carte liste : déplier une station replie les autres, et un clic en dehors de la carte replie tout. Un clic dans le détail déplié ne le referme plus.
+- Carte géographique : la bulle d'une station se ferme au clic en dehors de la carte.
+
 ## 0.4.1
 
 ### Améliorations
