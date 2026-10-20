@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.8.0';
+var CARBURANTS_CARD_VERSION = '0.8.1';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -30,6 +30,9 @@ var CarburantsI18n = {
     always_open: '24h/24',
     automate: 'Automate 24/24',
     out_of_stock: 'Rupture',
+    no_price: 'Sans prix',
+    no_price_hint: 'Ni prix ni rupture publiés pour l\'instant',
+    rupture_ended: 'rupture levée',
     not_sold: 'Non vendu',
     since: 'depuis',
     best: 'Meilleur prix',
@@ -77,6 +80,9 @@ var CarburantsI18n = {
     always_open: '24/7',
     automate: '24/7 pay at pump',
     out_of_stock: 'Out of stock',
+    no_price: 'No price',
+    no_price_hint: 'No price nor shortage published yet',
+    rupture_ended: 'shortage lifted',
     not_sold: 'Not sold',
     since: 'since',
     best: 'Best price',
@@ -463,6 +469,13 @@ class CarburantsFranceCard extends HTMLElement {
       // Empty slot, so each fuel stays in the same column from one station to the next.
       var slot = '<div class="fuel empty"></div>';
       if (!fuel) return slot;
+      if (!fuel.available && !fuel.rupture) {
+        // Shortage just lifted, or no price published yet: the fuel is still sold here.
+        var ended = fuel.rupture_end ? carbRelative(fuel.rupture_end, self._locale()) : '';
+        return '<div class="fuel nodata" title="' + carbEsc(t.no_price_hint) + '">' +
+          '<span class="fname">' + carbEsc(f.name) + '</span><span class="fprice">' + carbEsc(t.no_price) + '</span>' +
+          (cfg.show_updated && ended ? '<span class="fage">' + carbEsc(t.rupture_ended + ' ' + ended) + '</span>' : '') + '</div>';
+      }
       if (!fuel.available) {
         if (!cfg.show_out_of_stock || fuel.rupture === 'definitive') return slot;
         var since = fuel.rupture_since ? carbRelative(fuel.rupture_since, self._locale()) : '';
@@ -584,6 +597,8 @@ class CarburantsFranceCard extends HTMLElement {
       '.fuel.best .fprice, .fuel.best .fname { color: var(--success-color, #43a047); }',
       '.fuel.out { opacity: .85; border-color: var(--warning-color, #ffa600); background: rgba(255,166,0,.08); }',
       '.fuel.out .fprice { font-size: 0.9em; color: var(--warning-color, #ffa600); }',
+      '.fuel.nodata { border-style: dashed; border-color: var(--divider-color, rgba(0,0,0,.2)); }',
+      '.fuel.nodata .fprice { font-size: 0.9em; font-weight: 500; color: var(--secondary-text-color); }',
       '.details { margin: 10px 0 2px 52px; font-size: 0.85em; color: var(--primary-text-color); }',
       '.dtitle { font-weight: 500; margin: 8px 0 4px; color: var(--secondary-text-color); }',
       '.details table { border-collapse: collapse; }',
@@ -1111,8 +1126,11 @@ class CarburantsFranceMapCard extends HTMLElement {
     this._layer.clearLayers();
     stations.forEach(function (s) {
       var fuel = s.fuels && s.fuels[key];
-      var state = !fuel || fuel.rupture === 'definitive' ? 'none' : !fuel.available ? 'out' : best[key] === fuel.price && stations.length > 1 ? 'best' : 'ok';
-      var label = state === 'ok' || state === 'best' ? self._price(fuel.price) : state === 'out' ? t.out_of_stock : '—';
+      var state = !fuel || fuel.rupture === 'definitive' ? 'none'
+        : !fuel.available ? (fuel.rupture ? 'out' : 'nodata')
+        : best[key] === fuel.price && stations.length > 1 ? 'best' : 'ok';
+      var label = state === 'ok' || state === 'best' ? self._price(fuel.price)
+        : state === 'out' ? t.out_of_stock : state === 'nodata' ? t.no_price : '—';
       var logo = '';
       if (self._config.show_logo) {
         var name = s.brand || s.station_name || '';
@@ -1164,8 +1182,11 @@ class CarburantsFranceMapCard extends HTMLElement {
       if (!fuel || fuel.rupture === 'definitive') return '';
       var value = fuel.available
         ? '<b' + (best[f.key] === fuel.price ? ' class="best"' : '') + '>' + self._price(fuel.price) + '</b>'
-        : '<span class="out">' + carbEsc(t.out_of_stock) + '</span>';
-      var age = fuel.available ? carbRelative(fuel.updated, self._locale()) : carbRelative(fuel.rupture_since, self._locale());
+        : fuel.rupture
+          ? '<span class="out">' + carbEsc(t.out_of_stock) + '</span>'
+          : '<span class="nodata">' + carbEsc(t.no_price) + '</span>';
+      var age = fuel.available ? carbRelative(fuel.updated, self._locale())
+        : carbRelative(fuel.rupture ? fuel.rupture_since : fuel.rupture_end, self._locale());
       return '<tr><td>' + carbEsc(f.name) + '</td><td>' + value + '</td><td class="age">' + carbEsc(age) + '</td></tr>';
     }).join('');
     return '<div class="popup">' +
@@ -1216,6 +1237,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.popup td.age { color: var(--secondary-text-color, #727272); font-size: 11px; text-align: right; padding-right: 0; }',
       '.popup b.best { color: var(--success-color, #43a047); }',
       '.popup .out { color: var(--warning-color, #ffa600); font-weight: 600; }',
+      '.popup .nodata { color: var(--secondary-text-color, #727272); }',
       '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 4px; border: 2px solid rgba(0,0,0,.2); background: var(--card-background-color, #fff); color: var(--primary-color, #03a9f4); cursor: pointer; background-clip: padding-box; }',
       '.carb-toggle[hidden] { display: none; }',
       // Leaflet colours every link in the map: the selector must outrank '.leaflet-container a'.

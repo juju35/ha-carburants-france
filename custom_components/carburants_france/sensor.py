@@ -69,6 +69,7 @@ class FuelPriceSensor(StationFuelEntity, SensorEntity):
             "in_stock": bool(fuel.get("available")),
             "rupture": fuel.get("rupture"),
             "rupture_since": fuel.get("rupture_since"),
+            "rupture_end": fuel.get("rupture_end"),
             **_station_attributes(self.station or {"id": self.station_id}),
         }
 

@@ -157,26 +157,70 @@ def _services(record: dict[str, Any]) -> list[str]:
     return []
 
 
+def _raw_time(value: Any) -> str:
+    """"2026-10-20 18:05:00" -> ISO. The flat fields show these raw times are UTC."""
+    value = str(value or "").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?", value):
+        return ""
+    return value.replace(" ", "T") + "+00:00"
+
+
+def _raw_ruptures(raw: Any) -> dict[str, dict[str, str]]:
+    """The "rupture" JSON string, by fuel key: {type, debut, fin}. Keeps ruptures that have ended."""
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except ValueError:
+            return {}
+    if isinstance(raw, dict):
+        raw = [raw]
+    if not isinstance(raw, list):
+        return {}
+    keys = {name.lower(): key for key, name in FUELS.items()}
+    ruptures: dict[str, dict[str, str]] = {}
+    for item in raw:
+        if isinstance(item, dict) and (key := keys.get(str(item.get("@nom", "")).lower())):
+            ruptures[key] = {
+                "type": str(item.get("@type") or ""),
+                "debut": _raw_time(item.get("@debut")),
+                "fin": _raw_time(item.get("@fin")),
+            }
+    return ruptures
+
+
+def empty_fuel() -> dict[str, Any]:
+    """A fuel the station sells but has no price nor shortage for right now."""
+    return {"price": None, "updated": None, "available": False, "rupture": None, "rupture_since": None, "rupture_end": None}
+
+
 def parse_station(record: dict[str, Any]) -> dict[str, Any] | None:
-    """Normalise one API record. Prices come from the flat {fuel}_prix fields."""
+    """Normalise one API record. Prices come from the flat {fuel}_prix fields.
+
+    A fuel with a price is available, one with a shortage is not. A fuel with
+    neither, but listed in the raw shortages with an end date, is back from a
+    shortage with no price published yet: kept, with no price.
+    """
     try:
         station_id = int(record["id"])
     except (KeyError, TypeError, ValueError):
         return None
     latitude, longitude = _coordinates(record)
+    raw_ruptures = _raw_ruptures(record.get("rupture"))
 
     fuels: dict[str, dict[str, Any]] = {}
     for key in FUELS:
         price = record.get(f"{key}_prix")
         rupture = record.get(f"{key}_rupture_type")
-        if price is None and not rupture:
-            continue  # Not sold here.
+        ended = raw_ruptures.get(key, {}).get("fin") or None
+        if price is None and not rupture and not ended:
+            continue  # Not sold here, as far as this record says.
         fuels[key] = {
             "price": round(float(price), 3) if price is not None else None,
             "updated": record.get(f"{key}_maj"),
             "available": price is not None and not rupture,
             "rupture": rupture or None,
             "rupture_since": record.get(f"{key}_rupture_debut") if rupture else None,
+            "rupture_end": ended if price is None and not rupture else None,
         }
 
     return {

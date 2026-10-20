@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1
+
+### Corrections
+- Un carburant pouvait disparaître d'une station (cases et entités) quand le flux ne publiait plus ni prix ni rupture, par exemple juste après la levée d'une rupture, avant qu'un nouveau prix soit saisi. Un carburant qui a déjà eu ses entités reste désormais suivi : il s'affiche **Sans prix** (avec « rupture levée il y a… » quand le flux le précise), le prix est inconnu et la disponibilité aussi, jusqu'au prochain prix publié.
+- Le détail brut des ruptures du flux est lu, pour repérer une rupture qui vient d'être levée (attribut `rupture_end`).
+
 ## 0.8.0
 
 ### Changements

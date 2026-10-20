@@ -29,6 +29,7 @@ custom_components/carburants_france/
 - Flat fields per fuel key (gazole, sp95, sp98, e10, e85, gplc): `{k}_prix`, `{k}_maj`, `{k}_rupture_type` (`temporaire` | `definitive`), `{k}_rupture_debut`. No price and no rupture = not sold. Definitive rupture = no entity.
 - `horaires` is a JSON string; `horaire` is a dict or a list of ranges, `@ferme` "1" means closed. `geom` {lat, lon}; `latitude`/`longitude` are degrees × 100000 as strings.
 - The feed has no brand or station name.
+- A fuel can have neither price nor flat shortage (shortage just lifted, no price yet). The raw `rupture` JSON keeps ended shortages (`@fin`, UTC like the flat fields) -> `rupture_end`. The coordinator keeps `known_fuels` (pairs with a registry entity, plus those seen since) and fills them with `empty_fuel()`, so they keep their entities and card slot: price unknown, in_stock unknown, card shows "Sans prix".
 
 ## Brands and logos
 - Overpass: `nwr["amenity"="fuel"](around:300,lat,lon)` per station (feed coordinates are rounded to ~100 m), matched on `ref:FR:prix-carburants`, else nearest branded station. Gives `brand`, `brand:wikidata`, `name` (stored as `osm_name`).

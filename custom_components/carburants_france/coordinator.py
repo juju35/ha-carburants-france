@@ -8,9 +8,10 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import CarburantsApi, CarburantsError, distance_km
+from .api import CarburantsApi, CarburantsError, distance_km, empty_fuel
 from .const import (
     CONF_FUELS,
     CONF_SCAN_INTERVAL,
@@ -18,6 +19,7 @@ from .const import (
     DEFAULT_FUELS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    FUELS,
     MIN_SCAN_INTERVAL,
     ST_BRAND,
     ST_ID,
@@ -104,6 +106,18 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
         self.stations: dict[int, dict[str, Any]] = {
             int(s[ST_ID]): s for s in entry.options.get(CONF_STATIONS, [])
         }
+        # (station id, fuel) pairs sold at some point: those with an entity, plus those seen since.
+        # A fuel can briefly have neither price nor shortage in the feed (shortage just lifted,
+        # no new price yet); it must not vanish from the card nor lose its entities.
+        self.known_fuels: set[tuple[int, str]] = self._registered_fuels()
+
+    def _registered_fuels(self) -> set[tuple[int, str]]:
+        known = set()
+        for reg_entry in er.async_entries_for_config_entry(er.async_get(self.hass), self.config_entry.entry_id):
+            parts = (reg_entry.unique_id or "").split("_")
+            if len(parts) >= 3 and parts[0].isdigit() and parts[1] in FUELS:
+                known.add((int(parts[0]), parts[1]))
+        return known
 
     async def _async_update_data(self) -> dict[int, dict[str, Any]]:
         if not self.stations:
@@ -114,6 +128,11 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
             raise UpdateFailed(str(err)) from err
         home = (self.hass.config.latitude, self.hass.config.longitude)
         for station_id, station in data.items():
+            for fuel in self.fuels:
+                if fuel in station["fuels"]:
+                    self.known_fuels.add((station_id, fuel))
+                elif (station_id, fuel) in self.known_fuels:
+                    station["fuels"][fuel] = empty_fuel()
             station["distance"] = distance_km(home[0], home[1], station["latitude"], station["longitude"])
             stored = self.stations.get(station_id, {})
             station["name"] = station_title(stored or station, self.names)

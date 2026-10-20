@@ -36,9 +36,17 @@ class FuelAvailableSensor(StationFuelEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         fuel = self.fuel_data
-        return bool(fuel["available"]) if fuel else False
+        if not fuel:
+            return False
+        if fuel["price"] is None and not fuel["rupture"]:
+            return None  # No price published and no shortage: unknown.
+        return bool(fuel["available"])
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         fuel = self.fuel_data or {}
-        return {"rupture": fuel.get("rupture"), "rupture_since": fuel.get("rupture_since")}
+        return {
+            "rupture": fuel.get("rupture"),
+            "rupture_since": fuel.get("rupture_since"),
+            "rupture_end": fuel.get("rupture_end"),
+        }

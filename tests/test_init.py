@@ -110,7 +110,7 @@ def test_parse_station():
     assert a["latitude"] == 48.126
     assert a["fuels"]["gazole"] == {
         "price": 2.399, "updated": "2026-09-25T08:23:31+00:00", "available": True,
-        "rupture": None, "rupture_since": None,
+        "rupture": None, "rupture_since": None, "rupture_end": None,
     }
     assert a["fuels"]["e10"]["rupture"] == "definitive"
     assert "e85" in a["fuels"] and not a["fuels"]["e85"]["available"]
@@ -526,3 +526,42 @@ async def test_ai_leftovers_removed(hass, aioclient_mock, entry):
     names = {s["station_id"]: s["station_name"] for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
     assert names == {35000013: "TotalEnergies Rennes", 35000025: "Leclerc Rennes"}
 
+
+
+def test_parse_shortage_just_lifted():
+    """Neither price nor flat shortage, but the raw shortage has an end date: kept, with no price."""
+    record = {
+        **STATION_B,
+        "e10_rupture_type": None, "e10_rupture_debut": None,
+        "rupture": '[{"@nom": "E10", "@id": "5", "@debut": "2026-10-16 18:40:48", "@fin": "2026-10-20 18:05:00", "@type": "temporaire"}]',
+    }
+    fuel = parse_station(record)["fuels"]["e10"]
+    assert fuel == {
+        "price": None, "updated": None, "available": False, "rupture": None, "rupture_since": None,
+        "rupture_end": "2026-10-20T18:05:00+00:00",
+    }
+
+
+async def test_known_fuel_kept_without_price_nor_shortage(hass, aioclient_mock, entry):
+    """Relais Barre Thomas, 20 October: SP98 and E10 shortages lifted, no new price yet."""
+    await _setup(hass, aioclient_mock, entry)
+    assert hass.states.get("binary_sensor.leclerc_rennes_sp98_in_stock").state == "off"
+
+    # Same station, now with no SP98 data at all, and HA restarting with it.
+    lifted = {**STATION_B, "sp98_rupture_type": None, "sp98_rupture_debut": None}
+    # E10 at TotalEnergies was in definitive shortage, so it never had an entity.
+    total = {**STATION_A, "e10_rupture_type": None, "e10_rupture_debut": None}
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(API_RECORDS, json={"total_count": 2, "results": [total, lifted]})
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert hass.states.get("sensor.leclerc_rennes_sp98").state == "unknown"
+    assert hass.states.get("binary_sensor.leclerc_rennes_sp98_in_stock").state == "unknown"
+    stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert stations[35000025]["fuels"]["sp98"] == {
+        "price": None, "updated": None, "available": False, "rupture": None, "rupture_since": None, "rupture_end": None,
+    }
+    # A fuel that never had an entity, with no data, stays absent.
+    assert "e10" not in stations[35000013]["fuels"]
+    assert hass.states.get("sensor.totalenergies_rennes_e10") is None

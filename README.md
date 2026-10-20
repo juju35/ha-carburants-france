@@ -83,6 +83,8 @@ Chaque station est un appareil, nommé d'après son enseigne et sa ville (renomm
 
 Un carburant en rupture définitive (plus vendu) n'a pas d'entité. Un carburant qui n'est pas suivi non plus.
 
+Il arrive que le flux ne publie pour un carburant ni prix ni rupture, en général juste après la levée d'une rupture, avant qu'un nouveau prix soit saisi. Le carburant reste alors affiché **Sans prix**, avec un prix et une disponibilité inconnus, jusqu'au prochain prix publié.
+
 ## Carte
 
 Ajoutez la carte **Carburants France** depuis le sélecteur de cartes : toutes les options se règlent dans l'éditeur visuel. En YAML :
