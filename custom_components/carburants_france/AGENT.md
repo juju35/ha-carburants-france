@@ -31,8 +31,8 @@ custom_components/carburants_france/
 
 ## Brands and logos
 - Overpass: `nwr["amenity"="fuel"](around:120,lat,lon)` per station, matched on `ref:FR:prix-carburants`, else nearest branded station. Gives `brand`, `brand:wikidata`.
-- Wikidata `wbgetentities` claims P154 → `https://commons.wikimedia.org/wiki/Special:FilePath/<file>?width=96`.
-- Done in the config flow (brand at search, logo once stations are chosen) and stored in the entry options per station (`brand`, `wikidata`, `logo`, `brand_checked`). Stations with `brand_checked: false` are retried at startup.
+- Wikidata `wbgetentities` claims P154, current logo = preferred rank, else no P582 end time, else last → `https://commons.wikimedia.org/wiki/Special:FilePath/<file>?width=96`.
+- Done in the config flow (brand at search, logo once stations are chosen) and stored in the entry options per station (`brand`, `wikidata`, `logo`, `brand_checked`). Stations with `brand_checked: false`, or a `logo_version` below `LOGO_VERSION` (bump it when the logo choice changes), are looked up again at startup.
 
 ## Card
 - Served from `/carburants_france_static`, added to the Lovelace resources at startup (like ha-parcel), URL versioned with the file's md5. Falls back to `add_extra_js_url` in YAML mode.

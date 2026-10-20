@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "carburants_france"
-VERSION: Final = "0.3.1"
+VERSION: Final = "0.3.2"
 USER_AGENT: Final = f"ha-carburants-france/{VERSION} (+https://github.com/juju35/ha-carburants-france)"
 
 API_RECORDS: Final = (
@@ -51,6 +51,9 @@ ST_NAME: Final = "name"
 ST_BRAND: Final = "brand"
 ST_LOGO: Final = "logo"
 ST_BRAND_CHECKED: Final = "brand_checked"
+# Bumped when the logo choice changes, so stored logos are looked up again.
+ST_LOGO_VERSION: Final = "logo_version"
+LOGO_VERSION: Final = 2
 
 SERVICE_REFRESH: Final = "refresh"
 ATTR_CONFIG_ENTRY_ID: Final = "config_entry_id"

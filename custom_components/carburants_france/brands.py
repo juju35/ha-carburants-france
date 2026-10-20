@@ -15,7 +15,7 @@ from urllib.parse import quote
 import aiohttp
 
 from .api import distance_km
-from .const import COMMONS_FILE_URL, OVERPASS_URL, USER_AGENT, WIKIDATA_URL
+from .const import COMMONS_FILE_URL, LOGO_VERSION, OVERPASS_URL, ST_LOGO_VERSION, USER_AGENT, WIKIDATA_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -106,12 +106,28 @@ async def async_lookup_logos(session: aiohttp.ClientSession, qids: set[str]) -> 
         except (aiohttp.ClientError, TimeoutError, ValueError) as err:
             raise BrandLookupError(f"Cannot reach Wikidata: {err}") from err
         for qid, entity in ((data or {}).get("entities") or {}).items():
-            try:
-                filename = entity["claims"]["P154"][0]["mainsnak"]["datavalue"]["value"]
-            except (KeyError, IndexError, TypeError):
-                continue
-            logos[qid] = f"{COMMONS_FILE_URL}{quote(filename.replace(' ', '_'))}?width=96"
+            filename = _current_logo((entity.get("claims") or {}).get("P154") or [])
+            if filename:
+                logos[qid] = f"{COMMONS_FILE_URL}{quote(filename.replace(' ', '_'))}?width=96"
     return logos
+
+
+def _current_logo(claims: list[dict[str, Any]]) -> str | None:
+    """Pick the brand's current logo: brands keep their old ones, with an end time.
+
+    Preferred rank first, then a logo with no end time (P582), then the last one listed.
+    """
+    usable = [
+        c for c in claims
+        if c.get("rank") != "deprecated"
+        and isinstance(((c.get("mainsnak") or {}).get("datavalue") or {}).get("value"), str)
+    ]
+    if not usable:
+        return None
+    preferred = [c for c in usable if c.get("rank") == "preferred"]
+    current = [c for c in usable if "P582" not in (c.get("qualifiers") or {})]
+    claim = preferred[0] if preferred else (current or usable)[-1]
+    return claim["mainsnak"]["datavalue"]["value"]
 
 
 async def async_enrich(
@@ -124,7 +140,7 @@ async def async_enrich(
     except BrandLookupError as err:
         _LOGGER.debug("Brand lookup failed: %s", err)
         return False
-    logos: dict[str, str] = {}
+    logos: dict[str, str] | None = None
     if with_logos:
         try:
             logos = await async_lookup_logos(session, {b["wikidata"] for b in brands.values() if b.get("wikidata")})
@@ -137,6 +153,7 @@ async def async_enrich(
             continue
         station["brand"] = info["brand"]
         station["wikidata"] = info.get("wikidata")
-        if info.get("wikidata") in logos:
-            station["logo"] = logos[info["wikidata"]]
+        if logos is not None:
+            station["logo"] = logos.get(info.get("wikidata") or "")
+            station[ST_LOGO_VERSION] = LOGO_VERSION
     return ok

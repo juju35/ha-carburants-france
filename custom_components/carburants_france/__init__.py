@@ -28,6 +28,8 @@ from .const import (
     FRONTEND_URL,
     SERVICE_REFRESH,
     ST_BRAND_CHECKED,
+    ST_LOGO_VERSION,
+    LOGO_VERSION,
 )
 from .coordinator import CarburantsConfigEntry, CarburantsCoordinator
 
@@ -112,15 +114,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: CarburantsConfigEntry) -
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload))
-    if any(not s.get(ST_BRAND_CHECKED) for s in entry.options.get(CONF_STATIONS, [])):
+    if any(_needs_brand_lookup(s) for s in entry.options.get(CONF_STATIONS, [])):
         entry.async_create_background_task(hass, _async_retry_brands(hass, entry), "carburants_france_brands")
     return True
+
+
+def _needs_brand_lookup(station: dict) -> bool:
+    """OpenStreetMap was unreachable at setup, or the logo predates the current logo choice."""
+    if not station.get(ST_BRAND_CHECKED):
+        return True
+    return bool(station.get("wikidata")) and station.get(ST_LOGO_VERSION) != LOGO_VERSION
 
 
 async def _async_retry_brands(hass: HomeAssistant, entry: CarburantsConfigEntry) -> None:
     """Look up brands and logos that OpenStreetMap could not give during setup."""
     stations = [dict(s) for s in entry.options.get(CONF_STATIONS, [])]
-    pending = [s for s in stations if not s.get(ST_BRAND_CHECKED)]
+    pending = [s for s in stations if _needs_brand_lookup(s)]
     if not await async_enrich(async_get_clientsession(hass), pending, with_logos=True):
         return  # Still unreachable: try again at the next start.
     for station in pending:

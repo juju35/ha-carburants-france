@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+### Corrections
+- Carte géographique : les logos larges (TotalEnergies, E.Leclerc…) débordaient des repères ; ils sont maintenant contenus, proportions conservées.
+- Le logo actuel de l'enseigne est choisi quand Wikidata en garde plusieurs (l'ancien logo « TOTAL » s'affichait au lieu de TotalEnergies). Les logos des stations déjà configurées sont recherchés à nouveau une fois au démarrage.
+
 ## 0.3.1
 
 ### Corrections

@@ -59,7 +59,12 @@ OVERPASS = {
 }
 WIKIDATA = {
     "entities": {
-        "Q154037": {"claims": {"P154": [{"mainsnak": {"datavalue": {"value": "TotalEnergies logo.svg"}}}]}},
+        # The old logo stays listed, with an end time.
+        "Q154037": {"claims": {"P154": [
+            {"rank": "normal", "mainsnak": {"datavalue": {"value": "Total logo.svg"}},
+             "qualifiers": {"P582": [{"datavalue": {"value": {"time": "+2021-05-28T00:00:00Z"}}}]}},
+            {"rank": "normal", "mainsnak": {"datavalue": {"value": "TotalEnergies logo.svg"}}},
+        ]}},
         "Q1273376": {"claims": {}},
     }
 }
@@ -304,3 +309,24 @@ async def test_config_flow_unexpected_error(hass, aioclient_mock):
     ):
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {"query": "x", "radius": 5})
     assert result["errors"] == {"base": "unknown"}
+
+
+async def test_old_logos_looked_up_again(hass, aioclient_mock, entry):
+    options = dict(entry.options)
+    options["stations"] = [
+        {**options["stations"][0], "wikidata": "Q154037", "logo": "https://old-logo"},
+        options["stations"][1],
+    ]
+    hass.config_entries.async_update_entry(entry, options=options)
+    aioclient_mock.post(OVERPASS_URL, json=OVERPASS)
+    aioclient_mock.get(WIKIDATA_URL, json=WIKIDATA)
+    await _setup(hass, aioclient_mock, entry)
+    await hass.async_block_till_done()
+    total = {s["id"]: s for s in entry.options["stations"]}[35000013]
+    assert total["logo"].endswith("/TotalEnergies_logo.svg?width=96")
+    assert total["logo_version"] == 2
+    # Done once: no lookup at the next start.
+    calls = aioclient_mock.call_count
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert not [c for c in aioclient_mock.mock_calls[calls:] if str(c[1]).startswith(OVERPASS_URL)]

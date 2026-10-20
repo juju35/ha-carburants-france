@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.3.1';
+var CARBURANTS_CARD_VERSION = '0.3.2';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -1057,7 +1057,9 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.pin.out { border-color: var(--warning-color, #ffa600); color: var(--warning-color, #ffa600); }',
       '.pin.out::after { border-top-color: var(--warning-color, #ffa600); }',
       '.pin.none { opacity: .6; }',
-      '.pin img, .pin .ini { width: 22px; height: 22px; border-radius: 50%; flex: none; object-fit: contain; background: #fff; }',
+      // Leaflet forces width:auto and max-width:none on marker images: these selectors must outrank it.
+      '.leaflet-container .leaflet-marker-pane .pin img { flex: none; box-sizing: border-box; height: 22px !important; width: auto !important; max-width: 52px !important; max-height: 22px !important; padding: 2px 4px !important; border-radius: 11px; object-fit: contain; background: #fff; }',
+      '.pin .ini { width: 22px; height: 22px; border-radius: 50%; flex: none; }',
       '.pin .ini { display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700; background: #607d8b; }',
       '.home { position: absolute; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--primary-color, #03a9f4); color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); --mdc-icon-size: 18px; }',
       '.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); }',

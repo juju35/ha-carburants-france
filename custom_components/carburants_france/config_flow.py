@@ -43,6 +43,8 @@ from .const import (
     ST_BRAND_CHECKED,
     ST_ID,
     ST_LOGO,
+    ST_LOGO_VERSION,
+    LOGO_VERSION,
 )
 from .coordinator import pretty_city
 
@@ -190,6 +192,7 @@ class StationPickerMixin:
             return
         for station in missing:
             station[ST_LOGO] = logos.get(station["wikidata"])
+            station[ST_LOGO_VERSION] = LOGO_VERSION
 
     async def _async_finish(self) -> ConfigFlowResult:
         raise NotImplementedError
