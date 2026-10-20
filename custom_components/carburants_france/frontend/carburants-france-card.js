@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.11.0';
+var CARBURANTS_CARD_VERSION = '0.11.1';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -891,6 +891,8 @@ function carbLoadLeaflet() {
   return carbLeafletPromise;
 }
 
+var CARBURANTS_FS_SELECTORS = [':fullscreen', ':-webkit-full-screen'];
+
 // MapLibre GL draws Home Assistant's vector map; the adapter puts it in Leaflet, as the native
 // map card does. Both ship with the integration, at the versions Home Assistant uses.
 var carbMaplibrePromise = null;
@@ -1282,7 +1284,20 @@ class CarburantsFranceMapCard extends HTMLElement {
   }
 
   _isFullscreen() {
-    return this._pseudoFs || (document.fullscreenElement || document.webkitFullscreenElement) === this;
+    return this._pseudoFs || this._isNativeFullscreen();
+  }
+
+  // Not document.fullscreenElement: on a dashboard the card is deep in shadow roots, and the
+  // document only sees the outermost host. The pseudo-class matches the card itself.
+  _isNativeFullscreen() {
+    for (var i = 0; i < CARBURANTS_FS_SELECTORS.length; i++) {
+      try {
+        if (this.matches(CARBURANTS_FS_SELECTORS[i])) return true;
+      } catch (err) {
+        // Selector unknown to this browser.
+      }
+    }
+    return false;
   }
 
   _toggleFullscreen() {
