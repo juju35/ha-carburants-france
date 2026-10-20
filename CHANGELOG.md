@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.3
+
+### Améliorations
+- Les stations Total, TotalEnergies et Total Contact affichent le logo TotalEnergies actuel, intégré à la carte comme celui de Total Access (aucune requête externe).
+- Captures d'écran du README mises à jour.
+
 ## 0.9.2
 
 ### Changements
