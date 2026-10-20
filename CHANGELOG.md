@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.11.1
+## 1.0.0
+
+Première version stable : elle reprend la 0.11.1, qu'elle remplace.
 
 ### Corrections
 - Plein écran sur ordinateur : la carte passait en plein écran mais gardait la hauteur du tableau de bord. Dans un tableau de bord, la carte est imbriquée dans plusieurs composants et le navigateur ne la désignait pas directement comme élément en plein écran ; elle le détecte maintenant elle-même.
