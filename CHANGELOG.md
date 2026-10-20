@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1
+
+### Nouveautés
+- Options : **Renommer les stations** pour donner votre propre nom à chaque station. Laissé vide, le nom automatique est conservé.
+
+### Corrections
+- Le nom et l'enseigne sont cherchés dans OpenStreetMap dans un rayon de 300 m au lieu de 120 m : les coordonnées du flux sont arrondies et parfois placées sur la rue. Les stations restées sans nom (affichées avec leur adresse) sont recherchées à nouveau une fois, au prochain démarrage.
+
 ## 0.5.0
 
 ### Nouveautés

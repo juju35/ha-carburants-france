@@ -33,12 +33,18 @@
           "fuels": "Carburants à suivre",
           "stations": "Stations suivies",
           "add_stations": "Ajouter des stations",
+          "rename_stations": "Renommer les stations",
           "scan_interval": "Intervalle de mise à jour"
         },
         "data_description": {
           "stations": "Décochez une station pour ne plus la suivre.",
+          "rename_stations": "Donnez votre propre nom aux stations, à l'étape suivante.",
           "scan_interval": "Les données sont mises à jour toutes les 10 minutes côté État."
         }
+      },
+      "names": {
+        "title": "Renommer les stations",
+        "description": "Nom affiché pour chaque station. Laissez vide pour garder le nom automatique (OpenStreetMap, ou enseigne et ville), indiqué avant le tiret."
       },
       "search": {
         "title": "Rechercher des stations",

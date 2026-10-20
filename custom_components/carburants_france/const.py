@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "carburants_france"
-VERSION: Final = "0.5.0"
+VERSION: Final = "0.5.1"
 USER_AGENT: Final = f"ha-carburants-france/{VERSION} (+https://github.com/juju35/ha-carburants-france)"
 
 API_RECORDS: Final = (
@@ -37,6 +37,7 @@ CONF_QUERY: Final = "query"
 CONF_RADIUS: Final = "radius"
 CONF_SEARCH_AGAIN: Final = "search_again"
 CONF_ADD_STATIONS: Final = "add_stations"
+CONF_RENAME_STATIONS: Final = "rename_stations"
 DEFAULT_RADIUS: Final = 5
 MAX_RESULTS: Final = 50
 
@@ -54,9 +55,9 @@ ST_BRAND_CHECKED: Final = "brand_checked"
 # Station name from OpenStreetMap; ST_NAME stays for a name set by the user.
 ST_OSM_NAME: Final = "osm_name"
 # Bumped when what is looked up in OpenStreetMap / Wikidata changes, so stored
-# stations are looked up again once (3: OSM station name).
+# stations are looked up again once (3: OSM station name, 4: 300 m search radius).
 ST_LOGO_VERSION: Final = "logo_version"
-LOGO_VERSION: Final = 3
+LOGO_VERSION: Final = 4
 
 SERVICE_REFRESH: Final = "refresh"
 ATTR_CONFIG_ENTRY_ID: Final = "config_entry_id"

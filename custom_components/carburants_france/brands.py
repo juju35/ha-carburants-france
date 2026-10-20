@@ -20,7 +20,8 @@ from .const import COMMONS_FILE_URL, OVERPASS_URL, ST_OSM_NAME, USER_AGENT, WIKI
 _LOGGER = logging.getLogger(__name__)
 
 TIMEOUT = aiohttp.ClientTimeout(total=40)
-NEARBY_METERS = 120
+# The feed's coordinates are rounded to ~100 m and sometimes sit on the street, not the forecourt.
+NEARBY_METERS = 300
 HEADERS = {"User-Agent": USER_AGENT}
 
 

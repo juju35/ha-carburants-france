@@ -12,7 +12,7 @@ from homeassistant.setup import async_setup_component
 
 from custom_components.carburants_france.api import parse_station
 from custom_components.carburants_france.coordinator import station_title, useful_osm_name
-from custom_components.carburants_france.const import API_RECORDS, DOMAIN, OVERPASS_URL, WIKIDATA_URL
+from custom_components.carburants_france.const import API_RECORDS, DOMAIN, LOGO_VERSION, OVERPASS_URL, WIKIDATA_URL
 
 # Two real records from the feed (Rennes, October 2026), horaires shortened.
 HOURS_24 = (
@@ -76,7 +76,7 @@ def _stored(record, brand=None, logo=None):
     return {
         "id": s["id"], "address": s["address"], "postcode": s["postcode"], "city": s["city"],
         "latitude": s["latitude"], "longitude": s["longitude"],
-        "brand": brand, "wikidata": None, "logo": logo, "brand_checked": True, "logo_version": 3,
+        "brand": brand, "wikidata": None, "logo": logo, "brand_checked": True, "logo_version": LOGO_VERSION,
     }
 
 
@@ -327,7 +327,7 @@ async def test_old_logos_looked_up_again(hass, aioclient_mock, entry):
     await hass.async_block_till_done()
     total = {s["id"]: s for s in entry.options["stations"]}[35000013]
     assert total["logo"].endswith("/TotalEnergies_logo.svg?width=96")
-    assert total["logo_version"] == 3
+    assert total["logo_version"] == LOGO_VERSION
     # Done once: no lookup at the next start.
     calls = aioclient_mock.call_count
     await hass.config_entries.async_reload(entry.entry_id)
@@ -367,3 +367,48 @@ async def test_osm_names_looked_up_for_existing_stations(hass, aioclient_mock, e
     assert names[35000013] == "TotalEnergies Access Rennes Saint-Malo"
     # OSM only says "Leclerc": brand and town are clearer.
     assert names[35000025] == "Leclerc Rennes"
+
+
+async def test_options_flow_rename(hass, aioclient_mock, entry):
+    await _setup(hass, aioclient_mock, entry)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"fuels": ["gazole"], "stations": ["35000013", "35000025"], "add_stations": False,
+         "rename_stations": True, "scan_interval": 15},
+    )
+    assert result["step_id"] == "names"
+    fields = [str(key) for key in result["data_schema"].schema]
+    assert fields == [
+        "TotalEnergies Rennes — 238 Rue Saint-Malo, Rennes [35000013]",
+        "Leclerc Rennes — 19, BD LEON BOURGEOIS, Rennes [35000025]",
+    ]
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {fields[0]: "  Total de la rocade  ", fields[1]: ""}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    names = {s["id"]: s["name"] for s in entry.options["stations"]}
+    assert names == {35000013: "Total de la rocade", 35000025: None}
+    stations = hass.states.get("sensor.carburants_stations").attributes["stations"]
+    assert {s["station_id"]: s["station_name"] for s in stations} == {
+        35000013: "Total de la rocade",
+        35000025: "Leclerc Rennes",
+    }
+
+
+async def test_brand_found_250_m_away(hass, aioclient_mock):
+    """The feed's coordinates can be a couple hundred metres off the forecourt."""
+    from custom_components.carburants_france.brands import async_lookup_brands
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+    aioclient_mock.post(OVERPASS_URL, json={"elements": [
+        {"type": "way", "id": 3, "center": {"lat": 48.1050, "lon": -1.7376},
+         "tags": {"amenity": "fuel", "brand": "Intermarché", "name": "Intermarché Vezin-le-Coquet"}},
+    ]})
+    found = await async_lookup_brands(
+        async_get_clientsession(hass), [{"id": 35132004, "latitude": 48.105, "longitude": -1.741}]
+    )
+    assert found[35132004]["name"] == "Intermarché Vezin-le-Coquet"
+    query = aioclient_mock.mock_calls[0][2]["data"]
+    assert "around:300,48.105,-1.741" in query

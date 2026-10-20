@@ -30,8 +30,8 @@ custom_components/carburants_france/
 - The feed has no brand or station name.
 
 ## Brands and logos
-- Overpass: `nwr["amenity"="fuel"](around:120,lat,lon)` per station, matched on `ref:FR:prix-carburants`, else nearest branded station. Gives `brand`, `brand:wikidata`, `name` (stored as `osm_name`).
-- Station title (`coordinator.station_title`): user `name`, else `osm_name` unless generic or just the brand (`useful_osm_name`), else brand + town, else address. Computed server side, so both cards get it as `station_name`.
+- Overpass: `nwr["amenity"="fuel"](around:300,lat,lon)` per station (feed coordinates are rounded to ~100 m), matched on `ref:FR:prix-carburants`, else nearest branded station. Gives `brand`, `brand:wikidata`, `name` (stored as `osm_name`).
+- Station title (`coordinator.station_title`): user `name` (options step `names`, one field per station whose name ends with `[id]`), else `osm_name` unless generic or just the brand (`useful_osm_name`), else brand + town, else address. Computed server side, so both cards get it as `station_name`.
 - Wikidata `wbgetentities` claims P154, current logo = preferred rank, else no P582 end time, else last → `https://commons.wikimedia.org/wiki/Special:FilePath/<file>?width=96`.
 - Done in the config flow (brand at search, logo once stations are chosen) and stored in the entry options per station (`brand`, `wikidata`, `logo`, `brand_checked`). Stations with `brand_checked: false`, or a `logo_version` below `LOGO_VERSION` (bump it when the logo choice changes), are looked up again at startup.
 

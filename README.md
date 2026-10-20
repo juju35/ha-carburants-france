@@ -65,6 +65,7 @@ Options (bouton **Configurer**) :
 | Carburants à suivre | Gazole | Carburants pour lesquels les capteurs sont créés |
 | Stations suivies | — | Décochez une station pour ne plus la suivre |
 | Ajouter des stations | — | Relance la recherche pour ajouter des stations |
+| Renommer les stations | — | Étape suivante : un nom par station, vide pour garder le nom automatique |
 | Intervalle de mise à jour | 15 min | Minimum 5 min : le flux de l'État est mis à jour toutes les 10 minutes |
 
 Plusieurs entrées sont possibles, par exemple une autour de la maison et une sur le trajet du travail.
@@ -193,7 +194,7 @@ actions:
 
 ## Noms, enseignes et logos
 
-Le flux de l'État ne donne ni le nom ni l'enseigne des stations. L'intégration la retrouve dans [OpenStreetMap](https://www.openstreetmap.org) (tag `ref:FR:prix-carburants`, sinon la station la plus proche à moins de 120 m), puis le logo de l'enseigne sur [Wikidata](https://www.wikidata.org) / Wikimedia Commons. Le nom de la station vient aussi d'OpenStreetMap ; s'il manque, ou s'il se limite à « Station-service » ou au nom de l'enseigne, la station est nommée d'après son enseigne et sa ville. La recherche est faite une fois, à l'ajout de la station ; si OpenStreetMap est injoignable, elle est retentée au démarrage suivant. Sans enseigne connue, la carte affiche une icône de station.
+Le flux de l'État ne donne ni le nom ni l'enseigne des stations. L'intégration la retrouve dans [OpenStreetMap](https://www.openstreetmap.org) (tag `ref:FR:prix-carburants`, sinon la station la plus proche à moins de 300 m), puis le logo de l'enseigne sur [Wikidata](https://www.wikidata.org) / Wikimedia Commons. Le nom de la station vient aussi d'OpenStreetMap ; s'il manque, ou s'il se limite à « Station-service » ou au nom de l'enseigne, la station est nommée d'après son enseigne et sa ville, ou à défaut son adresse. Vous pouvez toujours imposer votre propre nom avec l'option **Renommer les stations**. La recherche est faite une fois, à l'ajout de la station ; si OpenStreetMap est injoignable, elle est retentée au démarrage suivant. Sans enseigne connue, la carte affiche une icône de station.
 
 ## Données
 

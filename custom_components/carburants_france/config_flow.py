@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -30,6 +31,7 @@ from .const import (
     CONF_FUELS,
     CONF_QUERY,
     CONF_RADIUS,
+    CONF_RENAME_STATIONS,
     CONF_SCAN_INTERVAL,
     CONF_SEARCH_AGAIN,
     CONF_STATIONS,
@@ -44,10 +46,11 @@ from .const import (
     ST_ID,
     ST_LOGO,
     ST_LOGO_VERSION,
+    ST_NAME,
     ST_OSM_NAME,
     LOGO_VERSION,
 )
-from .coordinator import pretty_city, useful_osm_name
+from .coordinator import pretty_city, station_title, useful_osm_name
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -246,9 +249,10 @@ class CarburantsConfigFlow(StationPickerMixin, ConfigFlow, domain=DOMAIN):
 
 
 class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
-    """Change fuels, remove or add stations, polling interval."""
+    """Change fuels, remove, add or rename stations, polling interval."""
 
     _scan_interval: int = DEFAULT_SCAN_INTERVAL
+    _rename: bool = False
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         options = self.config_entry.options
@@ -258,6 +262,7 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
             fuels = [f for f in user_input.get(CONF_FUELS, []) if f in FUELS]
             kept = {int(v) for v in user_input.get(CONF_STATIONS, [])}
             self._scan_interval = int(user_input[CONF_SCAN_INTERVAL])
+            self._rename = bool(user_input.get(CONF_RENAME_STATIONS))
             self._init_picker(fuels, [s for s in current if int(s[ST_ID]) in kept])
             if not fuels:
                 errors[CONF_FUELS] = "no_fuel"
@@ -277,6 +282,7 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
                     SelectSelectorConfig(options=station_options, multiple=True, mode=SelectSelectorMode.LIST)
                 ),
                 vol.Optional(CONF_ADD_STATIONS, default=False): BooleanSelector(),
+                vol.Optional(CONF_RENAME_STATIONS, default=False): BooleanSelector(),
                 vol.Required(
                     CONF_SCAN_INTERVAL, default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
                 ): NumberSelector(
@@ -288,7 +294,37 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
         )
         return self.async_show_form(step_id="init", data_schema=schema, errors=errors)
 
+    @staticmethod
+    def _name_field(station: dict[str, Any]) -> str:
+        """Form field for one station: the field name is its label, the station id ends it."""
+        automatic = station_title({**station, ST_NAME: None})
+        place = f"{station.get('address') or ''}, {pretty_city(station.get('city') or '')}".strip(", ")
+        return f"{automatic} — {place} [{station[ST_ID]}]"
+
+    async def async_step_names(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """One text field per station; empty keeps the automatic name."""
+        if user_input is not None:
+            for field, value in user_input.items():
+                if match := re.search(r"\[(\d+)\]$", field):
+                    station = self._selected.get(int(match.group(1)))
+                    if station is not None:
+                        station[ST_NAME] = (value or "").strip() or None
+            self._rename = False
+            return await self._async_finish()
+
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    self._name_field(station), description={"suggested_value": station.get(ST_NAME) or ""}
+                ): TextSelector()
+                for station in self._selected.values()
+            }
+        )
+        return self.async_show_form(step_id="names", data_schema=schema)
+
     async def _async_finish(self) -> ConfigFlowResult:
+        if self._rename:
+            return await self.async_step_names()
         return self.async_create_entry(
             data={
                 CONF_FUELS: self._fuels,

@@ -33,12 +33,18 @@
           "fuels": "Fuels to follow",
           "stations": "Followed stations",
           "add_stations": "Add stations",
+          "rename_stations": "Rename stations",
           "scan_interval": "Update interval"
         },
         "data_description": {
           "stations": "Untick a station to stop following it.",
+          "rename_stations": "Give the stations your own names, in the next step.",
           "scan_interval": "The government feed is updated every 10 minutes."
         }
+      },
+      "names": {
+        "title": "Rename stations",
+        "description": "Name shown for each station. Leave empty to keep the automatic name (OpenStreetMap, or brand and town), shown before the dash."
       },
       "search": {
         "title": "Search stations",

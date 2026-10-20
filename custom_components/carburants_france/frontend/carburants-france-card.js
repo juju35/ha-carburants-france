@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.5.0';
+var CARBURANTS_CARD_VERSION = '0.5.1';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
