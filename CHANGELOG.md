@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.2
+
+### Nouveautés
+- Carte géographique : l'icône de l'intégration s'affiche à gauche du titre, comme sur la carte liste, et ouvre la page des données sur data.economie.gouv.fr (option `show_icon`, activée par défaut).
+
 ## 0.8.1
 
 ### Corrections

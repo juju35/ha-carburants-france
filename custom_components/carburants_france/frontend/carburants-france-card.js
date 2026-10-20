@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.8.1';
+var CARBURANTS_CARD_VERSION = '0.8.2';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -726,7 +726,7 @@ if (!customElements.get('carburants-france-card')) {
 // ── carburants-france-map-card ────────────────────────────────────────────────
 // Leaflet ships with the integration: no CDN, only the map tiles come from the network.
 var CARBURANTS_STATIC = '/carburants_france_static';
-var CARBURANTS_MAP_DEFAULTS = { height: 400, show_home: true, show_logo: true, show_name: true, map_style: 'osm', theme: 'auto', hide_out_of_stock_stations: true };
+var CARBURANTS_MAP_DEFAULTS = { height: 400, show_icon: true, show_home: true, show_logo: true, show_name: true, map_style: 'osm', theme: 'auto', hide_out_of_stock_stations: true };
 
 var CARBURANTS_OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
 var CARBURANTS_IGN_WMTS = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}';
@@ -786,6 +786,7 @@ var CarburantsMapI18n = {
       theme: 'Thème du fond de carte',
       tile_url: 'URL des tuiles ({z}, {x}, {y})',
       tile_attribution: 'Attribution des tuiles',
+      show_icon: 'Icône',
       show_home: 'Domicile',
       show_logo: 'Logos des enseignes',
       show_name: 'Nom des stations sur les repères',
@@ -816,6 +817,7 @@ var CarburantsMapI18n = {
       theme: 'Base map theme',
       tile_url: 'Tile URL ({z}, {x}, {y})',
       tile_attribution: 'Tile attribution',
+      show_icon: 'Icon',
       show_home: 'Home',
       show_logo: 'Brand logos',
       show_name: 'Station names on markers',
@@ -967,8 +969,13 @@ class CarburantsFranceMapCard extends HTMLElement {
     var mt = CarburantsMapI18n[carbLang(this._hass)];
     var header = this._root.querySelector('.header');
     var title = this._config.title === undefined ? mt.default_title : this._config.title;
-    header.hidden = !title;
-    header.textContent = title || '';
+    // Same icon as the list card, opening the government data page.
+    var icon = this._config.show_icon
+      ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
+        '<img class="icon" src="' + CARBURANTS_ICON + '" alt="data.economie.gouv.fr"></a>'
+      : '';
+    header.hidden = !title && !icon;
+    header.innerHTML = icon + carbEsc(title || '');
     var mapEl = this._root.querySelector('.map');
     mapEl.style.height = Math.max(150, Number(this._config.height) || 400) + 'px';
     // Follows the Home Assistant theme live when theme is auto.
@@ -1203,7 +1210,9 @@ class CarburantsFranceMapCard extends HTMLElement {
     return [
       ':host { display: block; }',
       'ha-card { overflow: hidden; }',
-      '.header { padding: 12px 16px 8px; font-size: 1.15em; font-weight: 500; color: var(--primary-text-color); }',
+      '.header { display: flex; align-items: center; min-height: 40px; padding: 12px 16px 8px; font-size: 1.15em; font-weight: 500; color: var(--primary-text-color); }',
+      '.icon-link { display: flex; flex: none; margin-right: 10px; }',
+      '.icon { width: 28px; height: 28px; display: block; }',
       '.header[hidden], .message[hidden] { display: none; }',
       '.message { padding: 12px 16px; color: var(--secondary-text-color); }',
       '.map { width: 100%; background: var(--secondary-background-color, #e5e5e5); z-index: 0; }',
@@ -1296,6 +1305,7 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
           { name: 'fuel', selector: { select: { mode: 'dropdown', options: fuels } } },
           { name: 'height', selector: { number: { min: 150, max: 1200, step: 10, mode: 'box', unit_of_measurement: 'px' } } },
           { name: 'zoom', selector: { number: { min: 5, max: 18, mode: 'box' } } },
+          { name: 'show_icon', selector: { boolean: {} } },
           { name: 'show_home', selector: { boolean: {} } },
           { name: 'show_logo', selector: { boolean: {} } },
           { name: 'show_name', selector: { boolean: {} } },

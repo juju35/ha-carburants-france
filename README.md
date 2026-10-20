@@ -129,6 +129,7 @@ fuel: gazole
 |---|---|---|
 | `entity` | détectée | Capteur Stations à afficher (utile avec plusieurs entrées) |
 | `title` | « Carte des stations » | Titre de la carte, `""` pour le masquer |
+| `show_icon` | `true` | Icône à côté du titre, qui ouvre la page des données sur data.economie.gouv.fr |
 | `fuel` | 1er carburant | Carburant dont le prix est affiché sur les repères |
 | `height` | `400` | Hauteur de la carte en pixels |
 | `zoom` | ajusté | Zoom fixe ; par défaut, la carte s'ajuste pour montrer toutes les stations |
