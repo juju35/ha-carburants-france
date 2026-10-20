@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.3.0';
+var CARBURANTS_CARD_VERSION = '0.3.1';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -774,11 +774,20 @@ class CarburantsFranceMapCard extends HTMLElement {
   }
 
   connectedCallback() {
-    if (this._map) setTimeout(this._invalidate.bind(this), 0);
+    if (!this._map) return;
+    if (this._resizeObserver) this._resizeObserver.observe(this._root.querySelector('.map'));
+    this._scheduleTokenRefresh();
+    // The token may have expired while the card was detached.
+    var self = this;
+    if (this._tiles && this._tiles._url.indexOf('/api/map_tiles/') === 0) {
+      this._tileUrl().then(function (url) { if (self._tiles) self._tiles.setUrl(url); });
+    }
+    setTimeout(this._invalidate.bind(this), 0);
   }
 
   disconnectedCallback() {
     if (this._resizeObserver) this._resizeObserver.disconnect();
+    clearInterval(this._tokenTimer);
   }
 
   getCardSize() {
@@ -826,6 +835,8 @@ class CarburantsFranceMapCard extends HTMLElement {
     header.textContent = title || '';
     var mapEl = this._root.querySelector('.map');
     mapEl.style.height = Math.max(150, Number(this._config.height) || 400) + 'px';
+    // Follows the Home Assistant theme live when theme is auto.
+    mapEl.classList.toggle('dark', this._dark());
     var message = this._root.querySelector('.message');
     if (!this._lastState) {
       message.hidden = false;
@@ -847,12 +858,8 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (this._map) return;
     var mapEl = this._root.querySelector('.map');
     this._map = L.map(mapEl, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, zoomSnap: 0.25 });
-    // Same tiles as the Home Assistant map card.
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/' + (this._dark() ? 'dark_all' : 'light_all') + '/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
-    }).addTo(this._map);
+    mapEl.classList.toggle('dark', this._dark());
+    this._loadTiles(L);
     this._layer = L.layerGroup().addTo(this._map);
     var self = this;
     var Toggle = L.Control.extend({
@@ -869,18 +876,55 @@ class CarburantsFranceMapCard extends HTMLElement {
     });
     this._toggle = new Toggle({ position: 'topright' }).addTo(this._map);
     this._fitted = false;
-    var self = this;
     if (window.ResizeObserver) {
       this._resizeObserver = new ResizeObserver(function () { self._invalidate(); });
       this._resizeObserver.observe(mapEl);
     }
   }
 
+  // OpenStreetMap tiles through Home Assistant's own Map tiles proxy (2026.9+), like the
+  // native map card. Its access token rotates every 30 minutes, two being valid at once.
+  _tileUrl() {
+    var hass = this._hass;
+    return Promise.resolve()
+      .then(function () { return hass.callWS({ type: 'map_tiles/access_token' }); })
+      .then(function (res) { return '/api/map_tiles/raster/{z}/{x}/{y}.png?token=' + encodeURIComponent(res.token); })
+      .catch(function () { return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'; });
+  }
+
+  _loadTiles(L) {
+    var self = this;
+    var map = this._map;
+    this._tileUrl().then(function (url) {
+      if (self._map !== map) return;
+      self._tiles = L.tileLayer(url, {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+      }).addTo(map);
+      self._tiles.bringToBack();
+      self._scheduleTokenRefresh();
+    });
+  }
+
+  _scheduleTokenRefresh() {
+    clearInterval(this._tokenTimer);
+    if (!this._tiles || this._tiles._url.indexOf('/api/map_tiles/') !== 0) return;
+    var self = this;
+    this._tokenTimer = setInterval(function () {
+      self._tileUrl().then(function (url) {
+        // No redraw: tiles already shown stay, new ones use the new token.
+        if (self._tiles) self._tiles.setUrl(url, true);
+      });
+    }, 20 * 60 * 1000);
+  }
+
   _destroyMap() {
     if (this._resizeObserver) this._resizeObserver.disconnect();
+    clearInterval(this._tokenTimer);
     if (this._map) this._map.remove();
     this._map = null;
     this._layer = null;
+    this._tiles = null;
   }
 
   _invalidate() {
@@ -1004,6 +1048,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.message { padding: 12px 16px; color: var(--secondary-text-color); }',
       '.map { width: 100%; background: var(--secondary-background-color, #e5e5e5); z-index: 0; }',
       '.leaflet-container { font: inherit; }',
+      '.map.dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }',
       '.carb-marker { background: none; border: none; }',
       '.pin { position: absolute; transform: translate(-50%, calc(-100% - 7px)); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
       '.pin::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--secondary-text-color, #727272); }',

@@ -129,14 +129,14 @@ fuel: gazole
 | `fuel` | 1er carburant | Carburant dont le prix est affiché sur les repères |
 | `height` | `400` | Hauteur de la carte en pixels |
 | `zoom` | ajusté | Zoom fixe ; par défaut, la carte s'ajuste pour montrer toutes les stations |
-| `theme` | `auto` | Fond de carte `auto` (selon le thème de Home Assistant), `light` ou `dark` |
+| `theme` | `auto` | Fond de carte `auto` (selon le thème de Home Assistant), `light` ou `dark` (assombri) |
 | `show_home` | `true` | Afficher le domicile |
 | `show_logo` | `true` | Logo de l'enseigne sur les repères |
 | `hide_out_of_stock_stations` | `true` | Masquer les stations où tous les carburants suivis sont en rupture (bouton en haut à droite pour les afficher) |
 
 Chaque repère affiche le logo et le prix : vert pour le meilleur prix, orange en cas de rupture. Cliquez sur un repère pour voir tous les prix, l'ouverture et l'itinéraire. Le zoom à la molette est désactivé pour ne pas gêner le défilement du tableau de bord (utilisez les boutons ou le pincement).
 
-La carte utilise [Leaflet](https://leafletjs.com), fourni avec l'intégration, et les fonds de carte CARTO / OpenStreetMap, comme la carte native de Home Assistant.
+La carte utilise [Leaflet](https://leafletjs.com), fourni avec l'intégration, et le fond de carte OpenStreetMap servi par Home Assistant lui-même (intégration intégrée **Map tiles**, depuis la 2026.9), comme la carte native : aucune clé d'API. Avant la 2026.9, les tuiles sont chargées directement depuis OpenStreetMap. En thème sombre, le fond de carte est assombri.
 
 ## Automatisations
 
@@ -176,7 +176,7 @@ Le flux de l'État ne donne pas l'enseigne des stations. L'intégration la retro
 - Prix et stations : Ministère de l'Économie, [flux instantané v2](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/), Licence Ouverte
 - Enseignes : © contributeurs [OpenStreetMap](https://www.openstreetmap.org/copyright), ODbL
 - Logos : Wikimedia Commons, via Wikidata
-- Fonds de carte : © contributeurs OpenStreetMap, © CARTO
+- Fond de carte : © contributeurs OpenStreetMap
 
 ## Licence
 

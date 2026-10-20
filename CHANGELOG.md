@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+### Corrections
+- Carte géographique : le fond de carte affichait « API key required », CARTO exigeant désormais une clé. Il vient maintenant d'OpenStreetMap via le service de tuiles intégré à Home Assistant (2026.9 et plus), comme la carte native, sans clé ; directement depuis OpenStreetMap sur les versions plus anciennes. Le thème sombre assombrit le fond de carte.
+- La carte géographique se redimensionne correctement après avoir été déplacée dans le tableau de bord.
+
 ## 0.3.0
 
 ### Nouveautés

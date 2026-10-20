@@ -40,7 +40,7 @@ custom_components/carburants_france/
 
 ## Map card
 - `carburants-france-map-card` lives in the same JS file and reuses the list card helpers. It loads `/carburants_france_static/leaflet/leaflet.js` once (global `L`, reused if another card already set it) and links `leaflet.css` inside its shadow root.
-- CARTO tiles (`light_all` / `dark_all`, like the HA map card). Markers are `divIcon` pins (logo + price), anchored above the point; `fitBounds` uses extra top/side padding and `zoomSnap: 0.25`.
+- Tiles: HA's built-in Map tiles proxy (2026.9+), `/api/map_tiles/raster/{z}/{x}/{y}.png?token=…`, token from websocket `map_tiles/access_token` (rotates every 30 min, two valid; refreshed every 20 min with `setUrl(url, true)` and on reconnect). Without it (older HA), tiles come straight from tile.openstreetmap.org. CARTO now requires an API key: don't use it. Dark theme = CSS filter on the tile pane. Markers are `divIcon` pins (logo + price), anchored above the point; `fitBounds` uses extra top/side padding and `zoomSnap: 0.25`.
 
 ## Release
 HACS downloads the repository itself (no `zip_release`). Before releasing `vX.Y.Z`, bump the version in manifest.json, const.py (`VERSION`) and `CARBURANTS_CARD_VERSION` in the card. Pushing to main publishes release `vX.Y.Z` (tag, notes from the CHANGELOG.md section, `carburants_france.zip`) when that tag doesn't exist yet; the workflow fails if the three versions differ. Rerun notes on an existing release with the "Update release notes" workflow (input `tag`).
