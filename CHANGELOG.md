@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+### Nouveautés
+- Carte géographique : choix du fond de carte (`map_style`), tous sans clé d'API : OpenStreetMap (via Home Assistant), OpenStreetMap France, Plan IGN, photos aériennes IGN, OpenTopoMap, CyclOSM, satellite Esri, ou vos propres tuiles (`tile_url`, `tile_attribution`).
+- Le thème clair / sombre reste réglable séparément ; les photos aériennes ne sont jamais assombries.
+- Changer de fond dans l'éditeur visuel met la carte à jour immédiatement, sans la recharger.
+
 ## 0.3.2
 
 ### Corrections

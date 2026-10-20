@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.3.2';
+var CARBURANTS_CARD_VERSION = '0.4.0';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -690,7 +690,51 @@ if (!customElements.get('carburants-france-card')) {
 // ── carburants-france-map-card ────────────────────────────────────────────────
 // Leaflet ships with the integration: no CDN, only the map tiles come from the network.
 var CARBURANTS_STATIC = '/carburants_france_static';
-var CARBURANTS_MAP_DEFAULTS = { height: 400, show_home: true, show_logo: true, theme: 'auto', hide_out_of_stock_stations: true };
+var CARBURANTS_MAP_DEFAULTS = { height: 400, show_home: true, show_logo: true, map_style: 'osm', theme: 'auto', hide_out_of_stock_stations: true };
+
+var CARBURANTS_OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
+var CARBURANTS_IGN_WMTS = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}';
+
+// Base maps that need no API key. "osm" goes through Home Assistant (see _tileUrl).
+// photo: aerial imagery, never darkened by the dark theme.
+var CARBURANTS_MAP_STYLES = {
+  osm: { maxZoom: 19, attribution: CARBURANTS_OSM_ATTRIBUTION },
+  osm_fr: {
+    url: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+    maxZoom: 20,
+    attribution: '&copy; <a href="https://www.openstreetmap.fr" target="_blank" rel="noopener">OpenStreetMap France</a> | ' + CARBURANTS_OSM_ATTRIBUTION,
+  },
+  ign: {
+    url: CARBURANTS_IGN_WMTS + '&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&FORMAT=image/png',
+    maxNativeZoom: 19,
+    maxZoom: 20,
+    attribution: 'Plan IGN &copy; <a href="https://www.ign.fr" target="_blank" rel="noopener">IGN</a>',
+  },
+  ign_photo: {
+    url: CARBURANTS_IGN_WMTS + '&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&FORMAT=image/jpeg',
+    maxNativeZoom: 19,
+    maxZoom: 20,
+    photo: true,
+    attribution: 'Photographies aériennes &copy; <a href="https://www.ign.fr" target="_blank" rel="noopener">IGN</a>',
+  },
+  topo: {
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    maxZoom: 17,
+    attribution: CARBURANTS_OSM_ATTRIBUTION + ', SRTM | &copy; <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA)',
+  },
+  cyclosm: {
+    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+    maxZoom: 20,
+    attribution: '<a href="https://www.cyclosm.org" target="_blank" rel="noopener">CyclOSM</a> | ' + CARBURANTS_OSM_ATTRIBUTION,
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    maxZoom: 19,
+    photo: true,
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+  },
+  custom: { maxZoom: 20 },
+};
 
 var CarburantsMapI18n = {
   fr: {
@@ -702,12 +746,25 @@ var CarburantsMapI18n = {
       fuel: 'Carburant affiché sur les repères',
       height: 'Hauteur (px)',
       zoom: 'Zoom (vide = ajusté aux stations)',
-      theme: 'Fond de carte',
+      map_style: 'Fond de carte',
+      theme: 'Thème du fond de carte',
+      tile_url: 'URL des tuiles ({z}, {x}, {y})',
+      tile_attribution: 'Attribution des tuiles',
       show_home: 'Domicile',
       show_logo: 'Logos des enseignes',
       hide_out_of_stock_stations: 'Masquer les stations en rupture',
     },
     themes: { auto: 'Selon le thème', light: 'Clair', dark: 'Sombre' },
+    styles: {
+      osm: 'OpenStreetMap',
+      osm_fr: 'OpenStreetMap France',
+      ign: 'Plan IGN',
+      ign_photo: 'Photos aériennes IGN',
+      topo: 'OpenTopoMap (relief)',
+      cyclosm: 'CyclOSM (vélo)',
+      satellite: 'Satellite (Esri)',
+      custom: 'Personnalisé (URL)',
+    },
   },
   en: {
     default_title: 'Stations map',
@@ -718,12 +775,25 @@ var CarburantsMapI18n = {
       fuel: 'Fuel shown on markers',
       height: 'Height (px)',
       zoom: 'Zoom (empty = fit the stations)',
-      theme: 'Map style',
+      map_style: 'Base map',
+      theme: 'Base map theme',
+      tile_url: 'Tile URL ({z}, {x}, {y})',
+      tile_attribution: 'Tile attribution',
       show_home: 'Home',
       show_logo: 'Brand logos',
       hide_out_of_stock_stations: 'Hide out of stock stations',
     },
     themes: { auto: 'Follow theme', light: 'Light', dark: 'Dark' },
+    styles: {
+      osm: 'OpenStreetMap',
+      osm_fr: 'OpenStreetMap France',
+      ign: 'IGN map',
+      ign_photo: 'IGN aerial photos',
+      topo: 'OpenTopoMap (terrain)',
+      cyclosm: 'CyclOSM (cycling)',
+      satellite: 'Satellite (Esri)',
+      custom: 'Custom (URL)',
+    },
   },
 };
 
@@ -755,8 +825,10 @@ class CarburantsFranceMapCard extends HTMLElement {
   setConfig(config) {
     var previous = this._config;
     this._config = Object.assign({}, CARBURANTS_MAP_DEFAULTS, config || {});
-    if (previous && this._map && (previous.theme !== this._config.theme || previous.height !== this._config.height)) {
-      this._destroyMap();
+    if (previous && this._map && this._tilesKey(previous) !== this._tilesKey(this._config)) {
+      if (this._tiles) this._map.removeLayer(this._tiles);
+      this._tiles = null;
+      this._loadTiles(window.L);
     }
     this._lastState = null;
     this._fitted = false;
@@ -816,6 +888,21 @@ class CarburantsFranceMapCard extends HTMLElement {
     return !!(this._hass && this._hass.themes && this._hass.themes.darkMode);
   }
 
+  _style() {
+    var style = this._config.map_style;
+    if (style === 'custom' && !this._config.tile_url) style = 'osm';
+    return CARBURANTS_MAP_STYLES[style] ? style : 'osm';
+  }
+
+  _tilesKey(config) {
+    return [config.map_style, config.tile_url, config.tile_attribution].join('|');
+  }
+
+  // Aerial imagery is never darkened.
+  _darkTiles() {
+    return this._dark() && !CARBURANTS_MAP_STYLES[this._style()].photo;
+  }
+
   _ensureShell() {
     if (this._root) return;
     this._root = this.attachShadow({ mode: 'open' });
@@ -836,7 +923,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     var mapEl = this._root.querySelector('.map');
     mapEl.style.height = Math.max(150, Number(this._config.height) || 400) + 'px';
     // Follows the Home Assistant theme live when theme is auto.
-    mapEl.classList.toggle('dark', this._dark());
+    mapEl.classList.toggle('dark', this._darkTiles());
     var message = this._root.querySelector('.message');
     if (!this._lastState) {
       message.hidden = false;
@@ -858,7 +945,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (this._map) return;
     var mapEl = this._root.querySelector('.map');
     this._map = L.map(mapEl, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, zoomSnap: 0.25 });
-    mapEl.classList.toggle('dark', this._dark());
+    mapEl.classList.toggle('dark', this._darkTiles());
     this._loadTiles(L);
     this._layer = L.layerGroup().addTo(this._map);
     var self = this;
@@ -895,12 +982,25 @@ class CarburantsFranceMapCard extends HTMLElement {
   _loadTiles(L) {
     var self = this;
     var map = this._map;
-    this._tileUrl().then(function (url) {
-      if (self._map !== map) return;
-      self._tiles = L.tileLayer(url, {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
-      }).addTo(map);
+    var style = this._style();
+    var spec = CARBURANTS_MAP_STYLES[style];
+    var options = { maxZoom: spec.maxZoom, attribution: spec.attribution };
+    if (spec.maxNativeZoom) options.maxNativeZoom = spec.maxNativeZoom;
+    var key = this._tilesKey(this._config);
+    var url;
+    if (style === 'osm') {
+      url = this._tileUrl();
+    } else if (style === 'custom') {
+      options.attribution = this._config.tile_attribution || '';
+      url = Promise.resolve(this._config.tile_url);
+    } else {
+      url = Promise.resolve(spec.url);
+    }
+    this._root.querySelector('.map').classList.toggle('dark', this._darkTiles());
+    url.then(function (resolved) {
+      // The map was rebuilt or the style changed while the token was loading.
+      if (self._map !== map || self._tilesKey(self._config) !== key) return;
+      self._tiles = L.tileLayer(resolved, options).addTo(map);
       self._tiles.bringToBack();
       self._scheduleTokenRefresh();
     });
@@ -1104,6 +1204,13 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
     var st = entity && this._hass.states[entity];
     var fuels = ((st && st.attributes.fuels) || []).map(function (f) { return { value: f.key, label: f.name }; });
     var themes = ['auto', 'light', 'dark'].map(function (k) { return { value: k, label: mt.themes[k] }; });
+    var styles = Object.keys(CARBURANTS_MAP_STYLES).map(function (k) { return { value: k, label: mt.styles[k] }; });
+    var custom = this._config.map_style === 'custom'
+      ? [
+          { name: 'tile_url', selector: { text: { type: 'url' } } },
+          { name: 'tile_attribution', selector: { text: {} } },
+        ]
+      : [];
     return [
       { name: 'entity', selector: { entity: { domain: 'sensor', integration: 'carburants_france' } } },
       { name: 'title', selector: { text: {} } },
@@ -1111,8 +1218,16 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
         type: 'grid',
         name: '',
         schema: [
-          { name: 'fuel', selector: { select: { mode: 'dropdown', options: fuels } } },
+          { name: 'map_style', selector: { select: { mode: 'dropdown', options: styles } } },
           { name: 'theme', selector: { select: { mode: 'dropdown', options: themes } } },
+        ],
+      },
+    ].concat(custom, [
+      {
+        type: 'grid',
+        name: '',
+        schema: [
+          { name: 'fuel', selector: { select: { mode: 'dropdown', options: fuels } } },
           { name: 'height', selector: { number: { min: 150, max: 1200, step: 10, mode: 'box', unit_of_measurement: 'px' } } },
           { name: 'zoom', selector: { number: { min: 5, max: 18, mode: 'box' } } },
           { name: 'show_home', selector: { boolean: {} } },
@@ -1120,7 +1235,7 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
           { name: 'hide_out_of_stock_stations', selector: { boolean: {} } },
         ],
       },
-    ];
+    ]);
   }
 
   _render() {
@@ -1142,11 +1257,15 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
     Object.keys(CARBURANTS_MAP_DEFAULTS).forEach(function (key) {
       if (value[key] === CARBURANTS_MAP_DEFAULTS[key]) delete value[key];
     });
-    ['entity', 'fuel', 'zoom'].forEach(function (key) { if (!value[key]) delete value[key]; });
+    ['entity', 'fuel', 'zoom', 'tile_url', 'tile_attribution'].forEach(function (key) { if (!value[key]) delete value[key]; });
+    if (value.map_style !== 'custom') {
+      delete value.tile_url;
+      delete value.tile_attribution;
+    }
     // An empty title hides the header: keep it as "" rather than dropping it.
-    var entityChanged = value.entity !== this._config.entity;
+    var rebuild = value.entity !== this._config.entity || value.map_style !== this._config.map_style;
     this._config = value;
-    if (entityChanged) this._form.schema = this._schema();
+    if (rebuild) this._form.schema = this._schema();
     this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: value }, bubbles: true, composed: true }));
   }
 }

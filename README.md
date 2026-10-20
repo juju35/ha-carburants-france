@@ -129,14 +129,37 @@ fuel: gazole
 | `fuel` | 1er carburant | Carburant dont le prix est affiché sur les repères |
 | `height` | `400` | Hauteur de la carte en pixels |
 | `zoom` | ajusté | Zoom fixe ; par défaut, la carte s'ajuste pour montrer toutes les stations |
-| `theme` | `auto` | Fond de carte `auto` (selon le thème de Home Assistant), `light` ou `dark` (assombri) |
+| `map_style` | `osm` | Fond de carte, voir ci-dessous |
+| `theme` | `auto` | Thème du fond de carte : `auto` (selon le thème de Home Assistant), `light` ou `dark` (assombri, sauf photos aériennes) |
+| `tile_url` | — | Avec `map_style: custom` : URL des tuiles avec `{z}`, `{x}`, `{y}` (et `{s}` si besoin) |
+| `tile_attribution` | — | Avec `map_style: custom` : attribution affichée en bas de la carte |
 | `show_home` | `true` | Afficher le domicile |
 | `show_logo` | `true` | Logo de l'enseigne sur les repères |
 | `hide_out_of_stock_stations` | `true` | Masquer les stations où tous les carburants suivis sont en rupture (bouton en haut à droite pour les afficher) |
 
 Chaque repère affiche le logo et le prix : vert pour le meilleur prix, orange en cas de rupture. Cliquez sur un repère pour voir tous les prix, l'ouverture et l'itinéraire. Le zoom à la molette est désactivé pour ne pas gêner le défilement du tableau de bord (utilisez les boutons ou le pincement).
 
-La carte utilise [Leaflet](https://leafletjs.com), fourni avec l'intégration, et le fond de carte OpenStreetMap servi par Home Assistant lui-même (intégration intégrée **Map tiles**, depuis la 2026.9), comme la carte native : aucune clé d'API. Avant la 2026.9, les tuiles sont chargées directement depuis OpenStreetMap. En thème sombre, le fond de carte est assombri.
+Fonds de carte disponibles, tous sans clé d'API :
+
+| `map_style` | Fond |
+|---|---|
+| `osm` | OpenStreetMap, servi par Home Assistant lui-même (intégration intégrée **Map tiles**, 2026.9 et plus) comme la carte native ; directement depuis OpenStreetMap avant la 2026.9 |
+| `osm_fr` | [OpenStreetMap France](https://www.openstreetmap.fr) |
+| `ign` | Plan IGN ([Géoplateforme](https://geoservices.ign.fr)) |
+| `ign_photo` | Photos aériennes IGN (France uniquement) |
+| `topo` | [OpenTopoMap](https://opentopomap.org), avec le relief |
+| `cyclosm` | [CyclOSM](https://www.cyclosm.org), orienté vélo |
+| `satellite` | Imagerie satellite Esri World Imagery |
+| `custom` | Vos propres tuiles (`tile_url`), par exemple un serveur auto-hébergé |
+
+```yaml
+type: custom:carburants-france-map-card
+map_style: custom
+tile_url: https://tuiles.example.fr/{z}/{x}/{y}.png
+tile_attribution: © OpenStreetMap contributors
+```
+
+La carte utilise [Leaflet](https://leafletjs.com), fourni avec l'intégration. En thème sombre, le fond de carte est assombri, sauf les photos aériennes.
 
 ## Automatisations
 
@@ -176,7 +199,7 @@ Le flux de l'État ne donne pas l'enseigne des stations. L'intégration la retro
 - Prix et stations : Ministère de l'Économie, [flux instantané v2](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/), Licence Ouverte
 - Enseignes : © contributeurs [OpenStreetMap](https://www.openstreetmap.org/copyright), ODbL
 - Logos : Wikimedia Commons, via Wikidata
-- Fond de carte : © contributeurs OpenStreetMap
+- Fonds de carte : © contributeurs OpenStreetMap, OpenStreetMap France, IGN, OpenTopoMap, CyclOSM, Esri selon le fond choisi
 
 ## Licence
 
