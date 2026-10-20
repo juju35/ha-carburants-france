@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+
+### Améliorations
+- Le lien **Itinéraire** devient un bouton plein, aux couleurs du thème, dans le détail d'une station et dans la bulle de la carte géographique.
+
 ## 0.4.0
 
 ### Nouveautés

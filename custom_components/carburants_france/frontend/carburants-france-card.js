@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.4.0';
+var CARBURANTS_CARD_VERSION = '0.4.1';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -571,8 +571,9 @@ class CarburantsFranceCard extends HTMLElement {
       '.details tr.today td { font-weight: 600; }',
       '.services { display: flex; flex-wrap: wrap; gap: 4px; }',
       '.services span { border: 1px solid var(--divider-color, rgba(0,0,0,.12)); border-radius: 10px; padding: 1px 8px; font-size: 0.9em; }',
-      '.directions { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; color: var(--primary-color); text-decoration: none; font-weight: 500; }',
-      '.directions ha-icon { --mdc-icon-size: 18px; }',
+      '.directions { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 8px 16px; border-radius: 20px; background: var(--primary-color); color: var(--text-primary-color, #fff); text-decoration: none; font-weight: 500; font-size: 1.05em; box-shadow: 0 1px 3px rgba(0,0,0,.25); }',
+      '.directions:hover { filter: brightness(1.1); }',
+      '.directions ha-icon { --mdc-icon-size: 20px; }',
       '.footer { padding: 4px 16px 2px; border-top: 1px solid var(--divider-color, rgba(0,0,0,.12)); }',
       '.footer[hidden] { display: none; }',
       '.toggle { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 0.875em; font-weight: 500; padding: 6px 0; border: none; background: none; color: var(--primary-color); cursor: pointer; }',
@@ -1136,7 +1137,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       (opening ? '<div class="popening ' + opening.key + '">' + carbEsc(opening.text) + '</div>' : '') +
       (rows ? '<table>' + rows + '</table>' : '') +
       '<a class="pdir" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=' +
-      encodeURIComponent(s.latitude + ',' + s.longitude) + '">' + carbEsc(t.directions) + '</a></div>';
+      encodeURIComponent(s.latitude + ',' + s.longitude) + '"><ha-icon icon="mdi:directions"></ha-icon>' + carbEsc(t.directions) + '</a></div>';
   }
 
   static _styles() {
@@ -1177,7 +1178,10 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.popup .out { color: var(--warning-color, #ffa600); font-weight: 600; }',
       '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 4px; border: 2px solid rgba(0,0,0,.2); background: var(--card-background-color, #fff); color: var(--primary-color, #03a9f4); cursor: pointer; background-clip: padding-box; }',
       '.carb-toggle[hidden] { display: none; }',
-      '.pdir { display: inline-block; margin-top: 8px; color: var(--primary-color, #03a9f4); text-decoration: none; font-weight: 500; }',
+      // Leaflet colours every link in the map: the selector must outrank '.leaflet-container a'.
+      '.leaflet-container a.pdir { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 8px 14px; border-radius: 18px; background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); text-decoration: none; font-weight: 500; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.25); }',
+      '.leaflet-container a.pdir:hover { filter: brightness(1.1); }',
+      '.pdir ha-icon { --mdc-icon-size: 18px; }',
     ].join('\n');
   }
 }
