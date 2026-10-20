@@ -11,6 +11,9 @@ var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   '<rect x="78" y="78" width="56" height="30" rx="6" fill="#fff"/></svg>'
 );
 
+// The government open data page the prices come from.
+var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
+
 // ── i18n ──────────────────────────────────────────────────────────────────────
 var CarburantsI18n = {
   fr: {
@@ -322,7 +325,10 @@ class CarburantsFranceCard extends HTMLElement {
     var header = this._root.querySelector('.header');
     var list = this._root.querySelector('.list');
     var title = this._config.title || t.default_title;
-    var icon = this._config.show_icon ? '<img class="icon" src="' + CARBURANTS_ICON + '" alt="">' : '';
+    var icon = this._config.show_icon
+      ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
+        '<img class="icon" src="' + CARBURANTS_ICON + '" alt="data.economie.gouv.fr"></a>'
+      : '';
 
     if (!st) {
       header.innerHTML = '<div class="title">' + icon + carbEsc(title) + '</div>';
@@ -526,7 +532,8 @@ class CarburantsFranceCard extends HTMLElement {
       'ha-card { padding: 12px 0 8px; overflow: hidden; }',
       '.header { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 4px 16px; min-height: 40px; }',
       '.title { display: flex; align-items: center; font-size: 1.15em; font-weight: 500; color: var(--primary-text-color); }',
-      '.icon { width: 28px; height: 28px; margin-right: 10px; flex: none; }',
+      '.icon-link { display: flex; flex: none; margin-right: 10px; }',
+      '.icon { width: 28px; height: 28px; display: block; }',
       '.count { font-size: 0.8em; font-weight: 400; color: var(--secondary-text-color); margin-left: 6px; }',
       '.refresh-btn.spinning ha-icon { animation: carb-spin 1s linear infinite; }',
       '@keyframes carb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }',

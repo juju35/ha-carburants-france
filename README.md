@@ -98,7 +98,7 @@ type: custom:carburants-france-card
 | `sort` | `price` | `price`, `distance`, `name` ou `config` (ordre de configuration) |
 | `sort_fuel` | 1er carburant | Carburant utilisé pour le tri par prix |
 | `max_stations` | `0` | Nombre maximum de stations affichées (`0` = toutes) |
-| `show_icon` | `true` | Icône à côté du titre |
+| `show_icon` | `true` | Icône à côté du titre, qui ouvre la page des données sur data.economie.gouv.fr |
 | `show_logo` | `true` | Logo de l'enseigne (initiales en couleur si aucun logo n'est connu) |
 | `show_address` | `true` | Adresse et ville |
 | `show_distance` | `true` | Distance depuis le domicile |
