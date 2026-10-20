@@ -21,7 +21,8 @@
       "cannot_connect": "Cannot reach the fuel prices API. Try again later.",
       "no_results": "No station found. Try a postcode, another town or a larger radius.",
       "no_station": "Pick at least one station.",
-      "no_fuel": "Pick at least one fuel."
+      "no_fuel": "Pick at least one fuel.",
+      "unknown": "Unexpected error, see the Home Assistant log."
     }
   },
   "options": {
@@ -54,7 +55,8 @@
       "cannot_connect": "Cannot reach the fuel prices API. Try again later.",
       "no_results": "No station found. Try a postcode, another town or a larger radius.",
       "no_station": "Pick at least one station.",
-      "no_fuel": "Pick at least one fuel."
+      "no_fuel": "Pick at least one fuel.",
+      "unknown": "Unexpected error, see the Home Assistant log."
     }
   },
   "entity": {

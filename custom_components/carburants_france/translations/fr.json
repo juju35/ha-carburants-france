@@ -21,7 +21,8 @@
       "cannot_connect": "Impossible de joindre l'API des prix des carburants. Réessayez plus tard.",
       "no_results": "Aucune station trouvée. Essayez un code postal, une autre ville ou un rayon plus grand.",
       "no_station": "Choisissez au moins une station.",
-      "no_fuel": "Choisissez au moins un carburant."
+      "no_fuel": "Choisissez au moins un carburant.",
+      "unknown": "Erreur inattendue, voir le journal de Home Assistant."
     }
   },
   "options": {
@@ -54,7 +55,8 @@
       "cannot_connect": "Impossible de joindre l'API des prix des carburants. Réessayez plus tard.",
       "no_results": "Aucune station trouvée. Essayez un code postal, une autre ville ou un rayon plus grand.",
       "no_station": "Choisissez au moins une station.",
-      "no_fuel": "Choisissez au moins un carburant."
+      "no_fuel": "Choisissez au moins un carburant.",
+      "unknown": "Erreur inattendue, voir le journal de Home Assistant."
     }
   },
   "entity": {

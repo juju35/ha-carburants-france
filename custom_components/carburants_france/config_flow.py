@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import voluptuous as vol
@@ -45,6 +46,8 @@ from .const import (
 )
 from .coordinator import pretty_city
 
+_LOGGER = logging.getLogger(__name__)
+
 STORED_KEYS = ("address", "postcode", "city", "latitude", "longitude")
 
 
@@ -87,8 +90,12 @@ class StationPickerMixin:
                 found = await CarburantsApi(session).search(
                     self._query, self.hass.config.latitude, self.hass.config.longitude, self._radius
                 )
-            except CarburantsError:
+            except CarburantsError as err:
+                _LOGGER.warning("Station search failed: %s", err)
                 errors["base"] = "cannot_connect"
+            except Exception:
+                _LOGGER.exception("Unexpected error while searching stations for %r", self._query)
+                errors["base"] = "unknown"
             else:
                 if not found:
                     errors["base"] = "no_results"
