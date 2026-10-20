@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "carburants_france"
-VERSION: Final = "0.5.1"
+VERSION: Final = "0.6.0"
 USER_AGENT: Final = f"ha-carburants-france/{VERSION} (+https://github.com/juju35/ha-carburants-france)"
 
 API_RECORDS: Final = (
@@ -38,6 +38,8 @@ CONF_RADIUS: Final = "radius"
 CONF_SEARCH_AGAIN: Final = "search_again"
 CONF_ADD_STATIONS: Final = "add_stations"
 CONF_RENAME_STATIONS: Final = "rename_stations"
+# AI Task entity (Gemini or another) asked for the names OpenStreetMap does not have.
+CONF_AI_TASK_ENTITY: Final = "ai_task_entity"
 DEFAULT_RADIUS: Final = 5
 MAX_RESULTS: Final = 50
 
@@ -54,6 +56,8 @@ ST_LOGO: Final = "logo"
 ST_BRAND_CHECKED: Final = "brand_checked"
 # Station name from OpenStreetMap; ST_NAME stays for a name set by the user.
 ST_OSM_NAME: Final = "osm_name"
+ST_AI_NAME: Final = "ai_name"
+ST_AI_CHECKED: Final = "ai_checked"
 # Bumped when what is looked up in OpenStreetMap / Wikidata changes, so stored
 # stations are looked up again once (3: OSM station name, 4: 300 m search radius).
 ST_LOGO_VERSION: Final = "logo_version"

@@ -19,6 +19,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MIN_SCAN_INTERVAL,
+    ST_AI_NAME,
     ST_BRAND,
     ST_ID,
     ST_LOGO,
@@ -54,11 +55,13 @@ def useful_osm_name(name: str | None, brand: str | None) -> str | None:
 
 
 def station_title(stored: dict[str, Any]) -> str:
-    """Name shown for a station: custom name, else its OSM name, else brand + town, else address."""
+    """Name shown: custom name, else OSM name, else AI name, else brand + town, else address."""
     if stored.get(ST_NAME):
         return stored[ST_NAME]
     if osm_name := useful_osm_name(stored.get(ST_OSM_NAME), stored.get(ST_BRAND)):
         return osm_name
+    if stored.get(ST_AI_NAME):
+        return stored[ST_AI_NAME]
     city = pretty_city(stored.get("city") or "")
     if stored.get(ST_BRAND):
         return f"{stored[ST_BRAND]} {city}".strip()

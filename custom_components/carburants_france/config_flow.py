@@ -14,6 +14,8 @@ from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
+    EntitySelector,
+    EntitySelectorConfig,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -28,6 +30,7 @@ from .api import CarburantsApi, CarburantsError
 from .brands import BrandLookupError, async_enrich, async_lookup_logos
 from .const import (
     CONF_ADD_STATIONS,
+    CONF_AI_TASK_ENTITY,
     CONF_FUELS,
     CONF_QUERY,
     CONF_RADIUS,
@@ -41,6 +44,8 @@ from .const import (
     DOMAIN,
     FUELS,
     MIN_SCAN_INTERVAL,
+    ST_AI_CHECKED,
+    ST_AI_NAME,
     ST_BRAND,
     ST_BRAND_CHECKED,
     ST_ID,
@@ -253,6 +258,7 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
 
     _scan_interval: int = DEFAULT_SCAN_INTERVAL
     _rename: bool = False
+    _ai_entity: str | None = None
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         options = self.config_entry.options
@@ -263,7 +269,12 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
             kept = {int(v) for v in user_input.get(CONF_STATIONS, [])}
             self._scan_interval = int(user_input[CONF_SCAN_INTERVAL])
             self._rename = bool(user_input.get(CONF_RENAME_STATIONS))
-            self._init_picker(fuels, [s for s in current if int(s[ST_ID]) in kept])
+            self._ai_entity = user_input.get(CONF_AI_TASK_ENTITY) or None
+            kept_stations = [s for s in current if int(s[ST_ID]) in kept]
+            if self._ai_entity != options.get(CONF_AI_TASK_ENTITY):
+                # Another AI may know what the previous one did not: ask again.
+                kept_stations = [{**s, ST_AI_CHECKED: False} if not s.get(ST_AI_NAME) else s for s in kept_stations]
+            self._init_picker(fuels, kept_stations)
             if not fuels:
                 errors[CONF_FUELS] = "no_fuel"
             elif user_input.get(CONF_ADD_STATIONS):
@@ -283,6 +294,9 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
                 ),
                 vol.Optional(CONF_ADD_STATIONS, default=False): BooleanSelector(),
                 vol.Optional(CONF_RENAME_STATIONS, default=False): BooleanSelector(),
+                vol.Optional(
+                    CONF_AI_TASK_ENTITY, description={"suggested_value": options.get(CONF_AI_TASK_ENTITY)}
+                ): EntitySelector(EntitySelectorConfig(domain="ai_task")),
                 vol.Required(
                     CONF_SCAN_INTERVAL, default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
                 ): NumberSelector(
@@ -325,10 +339,11 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
     async def _async_finish(self) -> ConfigFlowResult:
         if self._rename:
             return await self.async_step_names()
-        return self.async_create_entry(
-            data={
-                CONF_FUELS: self._fuels,
-                CONF_STATIONS: list(self._selected.values()),
-                CONF_SCAN_INTERVAL: self._scan_interval,
-            }
-        )
+        data = {
+            CONF_FUELS: self._fuels,
+            CONF_STATIONS: list(self._selected.values()),
+            CONF_SCAN_INTERVAL: self._scan_interval,
+        }
+        if self._ai_entity:
+            data[CONF_AI_TASK_ENTITY] = self._ai_entity
+        return self.async_create_entry(data=data)

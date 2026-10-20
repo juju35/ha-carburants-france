@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0
+
+### Nouveautés
+- Option **IA pour les noms manquants** : une entité IA de Home Assistant (Google Gemini ou autre, via `ai_task.generate_data`) est interrogée pour le nom des stations qu'OpenStreetMap ne connaît pas. Chaque station n'est demandée qu'une fois ; une réponse incertaine est ignorée et le nom automatique est conservé. Activer la recherche Google sur l'entité Gemini permet d'obtenir des noms vérifiés plutôt que devinés.
+- Ordre des noms : nom personnalisé, puis OpenStreetMap, puis IA, puis enseigne et ville, puis adresse.
+
 ## 0.5.1
 
 ### Nouveautés
