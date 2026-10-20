@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.1.0';
+var CARBURANTS_CARD_VERSION = '0.2.0';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -635,3 +635,410 @@ if (!customElements.get('carburants-france-card')) {
   });
   console.info('%c CARBURANTS-FRANCE-CARD %c v' + CARBURANTS_CARD_VERSION + ' ', 'color:#fff;background:#0e7c66;font-weight:700', 'color:#0e7c66;background:#fff');
 }
+
+// ── carburants-france-map-card ────────────────────────────────────────────────
+// Leaflet ships with the integration: no CDN, only the map tiles come from the network.
+var CARBURANTS_STATIC = '/carburants_france_static';
+var CARBURANTS_MAP_DEFAULTS = { height: 400, show_home: true, show_logo: true, theme: 'auto' };
+
+var CarburantsMapI18n = {
+  fr: {
+    default_title: 'Carte des stations',
+    home: 'Domicile',
+    editor: {
+      entity: 'Capteur Stations',
+      title: 'Titre (vide pour aucun)',
+      fuel: 'Carburant affiché sur les repères',
+      height: 'Hauteur (px)',
+      zoom: 'Zoom (vide = ajusté aux stations)',
+      theme: 'Fond de carte',
+      show_home: 'Domicile',
+      show_logo: 'Logos des enseignes',
+    },
+    themes: { auto: 'Selon le thème', light: 'Clair', dark: 'Sombre' },
+  },
+  en: {
+    default_title: 'Stations map',
+    home: 'Home',
+    editor: {
+      entity: 'Stations sensor',
+      title: 'Title (empty for none)',
+      fuel: 'Fuel shown on markers',
+      height: 'Height (px)',
+      zoom: 'Zoom (empty = fit the stations)',
+      theme: 'Map style',
+      show_home: 'Home',
+      show_logo: 'Brand logos',
+    },
+    themes: { auto: 'Follow theme', light: 'Light', dark: 'Dark' },
+  },
+};
+
+var carbLeafletPromise = null;
+function carbLoadLeaflet() {
+  if (window.L && window.L.map) return Promise.resolve(window.L);
+  if (!carbLeafletPromise) {
+    carbLeafletPromise = new Promise(function (resolve, reject) {
+      var script = document.createElement('script');
+      script.src = CARBURANTS_STATIC + '/leaflet/leaflet.js?v=1.9.4';
+      script.onload = function () { resolve(window.L); };
+      script.onerror = function () { carbLeafletPromise = null; reject(new Error('Leaflet could not be loaded')); };
+      document.head.appendChild(script);
+    });
+  }
+  return carbLeafletPromise;
+}
+
+class CarburantsFranceMapCard extends HTMLElement {
+  static getConfigElement() {
+    return document.createElement('carburants-france-map-card-editor');
+  }
+
+  static getStubConfig(hass) {
+    var entity = CarburantsFranceCard._findEntity(hass);
+    return entity ? { entity: entity } : {};
+  }
+
+  setConfig(config) {
+    var previous = this._config;
+    this._config = Object.assign({}, CARBURANTS_MAP_DEFAULTS, config || {});
+    if (previous && this._map && (previous.theme !== this._config.theme || previous.height !== this._config.height)) {
+      this._destroyMap();
+    }
+    this._lastState = null;
+    this._fitted = false;
+    if (this._hass) this._update();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    var entityId = this._entityId();
+    var st = entityId ? hass.states[entityId] : null;
+    if (st !== this._lastState || !this._map) {
+      this._lastState = st;
+      this._update();
+    }
+  }
+
+  connectedCallback() {
+    if (this._map) setTimeout(this._invalidate.bind(this), 0);
+  }
+
+  disconnectedCallback() {
+    if (this._resizeObserver) this._resizeObserver.disconnect();
+  }
+
+  getCardSize() {
+    return Math.ceil((this._config ? this._config.height : 400) / 50) + 1;
+  }
+
+  getGridOptions() {
+    return { columns: 12, min_columns: 6, rows: 'auto' };
+  }
+
+  _entityId() {
+    return (this._config && this._config.entity) || CarburantsFranceCard._findEntity(this._hass);
+  }
+
+  _t() {
+    return CarburantsI18n[carbLang(this._hass)];
+  }
+
+  _locale() {
+    return (this._hass && this._hass.locale && this._hass.locale.language) || navigator.language || 'fr';
+  }
+
+  _dark() {
+    if (this._config.theme === 'dark') return true;
+    if (this._config.theme === 'light') return false;
+    return !!(this._hass && this._hass.themes && this._hass.themes.darkMode);
+  }
+
+  _ensureShell() {
+    if (this._root) return;
+    this._root = this.attachShadow({ mode: 'open' });
+    this._root.innerHTML =
+      '<link rel="stylesheet" href="' + CARBURANTS_STATIC + '/leaflet/leaflet.css?v=1.9.4">' +
+      '<style>' + CarburantsFranceMapCard._styles() + '</style>' +
+      '<ha-card><div class="header" hidden></div><div class="message" hidden></div><div class="map"></div></ha-card>';
+  }
+
+  _update() {
+    if (!this._config || !this._hass) return;
+    this._ensureShell();
+    var mt = CarburantsMapI18n[carbLang(this._hass)];
+    var header = this._root.querySelector('.header');
+    var title = this._config.title === undefined ? mt.default_title : this._config.title;
+    header.hidden = !title;
+    header.textContent = title || '';
+    var mapEl = this._root.querySelector('.map');
+    mapEl.style.height = Math.max(150, Number(this._config.height) || 400) + 'px';
+    var message = this._root.querySelector('.message');
+    if (!this._lastState) {
+      message.hidden = false;
+      message.textContent = this._t().no_entity;
+      return;
+    }
+    message.hidden = true;
+    var self = this;
+    carbLoadLeaflet().then(function (L) {
+      self._ensureMap(L);
+      self._drawMarkers(L);
+    }).catch(function (err) {
+      message.hidden = false;
+      message.textContent = String((err && err.message) || err);
+    });
+  }
+
+  _ensureMap(L) {
+    if (this._map) return;
+    var mapEl = this._root.querySelector('.map');
+    this._map = L.map(mapEl, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, zoomSnap: 0.25 });
+    // Same tiles as the Home Assistant map card.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/' + (this._dark() ? 'dark_all' : 'light_all') + '/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 20,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+    }).addTo(this._map);
+    this._layer = L.layerGroup().addTo(this._map);
+    this._fitted = false;
+    var self = this;
+    if (window.ResizeObserver) {
+      this._resizeObserver = new ResizeObserver(function () { self._invalidate(); });
+      this._resizeObserver.observe(mapEl);
+    }
+  }
+
+  _destroyMap() {
+    if (this._resizeObserver) this._resizeObserver.disconnect();
+    if (this._map) this._map.remove();
+    this._map = null;
+    this._layer = null;
+  }
+
+  _invalidate() {
+    if (!this._map) return;
+    this._map.invalidateSize();
+    if (!this._fitted && this._bounds) this._fit();
+  }
+
+  _fit() {
+    var mapEl = this._root.querySelector('.map');
+    if (!mapEl.clientWidth) return; // Not laid out yet: the resize observer comes back.
+    if (this._config.zoom && this._bounds) {
+      this._map.setView(this._bounds.getCenter(), this._config.zoom);
+    } else if (this._bounds) {
+      // Pins sit above their point and are ~120 px wide: leave room on top and on the sides.
+      this._map.fitBounds(this._bounds, { paddingTopLeft: [80, 70], paddingBottomRight: [80, 30], maxZoom: 15 });
+    }
+    this._fitted = true;
+  }
+
+  _fuelKey(fuels) {
+    var wanted = this._config.fuel;
+    if (wanted && fuels.some(function (f) { return f.key === wanted; })) return wanted;
+    return fuels[0] && fuels[0].key;
+  }
+
+  _drawMarkers(L) {
+    var t = this._t();
+    var attrs = this._lastState.attributes;
+    var fuels = attrs.fuels || [];
+    var key = this._fuelKey(fuels);
+    var stations = (attrs.stations || []).filter(function (s) { return s.latitude != null && s.longitude != null; });
+    var best = CarburantsFranceCard.prototype._bestPrices.call(null, stations, fuels);
+    var fuelName = (fuels.filter(function (f) { return f.key === key; })[0] || {}).name || '';
+    var self = this;
+    var now = new Date();
+    var points = [];
+    var signature = stations.map(function (s) { return s.station_id; }).join(',');
+    if (signature !== this._signature) this._fitted = false;
+    this._signature = signature;
+
+    this._layer.clearLayers();
+    stations.forEach(function (s) {
+      var fuel = s.fuels && s.fuels[key];
+      var state = !fuel || fuel.rupture === 'definitive' ? 'none' : !fuel.available ? 'out' : best[key] === fuel.price && stations.length > 1 ? 'best' : 'ok';
+      var label = state === 'ok' || state === 'best' ? self._price(fuel.price) : state === 'out' ? t.out_of_stock : '—';
+      var logo = '';
+      if (self._config.show_logo) {
+        var name = s.brand || s.station_name || '';
+        logo = s.logo
+          ? '<img src="' + carbEsc(s.logo) + '" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{className:\'ini\',textContent:' +
+            carbEsc(JSON.stringify(carbInitials(name))) + '}))">'
+          : '<span class="ini" style="background:' + carbBrandColor(name || 'station') + '">' + carbEsc(carbInitials(name) || '⛽') + '</span>';
+      }
+      var icon = L.divIcon({
+        className: 'carb-marker',
+        html: '<div class="pin ' + state + '" title="' + carbEsc(s.station_name + ' · ' + fuelName) + '">' + logo + '<span class="price">' + carbEsc(label) + '</span></div>',
+        iconSize: null,
+        iconAnchor: [0, 0],
+      });
+      var marker = L.marker([s.latitude, s.longitude], { icon: icon, riseOnHover: true, zIndexOffset: state === 'best' ? 1000 : 0 });
+      marker.bindPopup(self._popup(s, fuels, best, t, now), { maxWidth: 280, minWidth: 220 });
+      marker.addTo(self._layer);
+      points.push([s.latitude, s.longitude]);
+    });
+
+    var home = this._hass.states['zone.home'];
+    if (this._config.show_home && home && home.attributes.latitude != null) {
+      var mt = CarburantsMapI18n[carbLang(this._hass)];
+      L.marker([home.attributes.latitude, home.attributes.longitude], {
+        icon: L.divIcon({ className: 'carb-marker', html: '<div class="home" title="' + carbEsc(mt.home) + '"><ha-icon icon="mdi:home"></ha-icon></div>', iconSize: null, iconAnchor: [0, 0] }),
+        zIndexOffset: -1000,
+        keyboard: false,
+      }).addTo(this._layer);
+      points.push([home.attributes.latitude, home.attributes.longitude]);
+    }
+
+    this._bounds = points.length ? L.latLngBounds(points) : null;
+    if (!this._fitted) this._fit();
+  }
+
+  _price(value) {
+    return new Intl.NumberFormat(this._locale(), { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(value) + ' €';
+  }
+
+  _popup(s, fuels, best, t, now) {
+    var self = this;
+    var opening = carbOpening(s, t, now);
+    var rows = fuels.map(function (f) {
+      var fuel = s.fuels && s.fuels[f.key];
+      if (!fuel || fuel.rupture === 'definitive') return '';
+      var value = fuel.available
+        ? '<b' + (best[f.key] === fuel.price ? ' class="best"' : '') + '>' + self._price(fuel.price) + '</b>'
+        : '<span class="out">' + carbEsc(t.out_of_stock) + '</span>';
+      var age = fuel.available ? carbRelative(fuel.updated, self._locale()) : carbRelative(fuel.rupture_since, self._locale());
+      return '<tr><td>' + carbEsc(f.name) + '</td><td>' + value + '</td><td class="age">' + carbEsc(age) + '</td></tr>';
+    }).join('');
+    return '<div class="popup">' +
+      '<div class="pname">' + carbEsc(s.station_name) + '</div>' +
+      '<div class="paddr">' + carbEsc(s.address) + ', ' + carbEsc(carbTitleCase(s.city)) +
+      (s.distance != null ? ' · ' + new Intl.NumberFormat(this._locale(), { maximumFractionDigits: 1 }).format(s.distance) + ' km' : '') + '</div>' +
+      (opening ? '<div class="popening ' + opening.key + '">' + carbEsc(opening.text) + '</div>' : '') +
+      (rows ? '<table>' + rows + '</table>' : '') +
+      '<a class="pdir" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=' +
+      encodeURIComponent(s.latitude + ',' + s.longitude) + '">' + carbEsc(t.directions) + '</a></div>';
+  }
+
+  static _styles() {
+    return [
+      ':host { display: block; }',
+      'ha-card { overflow: hidden; }',
+      '.header { padding: 12px 16px 8px; font-size: 1.15em; font-weight: 500; color: var(--primary-text-color); }',
+      '.header[hidden], .message[hidden] { display: none; }',
+      '.message { padding: 12px 16px; color: var(--secondary-text-color); }',
+      '.map { width: 100%; background: var(--secondary-background-color, #e5e5e5); z-index: 0; }',
+      '.leaflet-container { font: inherit; }',
+      '.carb-marker { background: none; border: none; }',
+      '.pin { position: absolute; transform: translate(-50%, calc(-100% - 7px)); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
+      '.pin::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--secondary-text-color, #727272); }',
+      '.pin.best { border-color: var(--success-color, #43a047); color: var(--success-color, #43a047); }',
+      '.pin.best::after { border-top-color: var(--success-color, #43a047); }',
+      '.pin.out { border-color: var(--warning-color, #ffa600); color: var(--warning-color, #ffa600); }',
+      '.pin.out::after { border-top-color: var(--warning-color, #ffa600); }',
+      '.pin.none { opacity: .6; }',
+      '.pin img, .pin .ini { width: 22px; height: 22px; border-radius: 50%; flex: none; object-fit: contain; background: #fff; }',
+      '.pin .ini { display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700; background: #607d8b; }',
+      '.home { position: absolute; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--primary-color, #03a9f4); color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); --mdc-icon-size: 18px; }',
+      '.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); }',
+      '.leaflet-popup-content { margin: 10px 12px; font-size: 13px; }',
+      '.pname { font-weight: 600; font-size: 14px; }',
+      '.paddr { color: var(--secondary-text-color, #727272); margin-top: 2px; }',
+      '.popening { margin-top: 4px; font-size: 12px; }',
+      '.popening.open, .popening.always { color: var(--success-color, #43a047); }',
+      '.popening.automate { color: var(--info-color, #039be5); }',
+      '.popening.closed { color: var(--error-color, #db4437); }',
+      '.popup table { margin-top: 6px; border-collapse: collapse; width: 100%; }',
+      '.popup td { padding: 2px 8px 2px 0; }',
+      '.popup td.age { color: var(--secondary-text-color, #727272); font-size: 11px; text-align: right; padding-right: 0; }',
+      '.popup b.best { color: var(--success-color, #43a047); }',
+      '.popup .out { color: var(--warning-color, #ffa600); font-weight: 600; }',
+      '.pdir { display: inline-block; margin-top: 8px; color: var(--primary-color, #03a9f4); text-decoration: none; font-weight: 500; }',
+    ].join('\n');
+  }
+}
+
+class CarburantsFranceMapCardEditor extends HTMLElement {
+  setConfig(config) {
+    this._config = Object.assign({}, config);
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (this._form) {
+      this._form.hass = hass;
+      this._form.schema = this._schema();
+    } else {
+      this._render();
+    }
+  }
+
+  _schema() {
+    var mt = CarburantsMapI18n[carbLang(this._hass)];
+    var entity = this._config.entity || CarburantsFranceCard._findEntity(this._hass);
+    var st = entity && this._hass.states[entity];
+    var fuels = ((st && st.attributes.fuels) || []).map(function (f) { return { value: f.key, label: f.name }; });
+    var themes = ['auto', 'light', 'dark'].map(function (k) { return { value: k, label: mt.themes[k] }; });
+    return [
+      { name: 'entity', selector: { entity: { domain: 'sensor', integration: 'carburants_france' } } },
+      { name: 'title', selector: { text: {} } },
+      {
+        type: 'grid',
+        name: '',
+        schema: [
+          { name: 'fuel', selector: { select: { mode: 'dropdown', options: fuels } } },
+          { name: 'theme', selector: { select: { mode: 'dropdown', options: themes } } },
+          { name: 'height', selector: { number: { min: 150, max: 1200, step: 10, mode: 'box', unit_of_measurement: 'px' } } },
+          { name: 'zoom', selector: { number: { min: 5, max: 18, mode: 'box' } } },
+          { name: 'show_home', selector: { boolean: {} } },
+          { name: 'show_logo', selector: { boolean: {} } },
+        ],
+      },
+    ];
+  }
+
+  _render() {
+    if (!this._hass || !this._config) return;
+    if (!this._form) {
+      var t = CarburantsMapI18n[carbLang(this._hass)].editor;
+      this._form = document.createElement('ha-form');
+      this._form.computeLabel = function (field) { return t[field.name] || field.name; };
+      this._form.addEventListener('value-changed', this._valueChanged.bind(this));
+      this.appendChild(this._form);
+    }
+    this._form.hass = this._hass;
+    this._form.schema = this._schema();
+    this._form.data = Object.assign({}, CARBURANTS_MAP_DEFAULTS, this._config);
+  }
+
+  _valueChanged(ev) {
+    var value = Object.assign({}, ev.detail.value);
+    Object.keys(CARBURANTS_MAP_DEFAULTS).forEach(function (key) {
+      if (value[key] === CARBURANTS_MAP_DEFAULTS[key]) delete value[key];
+    });
+    ['entity', 'fuel', 'zoom'].forEach(function (key) { if (!value[key]) delete value[key]; });
+    // An empty title hides the header: keep it as "" rather than dropping it.
+    var entityChanged = value.entity !== this._config.entity;
+    this._config = value;
+    if (entityChanged) this._form.schema = this._schema();
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: value }, bubbles: true, composed: true }));
+  }
+}
+
+if (!customElements.get('carburants-france-map-card-editor')) {
+  customElements.define('carburants-france-map-card-editor', CarburantsFranceMapCardEditor);
+}
+
+if (!customElements.get('carburants-france-map-card')) {
+  customElements.define('carburants-france-map-card', CarburantsFranceMapCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: 'carburants-france-map-card',
+    name: 'Carburants France — carte',
+    description: 'Map of the followed stations, with the price of a fuel on each marker.',
+    preview: true,
+  });
+}
+

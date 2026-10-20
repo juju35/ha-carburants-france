@@ -18,7 +18,8 @@ custom_components/carburants_france/
 ├── config_flow.py     # user (name, fuels) → search → stations; options: fuels, stations, add, scan_interval
 ├── const.py           # Constants, fuel keys
 ├── icons.json / services.yaml / translations/{en,fr}.json
-└── frontend/carburants-france-card.js   # Vanilla JS card, no dependencies
+├── frontend/carburants-france-card.js   # Both cards (list + map), vanilla JS
+└── frontend/leaflet/                    # Leaflet 1.9.4 (BSD-2), loaded by the map card
 ```
 
 ## Fuel prices API
@@ -36,6 +37,10 @@ custom_components/carburants_france/
 ## Card
 - Served from `/carburants_france_static`, added to the Lovelace resources at startup (like ha-parcel), URL versioned with the file's md5. Falls back to `add_extra_js_url` in YAML mode.
 - Reads the Stations sensor (`stations`, `fuels`, `config_entry_id` attributes). Opening status is computed in the browser every minute. Logo `<img>` falls back to an initials badge on error.
+
+## Map card
+- `carburants-france-map-card` lives in the same JS file and reuses the list card helpers. It loads `/carburants_france_static/leaflet/leaflet.js` once (global `L`, reused if another card already set it) and links `leaflet.css` inside its shadow root.
+- CARTO tiles (`light_all` / `dark_all`, like the HA map card). Markers are `divIcon` pins (logo + price), anchored above the point; `fitBounds` uses extra top/side padding and `zoomSnap: 0.25`.
 
 ## Release
 HACS downloads the repository itself (no `zip_release`). Before releasing `vX.Y.Z`, bump the version in manifest.json, const.py (`VERSION`) and `CARBURANTS_CARD_VERSION` in the card. Pushing to main publishes release `vX.Y.Z` (tag, notes from the CHANGELOG.md section, `carburants_france.zip`) when that tag doesn't exist yet; the workflow fails if the three versions differ. Rerun notes on an existing release with the "Update release notes" workflow (input `tag`).

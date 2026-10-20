@@ -173,7 +173,14 @@ async def test_card_served(hass, aioclient_mock, entry, hass_client):
     client = await hass_client()
     resp = await client.get("/carburants_france_static/carburants-france-card.js")
     assert resp.status == 200
-    assert "customElements.define('carburants-france-card'" in await resp.text()
+    text = await resp.text()
+    assert "customElements.define('carburants-france-card'" in text
+    assert "customElements.define('carburants-france-map-card'" in text
+    # Leaflet ships with the integration, no CDN.
+    resp = await client.get("/carburants_france_static/leaflet/leaflet.js")
+    assert resp.status == 200
+    resp = await client.get("/carburants_france_static/leaflet/leaflet.css")
+    assert resp.status == 200
 
 
 async def test_card_added_to_resources(hass, aioclient_mock, entry, stub_frontend):
@@ -287,3 +294,13 @@ async def test_brands_retried_at_startup(hass, aioclient_mock, entry):
     assert stations[35000025]["brand"] == "Leclerc"
     assert stations[35000025]["logo"] is None
     assert all(s["brand_checked"] for s in stations.values())
+
+
+async def test_config_flow_unexpected_error(hass, aioclient_mock):
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"name": "C", "fuels": ["gazole"]})
+    with patch(
+        "custom_components.carburants_france.config_flow.CarburantsApi.search", side_effect=RuntimeError("boom")
+    ):
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {"query": "x", "radius": 5})
+    assert result["errors"] == {"base": "unknown"}

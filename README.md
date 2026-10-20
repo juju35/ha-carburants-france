@@ -20,6 +20,7 @@ Intégration Home Assistant pour les [prix des carburants en France](https://dat
 - **Enseigne et logo** de chaque station, retrouvés automatiquement via OpenStreetMap et Wikidata
 - Action `carburants_france.refresh` pour forcer une mise à jour
 - Carte `custom:carburants-france-card` **incluse dans l'intégration** et chargée automatiquement : logos, prix, rupture, meilleur prix en vert, ouverture en temps réel, horaires, services et itinéraire au clic
+- Carte géographique `custom:carburants-france-map-card` : vos stations sur un plan, avec le logo et le prix d'un carburant sur chaque repère, le domicile, et le détail de la station au clic
 - Ajout ou retrait de stations et de carburants à tout moment depuis les options
 - Français / anglais
 
@@ -109,6 +110,30 @@ type: custom:carburants-france-card
 
 Cliquez sur une station pour voir ses horaires de la semaine, ses services et un lien d'itinéraire.
 
+## Carte géographique
+
+Ajoutez la carte **Carburants France — carte** depuis le sélecteur de cartes. En YAML :
+
+```yaml
+type: custom:carburants-france-map-card
+fuel: gazole
+```
+
+| Option | Défaut | Description |
+|---|---|---|
+| `entity` | détectée | Capteur Stations à afficher (utile avec plusieurs entrées) |
+| `title` | « Carte des stations » | Titre de la carte, `""` pour le masquer |
+| `fuel` | 1er carburant | Carburant dont le prix est affiché sur les repères |
+| `height` | `400` | Hauteur de la carte en pixels |
+| `zoom` | ajusté | Zoom fixe ; par défaut, la carte s'ajuste pour montrer toutes les stations |
+| `theme` | `auto` | Fond de carte `auto` (selon le thème de Home Assistant), `light` ou `dark` |
+| `show_home` | `true` | Afficher le domicile |
+| `show_logo` | `true` | Logo de l'enseigne sur les repères |
+
+Chaque repère affiche le logo et le prix : vert pour le meilleur prix, orange en cas de rupture. Cliquez sur un repère pour voir tous les prix, l'ouverture et l'itinéraire. Le zoom à la molette est désactivé pour ne pas gêner le défilement du tableau de bord (utilisez les boutons ou le pincement).
+
+La carte utilise [Leaflet](https://leafletjs.com), fourni avec l'intégration, et les fonds de carte CARTO / OpenStreetMap, comme la carte native de Home Assistant.
+
 ## Automatisations
 
 Être prévenu quand le gazole passe sous 2 € dans une de vos stations :
@@ -147,6 +172,7 @@ Le flux de l'État ne donne pas l'enseigne des stations. L'intégration la retro
 - Prix et stations : Ministère de l'Économie, [flux instantané v2](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/), Licence Ouverte
 - Enseignes : © contributeurs [OpenStreetMap](https://www.openstreetmap.org/copyright), ODbL
 - Logos : Wikimedia Commons, via Wikidata
+- Fonds de carte : © contributeurs OpenStreetMap, © CARTO
 
 ## Licence
 

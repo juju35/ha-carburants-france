@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+
+### Nouveautés
+- Nouvelle carte `custom:carburants-france-map-card` : les stations suivies sur un plan, avec le logo de l'enseigne et le prix du carburant choisi sur chaque repère (vert pour le meilleur prix, orange en cas de rupture), le domicile, et au clic tous les prix, l'ouverture et l'itinéraire.
+- Éditeur visuel de la carte géographique : carburant, hauteur, zoom, fond clair ou sombre, domicile, logos.
+- Leaflet est fourni avec l'intégration : aucun CDN à charger.
+
+### Corrections
+- Une erreur inattendue pendant la recherche des stations affiche désormais un message dans le formulaire et la trace complète dans le journal, au lieu de « Erreur inconnue ».
+
 ## 0.1.0
 
 Première version publique de l'intégration Carburants France pour Home Assistant, avec sa carte Lovelace.
