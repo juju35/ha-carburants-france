@@ -416,117 +416,6 @@ async def test_brand_found_250_m_away(hass, aioclient_mock):
 
 
 @pytest.mark.parametrize(
-    ("answer", "expected"),
-    [
-        pytest.param("Intermarché Vezin-le-Coquet", "Intermarché Vezin-le-Coquet", id="name"),
-        pytest.param("« Intermarché Vezin-le-Coquet ».\n", "Intermarché Vezin-le-Coquet", id="quotes"),
-        pytest.param("INCONNU", None, id="unknown"),
-        pytest.param("Je ne trouve pas cette station.", None, id="sentence"),
-        pytest.param("Intermarché\nC'est un supermarché", None, id="two-lines"),
-        pytest.param({"name": "x"}, None, id="not-text"),
-    ],
-)
-def test_clean_ai_answer(answer, expected):
-    from custom_components.carburants_france.ai_naming import clean_answer
-
-    assert clean_answer(answer) == expected
-
-
-def _fake_ai(hass, answers):
-    """Register ai_task.generate_data, answering from the station id found in the task name."""
-    from homeassistant.core import SupportsResponse
-
-    calls = []
-
-    async def generate(call):
-        calls.append(call.data)
-        station_id = int(call.data["task_name"].rsplit(" ", 1)[1])
-        answer = answers[station_id]
-        if isinstance(answer, Exception):
-            raise answer
-        return {"conversation_id": "c", "data": answer}
-
-    hass.services.async_register("ai_task", "generate_data", generate, supports_response=SupportsResponse.ONLY)
-    return calls
-
-
-async def test_ai_names_stations_without_osm_name(hass, aioclient_mock, entry):
-    options = dict(entry.options)
-    stations = [dict(s) for s in options["stations"]]
-    stations[0]["osm_name"] = "TotalEnergies Access Rennes Saint-Malo"  # OSM knows it: no AI call.
-    stations[1]["brand"] = None  # Like the Vezin-le-Coquet station: address only.
-    hass.config_entries.async_update_entry(
-        entry, options={**options, "stations": stations, "ai_task_entity": "ai_task.google_ai_task"}
-    )
-    calls = _fake_ai(hass, {35000025: "Station du Boulevard Léon Bourgeois"})
-    await _setup(hass, aioclient_mock, entry)
-    await hass.async_block_till_done()
-
-    assert len(calls) == 1
-    assert calls[0]["entity_id"] == "ai_task.google_ai_task"
-    assert "19, BD LEON BOURGEOIS, 35000 Rennes" in calls[0]["instructions"]
-    saved = {s["id"]: s for s in entry.options["stations"]}
-    assert saved[35000025]["ai_name"] == "Station du Boulevard Léon Bourgeois"
-    assert saved[35000025]["ai_checked"] is True
-    names = {s["station_id"]: s["station_name"] for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
-    assert names == {35000013: "TotalEnergies Access Rennes Saint-Malo", 35000025: "Station du Boulevard Léon Bourgeois"}
-
-    # Asked once: not again at the next start.
-    await hass.config_entries.async_reload(entry.entry_id)
-    await hass.async_block_till_done()
-    assert len(calls) == 1
-
-
-async def test_ai_unsure_keeps_automatic_name(hass, aioclient_mock, entry):
-    options = dict(entry.options)
-    hass.config_entries.async_update_entry(entry, options={**options, "ai_task_entity": "ai_task.google_ai_task"})
-    calls = _fake_ai(hass, {35000013: "INCONNU", 35000025: "INCONNU"})
-    await _setup(hass, aioclient_mock, entry)
-    await hass.async_block_till_done()
-    assert len(calls) == 2
-    names = {s["station_id"]: s["station_name"] for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
-    assert names == {35000013: "TotalEnergies Rennes", 35000025: "Leclerc Rennes"}
-    assert all(s["ai_checked"] for s in entry.options["stations"])
-
-
-async def test_ai_error_retried_next_start(hass, aioclient_mock, entry):
-    from homeassistant.exceptions import HomeAssistantError
-
-    options = dict(entry.options)
-    hass.config_entries.async_update_entry(entry, options={**options, "ai_task_entity": "ai_task.google_ai_task"})
-    calls = _fake_ai(hass, {35000013: "Total de Saint-Malo", 35000025: HomeAssistantError("quota")})
-    await _setup(hass, aioclient_mock, entry)
-    await hass.async_block_till_done()
-    saved = {s["id"]: s for s in entry.options["stations"]}
-    assert saved[35000013]["ai_name"] == "Total de Saint-Malo"
-    assert not saved[35000025].get("ai_checked")
-    # Saving the first name reloads the entry, which asks once more for the failed one, then stops.
-    assert [c["task_name"][-8:] for c in calls] == ["35000013", "35000025", "35000025"]
-
-
-async def test_no_ai_without_entity(hass, aioclient_mock, entry):
-    calls = _fake_ai(hass, {})
-    await _setup(hass, aioclient_mock, entry)
-    await hass.async_block_till_done()
-    assert calls == []
-
-
-async def test_options_flow_sets_ai_entity(hass, aioclient_mock, entry):
-    await _setup(hass, aioclient_mock, entry)
-    _fake_ai(hass, {35000013: "INCONNU", 35000025: "INCONNU"})
-    hass.states.async_set("ai_task.google_ai_task", "unknown")
-    result = await hass.config_entries.options.async_init(entry.entry_id)
-    result = await hass.config_entries.options.async_configure(
-        result["flow_id"],
-        {"fuels": ["gazole"], "stations": ["35000013", "35000025"], "add_stations": False,
-         "rename_stations": False, "ai_task_entity": "ai_task.google_ai_task", "scan_interval": 15},
-    )
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    await hass.async_block_till_done()
-    assert entry.options["ai_task_entity"] == "ai_task.google_ai_task"
-
-
-@pytest.mark.parametrize(
     ("raw", "expected"),
     [
         pytest.param("RELAIS LES TROIS MARCHES", "Relais les Trois Marches", id="caps"),
@@ -582,16 +471,6 @@ async def test_custom_name_beats_community(hass, aioclient_mock, entry, communit
     assert stations[35000013]["station_name"] == "Ma station"
 
 
-async def test_no_ai_when_community_name(hass, aioclient_mock, entry, community_names):
-    options = dict(entry.options)
-    hass.config_entries.async_update_entry(entry, options={**options, "ai_task_entity": "ai_task.google_ai_task"})
-    community_names["35000013"] = {"name": "RELAIS SAINT-MALO", "brand": "Total"}
-    calls = _fake_ai(hass, {35000025: "INCONNU"})
-    await _setup(hass, aioclient_mock, entry)
-    await hass.async_block_till_done()
-    assert [c["task_name"][-8:] for c in calls] == ["35000025"]
-
-
 @pytest.mark.real_names_download
 async def test_names_downloaded_weekly_and_cached(hass, aioclient_mock, hass_storage):
     """Real download path: GitHub once, then the copy in .storage, also when GitHub is down."""
@@ -632,3 +511,18 @@ async def test_community_brand_first(hass, aioclient_mock, entry, community_name
     assert stations[35000013]["brand"] == "Total Access"
     assert stations[35000013]["station_name"] == "Total Access Rennes"
     assert stations[35000013]["logo"] == "https://logo"
+
+
+async def test_ai_leftovers_removed(hass, aioclient_mock, entry):
+    """0.6.0 to 0.7.1 could store an AI entity and AI names: they are dropped at setup."""
+    options = dict(entry.options)
+    stations = [{**s, "ai_name": "Nom inventé", "ai_checked": True} for s in options["stations"]]
+    hass.config_entries.async_update_entry(
+        entry, options={**options, "stations": stations, "ai_task_entity": "ai_task.google_ai_task"}
+    )
+    await _setup(hass, aioclient_mock, entry)
+    assert "ai_task_entity" not in entry.options
+    assert not any("ai_name" in s or "ai_checked" in s for s in entry.options["stations"])
+    names = {s["station_id"]: s["station_name"] for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert names == {35000013: "TotalEnergies Rennes", 35000025: "Leclerc Rennes"}
+

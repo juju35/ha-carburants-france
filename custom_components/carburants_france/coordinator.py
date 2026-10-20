@@ -19,7 +19,6 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MIN_SCAN_INTERVAL,
-    ST_AI_NAME,
     ST_BRAND,
     ST_ID,
     ST_LOGO,
@@ -65,15 +64,13 @@ def station_brand(stored: dict[str, Any], names: dict[str, dict[str, str]] | Non
 
 
 def station_title(stored: dict[str, Any], names: dict[str, dict[str, str]] | None = None) -> str:
-    """Name shown: custom, community file, OpenStreetMap, AI, then brand + town, then address."""
+    """Name shown: custom, community file, OpenStreetMap, then brand + town, then address."""
     if stored.get(ST_NAME):
         return stored[ST_NAME]
     if community_name := community_entry(stored, names).get("name"):
         return community_name
     if osm_name := useful_osm_name(stored.get(ST_OSM_NAME), stored.get(ST_BRAND)):
         return osm_name
-    if stored.get(ST_AI_NAME):
-        return stored[ST_AI_NAME]
     city = pretty_city(stored.get("city") or "")
     if brand := station_brand(stored, names):
         return f"{brand} {city}".strip()

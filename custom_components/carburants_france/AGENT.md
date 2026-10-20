@@ -11,7 +11,6 @@ custom_components/carburants_france/
 ├── __init__.py        # Setup, card registration, refresh service, background brand retry
 ├── api.py             # aiohttp client for the ODS records API + record parsing
 ├── names.py           # Community names file (Aohzan/hass-prixcarburant stations_name.json), weekly, .storage cache
-├── ai_naming.py       # Optional names from an AI Task entity (ai_task.generate_data), plain text answer
 ├── brands.py          # Brand (OpenStreetMap Overpass) and logo (Wikidata P154) lookup, best effort
 ├── coordinator.py     # DataUpdateCoordinator: every followed station in one request
 ├── entity.py          # Station device / base entity
@@ -33,8 +32,7 @@ custom_components/carburants_france/
 
 ## Brands and logos
 - Overpass: `nwr["amenity"="fuel"](around:300,lat,lon)` per station (feed coordinates are rounded to ~100 m), matched on `ref:FR:prix-carburants`, else nearest branded station. Gives `brand`, `brand:wikidata`, `name` (stored as `osm_name`).
-- Station title (`coordinator.station_title(stored, names)`): user `name` (options step `names`, one field per station whose name ends with `[id]`), else the community file name (`names.py`, all-caps names prettified), else `osm_name` unless generic or just the brand (`useful_osm_name`), else `ai_name`, else brand + town, else address.
-- AI names: option `ai_task_entity`. At setup a background task runs the OSM lookup, then `ai_task.generate_data` (return_response) for stations without a useful OSM name, sequentially, then saves options once (saving reloads the entry). Plain text answer, `INCONNU` when unsure, validated by `clean_answer`; no structured output, as Gemini rejects a response schema together with its Google Search tool. `ai_checked` marks a station asked; changing the entity clears it for unnamed stations. Computed server side, so both cards get it as `station_name`.
+- Station title (`coordinator.station_title(stored, names)`): user `name` (options step `names`, one field per station whose name ends with `[id]`), else the community file name (`names.py`, all-caps names prettified), else `osm_name` unless generic or just the brand (`useful_osm_name`), else brand + town, else address. Computed server side, so both cards get it as `station_name`.
 - Wikidata `wbgetentities` claims P154, current logo = preferred rank, else no P582 end time, else last → `https://commons.wikimedia.org/wiki/Special:FilePath/<file>?width=96`.
 - Done in the config flow (brand at search, logo once stations are chosen) and stored in the entry options per station (`brand`, `wikidata`, `logo`, `brand_checked`). Stations with `brand_checked: false`, or a `logo_version` below `LOGO_VERSION` (bump it when the logo choice changes), are looked up again at startup.
 
@@ -46,6 +44,8 @@ custom_components/carburants_france/
 - `carburants-france-map-card` lives in the same JS file and reuses the list card helpers. It loads `/carburants_france_static/leaflet/leaflet.js` once (global `L`, reused if another card already set it) and links `leaflet.css` inside its shadow root.
 - Base maps in `CARBURANTS_MAP_STYLES` (`map_style`), all key-free: osm (default, below), osm_fr, ign / ign_photo (data.geopf.fr WMTS, TILEMATRIXSET=PM), topo, cyclosm, satellite (Esri World Imagery), custom (`tile_url`). `photo: true` styles are never darkened. A style change swaps the tile layer in place.
 - osm tiles: HA's built-in Map tiles proxy (2026.9+), `/api/map_tiles/raster/{z}/{x}/{y}.png?token=…`, token from websocket `map_tiles/access_token` (rotates every 30 min, two valid; refreshed every 20 min with `setUrl(url, true)` and on reconnect). Without it (older HA), tiles come straight from tile.openstreetmap.org. CARTO now requires an API key: don't use it. Dark theme = CSS filter on the tile pane. Markers are `divIcon` pins (logo + price), anchored above the point; `fitBounds` uses extra top/side padding and `zoomSnap: 0.25`.
+
+- 0.6.0 to 0.7.1 could ask an AI (`ai_task`) for names; removed in 0.8.0. `_async_drop_ai_options` strips the leftover `ai_task_entity` option and per-station `ai_name` / `ai_checked` at setup.
 
 ## Release
 HACS downloads the repository itself (no `zip_release`). Before releasing `vX.Y.Z`, bump the version in manifest.json, const.py (`VERSION`) and `CARBURANTS_CARD_VERSION` in the card. Pushing to main publishes release `vX.Y.Z` (tag, notes from the CHANGELOG.md section, `carburants_france.zip`) when that tag doesn't exist yet; the workflow fails if the three versions differ. Rerun notes on an existing release with the "Update release notes" workflow (input `tag`).

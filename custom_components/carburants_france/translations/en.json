@@ -34,13 +34,11 @@
           "stations": "Followed stations",
           "add_stations": "Add stations",
           "rename_stations": "Rename stations",
-          "ai_task_entity": "AI for missing names",
           "scan_interval": "Update interval"
         },
         "data_description": {
           "stations": "Untick a station to stop following it.",
           "rename_stations": "Give the stations your own names, in the next step.",
-          "ai_task_entity": "AI Task entity (for example Google Gemini) asked for the names of the stations OpenStreetMap does not know. Turn on Google Search for this entity to get checked names. Leave empty to use no AI.",
           "scan_interval": "The government feed is updated every 10 minutes."
         }
       },

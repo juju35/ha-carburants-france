@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0
+
+### Changements
+- Retrait des noms par IA (Gemini ou autre entité `ai_task`) : le fichier communautaire de noms les rend inutiles. L'option et les noms obtenus par IA sont supprimés automatiquement de la configuration au démarrage.
+- Ordre des noms : nom personnalisé, fichier communautaire, OpenStreetMap, enseigne et ville, adresse.
+
 ## 0.7.1
 
 ### Changements

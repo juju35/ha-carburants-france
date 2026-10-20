@@ -34,13 +34,11 @@
           "stations": "Stations suivies",
           "add_stations": "Ajouter des stations",
           "rename_stations": "Renommer les stations",
-          "ai_task_entity": "IA pour les noms manquants",
           "scan_interval": "Intervalle de mise à jour"
         },
         "data_description": {
           "stations": "Décochez une station pour ne plus la suivre.",
           "rename_stations": "Donnez votre propre nom aux stations, à l'étape suivante.",
-          "ai_task_entity": "Entité IA (par exemple Google Gemini) interrogée pour le nom des stations qu'OpenStreetMap ne connaît pas. Activez la recherche Google sur cette entité pour des noms vérifiés. Laissez vide pour ne pas utiliser d'IA.",
           "scan_interval": "Les données sont mises à jour toutes les 10 minutes côté État."
         }
       },

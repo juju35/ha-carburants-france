@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import logging
 from pathlib import Path
@@ -13,32 +12,28 @@ from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
-from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
+from homeassistant.core import Event, HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
 from .api import CarburantsApi
-from .ai_naming import ai_available, async_name_stations
 from .brands import async_enrich
 from .const import (
     ATTR_CONFIG_ENTRY_ID,
     CARD_FILENAME,
-    CONF_AI_TASK_ENTITY,
     CONF_STATIONS,
     DOMAIN,
     FRONTEND_URL,
+    LEGACY_AI_KEYS,
+    LEGACY_AI_OPTION,
+    LOGO_VERSION,
     SERVICE_REFRESH,
-    ST_AI_CHECKED,
-    ST_BRAND,
     ST_BRAND_CHECKED,
     ST_LOGO_VERSION,
-    ST_NAME,
-    ST_OSM_NAME,
-    LOGO_VERSION,
 )
-from .coordinator import CarburantsConfigEntry, CarburantsCoordinator, community_entry, useful_osm_name
+from .coordinator import CarburantsConfigEntry, CarburantsCoordinator
 from .names import async_get_names
 
 _LOGGER = logging.getLogger(__name__)
@@ -117,16 +112,29 @@ async def _async_register_card(hass: HomeAssistant) -> None:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: CarburantsConfigEntry) -> bool:
+    _async_drop_ai_options(hass, entry)
     names = await async_get_names(hass)
     coordinator = CarburantsCoordinator(hass, entry, CarburantsApi(async_get_clientsession(hass)), names)
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload))
-    stations = entry.options.get(CONF_STATIONS, [])
-    if any(_needs_brand_lookup(s) for s in stations) or any(_needs_ai_name(entry, s, names) for s in stations):
-        entry.async_create_background_task(hass, _async_lookup_names(hass, entry), "carburants_france_names")
+    if any(_needs_brand_lookup(s) for s in entry.options.get(CONF_STATIONS, [])):
+        entry.async_create_background_task(hass, _async_retry_brands(hass, entry), "carburants_france_brands")
     return True
+
+
+def _async_drop_ai_options(hass: HomeAssistant, entry: CarburantsConfigEntry) -> None:
+    """0.6.0 to 0.7.1 could ask an AI for names: drop its option and the names it stored.
+
+    Done before the update listener is added, so it does not reload the entry.
+    """
+    stations = entry.options.get(CONF_STATIONS, [])
+    if LEGACY_AI_OPTION not in entry.options and not any(k in s for s in stations for k in LEGACY_AI_KEYS):
+        return
+    options = {k: v for k, v in entry.options.items() if k != LEGACY_AI_OPTION}
+    options[CONF_STATIONS] = [{k: v for k, v in s.items() if k not in LEGACY_AI_KEYS} for s in stations]
+    hass.config_entries.async_update_entry(entry, options=options)
 
 
 def _needs_brand_lookup(station: dict) -> bool:
@@ -134,55 +142,16 @@ def _needs_brand_lookup(station: dict) -> bool:
     return not station.get(ST_BRAND_CHECKED) or station.get(ST_LOGO_VERSION) != LOGO_VERSION
 
 
-def _needs_ai_name(entry: CarburantsConfigEntry, station: dict, names: dict) -> bool:
-    """An AI is set and no name is known: not the user's, the community file's or OpenStreetMap's."""
-    return (
-        bool(entry.options.get(CONF_AI_TASK_ENTITY))
-        and not station.get(ST_AI_CHECKED)
-        and not station.get(ST_NAME)
-        and not community_entry(station, names).get("name")
-        and station.get(ST_BRAND_CHECKED)
-        and not useful_osm_name(station.get(ST_OSM_NAME), station.get(ST_BRAND))
-    )
-
-
-async def _async_lookup_names(hass: HomeAssistant, entry: CarburantsConfigEntry) -> None:
-    """OpenStreetMap first (brand, name, logo), then the AI for the names still missing.
-
-    Saved once at the end, as saving reloads the entry. What fails is retried at the next start.
-    """
+async def _async_retry_brands(hass: HomeAssistant, entry: CarburantsConfigEntry) -> None:
+    """Look up the brands, names and logos OpenStreetMap could not give before; retried at each start."""
     stations = [dict(s) for s in entry.options.get(CONF_STATIONS, [])]
-    changed = False
-
     pending = [s for s in stations if _needs_brand_lookup(s)]
-    if pending and await async_enrich(async_get_clientsession(hass), pending, with_logos=True):
-        for station in pending:
-            station[ST_BRAND_CHECKED] = True
-            station[ST_LOGO_VERSION] = LOGO_VERSION
-        changed = True
-
-    ai_entity = entry.options.get(CONF_AI_TASK_ENTITY)
-    unnamed = [s for s in stations if _needs_ai_name(entry, s, entry.runtime_data.names)]
-    if unnamed and not hass.is_running:
-        # The AI integration may still be loading.
-        await _async_wait_started(hass)
-    if unnamed and ai_available(hass, ai_entity):
-        await async_name_stations(hass, ai_entity, unnamed)
-        changed = changed or any(s.get(ST_AI_CHECKED) for s in unnamed)
-
-    if changed:
-        hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_STATIONS: stations})
-
-
-async def _async_wait_started(hass: HomeAssistant) -> None:
-    started = asyncio.Event()
-
-    @callback
-    def _started(_event: Event) -> None:
-        started.set()
-
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _started)
-    await started.wait()
+    if not await async_enrich(async_get_clientsession(hass), pending, with_logos=True):
+        return
+    for station in pending:
+        station[ST_BRAND_CHECKED] = True
+        station[ST_LOGO_VERSION] = LOGO_VERSION
+    hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_STATIONS: stations})
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: CarburantsConfigEntry) -> bool:
