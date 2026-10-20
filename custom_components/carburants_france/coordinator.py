@@ -46,12 +46,24 @@ def _key(text: str) -> str:
 
 
 def useful_osm_name(name: str | None, brand: str | None) -> str | None:
-    """The OpenStreetMap name, unless it only repeats the brand or says "Station-service"."""
+    """The OpenStreetMap name, unless it says "Station-service" or is just the brand.
+
+    "Just the brand" includes a short or long form of it: "Total" for TotalEnergies,
+    "TotalEnergies" for Total, "E. Leclerc" for Leclerc.
+    """
     if not name:
         return None
     key = _key(name.replace("-", " "))
-    if key in GENERIC_NAMES or (brand and key.replace(" ", "") == _key(brand.replace("-", " ")).replace(" ", "")):
+    if key in GENERIC_NAMES:
         return None
+    if brand:
+        compact = key.replace(" ", "")
+        brand_compact = _key(brand.replace("-", " ")).replace(" ", "")
+        # Shorter than the brand, or the brand plus a few letters ("Energies", an initial).
+        if compact and brand_compact and (
+            compact in brand_compact or (brand_compact in compact and len(compact) - len(brand_compact) <= 8)
+        ):
+            return None
     return name.strip()
 
 

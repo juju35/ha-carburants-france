@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.5
+
+### Corrections
+- Une station absente du fichier communautaire pouvait s'appeler simplement « Total » : son nom OpenStreetMap n'était qu'une forme courte de son enseigne TotalEnergies. Ces noms (forme courte ou longue de l'enseigne, comme « Total », « TotalEnergies », « Leclerc ») sont ignorés au profit de l'enseigne et de la ville : « TotalEnergies Rennes ».
+
 ## 0.9.4
 
 ### Corrections

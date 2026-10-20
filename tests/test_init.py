@@ -342,6 +342,9 @@ async def test_old_logos_looked_up_again(hass, aioclient_mock, entry):
         pytest.param("TotalEnergies Access Rennes Saint-Malo", "TotalEnergies", "TotalEnergies Access Rennes Saint-Malo", id="real-name"),
         pytest.param("Station-service", "Esso", "Esso Rennes", id="generic"),
         pytest.param("E. Leclerc", "E.Leclerc", "E.Leclerc Rennes", id="repeats-brand"),
+        pytest.param("Total", "TotalEnergies", "TotalEnergies Rennes", id="short-brand"),
+        pytest.param("TotalEnergies", "Total", "Total Rennes", id="long-brand"),
+        pytest.param("Leclerc", "E.Leclerc", "E.Leclerc Rennes", id="brand-without-initial"),
         pytest.param(None, None, "238 Rue Saint-Malo Rennes", id="nothing-known"),
     ],
 )
