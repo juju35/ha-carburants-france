@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.8.2';
+var CARBURANTS_CARD_VERSION = '0.9.0';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -55,6 +55,7 @@ var CarburantsI18n = {
       max_stations: 'Nombre maximum de stations (0 = toutes)',
       show_icon: 'Icône',
       show_logo: 'Logos des enseignes',
+      show_brand: 'Enseigne',
       show_address: 'Adresse',
       show_distance: 'Distance',
       show_hours: 'Ouverture',
@@ -105,6 +106,7 @@ var CarburantsI18n = {
       max_stations: 'Maximum stations (0 = all)',
       show_icon: 'Icon',
       show_logo: 'Brand logos',
+      show_brand: 'Brand',
       show_address: 'Address',
       show_distance: 'Distance',
       show_hours: 'Opening status',
@@ -123,6 +125,7 @@ var CARBURANTS_DEFAULTS = {
   max_stations: 0,
   show_icon: true,
   show_logo: true,
+  show_brand: true,
   show_address: true,
   show_distance: true,
   show_hours: true,
@@ -183,6 +186,14 @@ function carbOutsideListener(element, onOutside) {
     var path = ev.composedPath ? ev.composedPath() : [];
     if (path.indexOf(element) === -1) onOutside();
   };
+}
+
+// Sub-brand of a network, shown as a tag on the logo: "Total Access" -> "Access".
+// The logo alone cannot tell them apart (TotalEnergies and Total Access share it).
+var CARBURANTS_SUB_BRAND = /\b(access|contact|express|market|city)\b/i;
+function carbSubBrand(brand) {
+  var match = CARBURANTS_SUB_BRAND.exec(String(brand || ''));
+  return match ? match[1].toUpperCase() : '';
 }
 
 function carbMinutes(hhmm) {
@@ -433,6 +444,13 @@ class CarburantsFranceCard extends HTMLElement {
     });
   }
 
+  _logoWrap(s) {
+    var logo = this._logoHtml(s);
+    var sub = carbSubBrand(s.brand);
+    if (!logo || !sub) return logo;
+    return '<div class="logo-wrap" title="' + carbEsc(s.brand) + '">' + logo + '<span class="sub-brand">' + carbEsc(sub) + '</span></div>';
+  }
+
   _logoHtml(s) {
     if (!this._config.show_logo) return '';
     var label = s.brand || s.station_name || '';
@@ -458,6 +476,7 @@ class CarburantsFranceCard extends HTMLElement {
     var self = this;
 
     var meta = [];
+    if (cfg.show_brand && s.brand) meta.push('<span class="brand">' + carbEsc(s.brand) + '</span>');
     if (cfg.show_address) meta.push(carbEsc(s.address) + ', ' + carbEsc(carbTitleCase(s.city)));
     if (cfg.show_distance && s.distance != null) {
       meta.push(new Intl.NumberFormat(this._locale(), { maximumFractionDigits: 1 }).format(s.distance) + ' km');
@@ -493,7 +512,7 @@ class CarburantsFranceCard extends HTMLElement {
 
     var html =
       '<div class="station" data-id="' + carbEsc(id) + '">' +
-      '<div class="row">' + this._logoHtml(s) +
+      '<div class="row">' + this._logoWrap(s) +
       '<div class="main">' +
       '<div class="line1"><span class="name">' + carbEsc(s.station_name) + '</span>' +
       (opening ? '<span class="opening ' + opening.key + '">' + carbEsc(opening.text) + '</span>' : '') + '</div>' +
@@ -576,6 +595,9 @@ class CarburantsFranceCard extends HTMLElement {
       '.row { display: flex; align-items: center; gap: 12px; }',
       '.logo { width: 40px; height: 40px; flex: none; border-radius: 10px; object-fit: contain; background: #fff; padding: 3px; box-sizing: border-box; border: 1px solid var(--divider-color, rgba(0,0,0,.12)); }',
       '.logo.badge { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.95em; letter-spacing: .5px; border: none; }',
+      '.logo-wrap { position: relative; flex: none; display: flex; }',
+      '.sub-brand { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); padding: 0 4px; border-radius: 4px; background: #e2001a; color: #fff; font-size: 8px; font-weight: 700; letter-spacing: .4px; line-height: 12px; white-space: nowrap; box-shadow: 0 0 0 1.5px var(--card-background-color, #fff); }',
+      '.meta .brand { color: var(--primary-text-color); font-weight: 500; }',
       '.logo.badge.neutral { background: var(--secondary-background-color, #eee); color: var(--secondary-text-color); }',
       '.main { flex: 1; min-width: 0; }',
       '.line1 { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; flex-wrap: wrap; }',
@@ -664,6 +686,7 @@ class CarburantsFranceCardEditor extends HTMLElement {
         schema: [
           { name: 'show_icon', selector: { boolean: {} } },
           { name: 'show_logo', selector: { boolean: {} } },
+          { name: 'show_brand', selector: { boolean: {} } },
           { name: 'show_address', selector: { boolean: {} } },
           { name: 'show_distance', selector: { boolean: {} } },
           { name: 'show_hours', selector: { boolean: {} } },
@@ -1146,12 +1169,14 @@ class CarburantsFranceMapCard extends HTMLElement {
             carbEsc(JSON.stringify(carbInitials(name))) + '}))">'
           : '<span class="ini" style="background:' + carbBrandColor(name || 'station') + '">' + carbEsc(carbInitials(name) || '⛽') + '</span>';
       }
+      var sub = carbSubBrand(s.brand);
+      var subTag = sub ? '<span class="psub">' + carbEsc(sub) + '</span>' : '';
       var icon = L.divIcon({
         className: 'carb-marker',
         html: '<div class="pin ' + state + '" title="' + carbEsc(s.station_name + ' · ' + fuelName) + '">' + logo +
           (self._config.show_name
-            ? '<span class="ptext"><span class="pname-pin">' + carbEsc(s.station_name) + '</span><span class="price">' + carbEsc(label) + '</span></span>'
-            : '<span class="price">' + carbEsc(label) + '</span>') +
+            ? '<span class="ptext"><span class="pline">' + subTag + '<span class="pname-pin">' + carbEsc(s.station_name) + '</span></span><span class="price">' + carbEsc(label) + '</span></span>'
+            : subTag + '<span class="price">' + carbEsc(label) + '</span>') +
           '</div>',
         iconSize: null,
         iconAnchor: [0, 0],
@@ -1198,6 +1223,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     }).join('');
     return '<div class="popup">' +
       '<div class="pname">' + carbEsc(s.station_name) + '</div>' +
+      (s.brand ? '<div class="pbrand">' + carbEsc(s.brand) + '</div>' : '') +
       '<div class="paddr">' + carbEsc(s.address) + ', ' + carbEsc(carbTitleCase(s.city)) +
       (s.distance != null ? ' · ' + new Intl.NumberFormat(this._locale(), { maximumFractionDigits: 1 }).format(s.distance) + ' km' : '') + '</div>' +
       (opening ? '<div class="popening ' + opening.key + '">' + carbEsc(opening.text) + '</div>' : '') +
@@ -1220,6 +1246,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.map.dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }',
       '.carb-marker { background: none; border: none; }',
       '.ptext { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }',
+      '.pline { display: flex; align-items: center; gap: 3px; min-width: 0; }',
+      '.psub { flex: none; padding: 0 3px; border-radius: 3px; background: #e2001a; color: #fff; font-size: 8px; font-weight: 700; letter-spacing: .3px; line-height: 11px; }',
       '.pname-pin { max-width: 130px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--primary-text-color, #212121); }',
       '.pin { position: absolute; transform: translate(-50%, calc(-100% - 7px)); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
       '.pin::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--secondary-text-color, #727272); }',
@@ -1236,6 +1264,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); }',
       '.leaflet-popup-content { margin: 10px 12px; font-size: 13px; }',
       '.pname { font-weight: 600; font-size: 14px; }',
+      '.pbrand { font-size: 12px; font-weight: 500; color: var(--secondary-text-color, #727272); }',
       '.paddr { color: var(--secondary-text-color, #727272); margin-top: 2px; }',
       '.popening { margin-top: 4px; font-size: 12px; }',
       '.popening.open, .popening.always { color: var(--success-color, #43a047); }',

@@ -103,6 +103,7 @@ type: custom:carburants-france-card
 | `max_stations` | `0` | Nombre maximum de stations affichées (`0` = toutes) |
 | `show_icon` | `true` | Icône à côté du titre, qui ouvre la page des données sur data.economie.gouv.fr |
 | `show_logo` | `true` | Logo de l'enseigne (initiales en couleur si aucun logo n'est connu) |
+| `show_brand` | `true` | Enseigne en toutes lettres, avant l'adresse (« Total Access », « TotalEnergies »…) |
 | `show_address` | `true` | Adresse et ville |
 | `show_distance` | `true` | Distance depuis le domicile |
 | `show_hours` | `true` | Ouvert, fermé, 24h/24 ou automate 24/24, avec l'heure de fermeture ou d'ouverture |
@@ -204,6 +205,8 @@ Le flux de l'État ne donne ni le nom ni l'enseigne des stations.
 Pour les stations absentes de ce fichier, l'intégration cherche dans [OpenStreetMap](https://www.openstreetmap.org) (tag `ref:FR:prix-carburants`, sinon la station la plus proche à moins de 300 m). Si OpenStreetMap n'a qu'un nom générique (« Station-service ») ou le nom de l'enseigne, la station est nommée d'après son enseigne et sa ville, ou à défaut son adresse.
 
 Ordre de priorité du nom : nom personnalisé (option **Renommer les stations**), fichier communautaire, OpenStreetMap, enseigne et ville, adresse.
+
+Les sous-enseignes partagent souvent le logo de leur réseau (Total Access et TotalEnergies, Intermarché et Intermarché Contact…) : les cartes ajoutent alors une étiquette **ACCESS**, **CONTACT**, **EXPRESS**, **MARKET** ou **CITY** sur le logo et sur les repères.
 
 Le **logo** vient de l'enseigne trouvée dans OpenStreetMap, via [Wikidata](https://www.wikidata.org) / Wikimedia Commons. La recherche est faite une fois, à l'ajout de la station ; si OpenStreetMap est injoignable, elle est retentée au démarrage suivant. Sans logo connu, la carte affiche les initiales de l'enseigne.
 

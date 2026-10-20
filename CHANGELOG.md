@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0
+
+### Nouveautés
+- Les sous-enseignes se distinguent : TotalEnergies et Total Access partagent le même logo, une étiquette **ACCESS** est donc ajoutée sous le logo (carte liste) et à côté du nom (repères de la carte géographique). Même chose pour Contact, Express, Market et City (Intermarché Contact, Esso Express, Carrefour Market…).
+- Carte liste : l'enseigne est écrite en toutes lettres avant l'adresse (option `show_brand`, activée par défaut).
+- Carte géographique : l'enseigne s'affiche sous le nom dans la bulle de la station.
+
 ## 0.8.2
 
 ### Nouveautés
