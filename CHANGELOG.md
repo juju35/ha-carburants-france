@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1
+
+### Améliorations
+- Les stations Total Access affichent leur propre logo, intégré à la carte (aucune requête externe), à la place du logo TotalEnergies et de l'étiquette ACCESS. L'étiquette reste pour les autres sous-enseignes (Contact, Express, Market, City).
+
 ## 0.9.0
 
 ### Nouveautés

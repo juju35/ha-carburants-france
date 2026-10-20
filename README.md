@@ -206,7 +206,7 @@ Pour les stations absentes de ce fichier, l'intégration cherche dans [OpenStree
 
 Ordre de priorité du nom : nom personnalisé (option **Renommer les stations**), fichier communautaire, OpenStreetMap, enseigne et ville, adresse.
 
-Les sous-enseignes partagent souvent le logo de leur réseau (Total Access et TotalEnergies, Intermarché et Intermarché Contact…) : les cartes ajoutent alors une étiquette **ACCESS**, **CONTACT**, **EXPRESS**, **MARKET** ou **CITY** sur le logo et sur les repères.
+Les sous-enseignes partagent souvent le logo de leur réseau dans Wikidata. Total Access a son propre logo, intégré aux cartes. Pour les autres (Intermarché Contact, Esso Express, Carrefour Market…), les cartes ajoutent une étiquette **CONTACT**, **EXPRESS**, **MARKET** ou **CITY** sur le logo et sur les repères.
 
 Le **logo** vient de l'enseigne trouvée dans OpenStreetMap, via [Wikidata](https://www.wikidata.org) / Wikimedia Commons. La recherche est faite une fois, à l'ajout de la station ; si OpenStreetMap est injoignable, elle est retentée au démarrage suivant. Sans logo connu, la carte affiche les initiales de l'enseigne.
 
@@ -215,7 +215,7 @@ Le **logo** vient de l'enseigne trouvée dans OpenStreetMap, via [Wikidata](http
 - Prix et stations : Ministère de l'Économie, [flux instantané v2](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/), Licence Ouverte
 - Noms des stations : fichier communautaire [hass-prixcarburant](https://github.com/Aohzan/hass-prixcarburant) (Aohzan et contributeurs), Apache 2.0
 - Enseignes : © contributeurs [OpenStreetMap](https://www.openstreetmap.org/copyright), ODbL
-- Logos : Wikimedia Commons, via Wikidata
+- Logos : Wikimedia Commons, via Wikidata ; logo Total Access intégré aux cartes, marque de TotalEnergies, utilisé uniquement pour identifier les stations
 - Fonds de carte : © contributeurs OpenStreetMap, OpenStreetMap France, IGN, OpenTopoMap, CyclOSM, Esri selon le fond choisi
 
 ## Licence
