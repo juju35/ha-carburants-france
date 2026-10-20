@@ -1,0 +1,15 @@
+{
+  "entity": {
+    "sensor": {
+      "price": { "default": "mdi:gas-station" },
+      "best_price": { "default": "mdi:gas-station-in-use" },
+      "stations": { "default": "mdi:map-marker-multiple" }
+    },
+    "binary_sensor": {
+      "in_stock": { "default": "mdi:gas-station", "state": { "off": "mdi:gas-station-off" } }
+    }
+  },
+  "services": {
+    "refresh": { "service": "mdi:refresh" }
+  }
+}

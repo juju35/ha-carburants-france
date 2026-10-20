@@ -1,0 +1,79 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Fuel prices and availability published by the French government (data.economie.gouv.fr), no API key needed.",
+        "data": { "name": "Name", "fuels": "Fuels to follow" }
+      },
+      "search": {
+        "title": "Search stations",
+        "description": "Postcode, town, department number or station id. Leave empty to search around your home within the radius.",
+        "data": { "query": "Search", "radius": "Radius around home" }
+      },
+      "stations": {
+        "title": "Pick stations",
+        "description": "{count} stations found, sorted by distance from home. Tick \"New search\" to add stations elsewhere: the selection is kept.",
+        "data": { "stations": "Stations", "search_again": "New search" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach the fuel prices API. Try again later.",
+      "no_results": "No station found. Try a postcode, another town or a larger radius.",
+      "no_station": "Pick at least one station.",
+      "no_fuel": "Pick at least one fuel."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Carburants France options",
+        "data": {
+          "fuels": "Fuels to follow",
+          "stations": "Followed stations",
+          "add_stations": "Add stations",
+          "scan_interval": "Update interval"
+        },
+        "data_description": {
+          "stations": "Untick a station to stop following it.",
+          "scan_interval": "The government feed is updated every 10 minutes."
+        }
+      },
+      "search": {
+        "title": "Search stations",
+        "description": "Postcode, town, department number or station id. Leave empty to search around your home within the radius.",
+        "data": { "query": "Search", "radius": "Radius around home" }
+      },
+      "stations": {
+        "title": "Pick stations",
+        "description": "{count} stations found, sorted by distance from home. Tick \"New search\" to add stations elsewhere: the selection is kept.",
+        "data": { "stations": "Stations", "search_again": "New search" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach the fuel prices API. Try again later.",
+      "no_results": "No station found. Try a postcode, another town or a larger radius.",
+      "no_station": "Pick at least one station.",
+      "no_fuel": "Pick at least one fuel."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Best price {fuel}" },
+      "stations": { "name": "Stations" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} in stock" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Refresh",
+      "description": "Fetches the prices now.",
+      "fields": {
+        "config_entry_id": { "name": "Entry", "description": "Only this entry. Defaults to all of them." }
+      }
+    }
+  }
+}

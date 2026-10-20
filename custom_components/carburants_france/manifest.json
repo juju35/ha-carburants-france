@@ -1,0 +1,14 @@
+{
+  "domain": "carburants_france",
+  "name": "Carburants France",
+  "after_dependencies": ["lovelace"],
+  "codeowners": ["@juju35"],
+  "config_flow": true,
+  "dependencies": ["frontend", "http"],
+  "documentation": "https://github.com/juju35/ha-carburants-france",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/juju35/ha-carburants-france/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

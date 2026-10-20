@@ -1,0 +1,79 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Prix et disponibilité des carburants publiés par l'État (data.economie.gouv.fr), sans clé d'API.",
+        "data": { "name": "Nom", "fuels": "Carburants à suivre" }
+      },
+      "search": {
+        "title": "Rechercher des stations",
+        "description": "Code postal, ville, numéro de département ou identifiant de station. Laissez vide pour chercher autour de votre domicile dans le rayon choisi.",
+        "data": { "query": "Recherche", "radius": "Rayon autour du domicile" }
+      },
+      "stations": {
+        "title": "Choisir les stations",
+        "description": "{count} stations trouvées, triées par distance de votre domicile. Cochez « Nouvelle recherche » pour en ajouter d'autres ailleurs : la sélection est conservée.",
+        "data": { "stations": "Stations", "search_again": "Nouvelle recherche" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de joindre l'API des prix des carburants. Réessayez plus tard.",
+      "no_results": "Aucune station trouvée. Essayez un code postal, une autre ville ou un rayon plus grand.",
+      "no_station": "Choisissez au moins une station.",
+      "no_fuel": "Choisissez au moins un carburant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options Carburants France",
+        "data": {
+          "fuels": "Carburants à suivre",
+          "stations": "Stations suivies",
+          "add_stations": "Ajouter des stations",
+          "scan_interval": "Intervalle de mise à jour"
+        },
+        "data_description": {
+          "stations": "Décochez une station pour ne plus la suivre.",
+          "scan_interval": "Les données sont mises à jour toutes les 10 minutes côté État."
+        }
+      },
+      "search": {
+        "title": "Rechercher des stations",
+        "description": "Code postal, ville, numéro de département ou identifiant de station. Laissez vide pour chercher autour de votre domicile dans le rayon choisi.",
+        "data": { "query": "Recherche", "radius": "Rayon autour du domicile" }
+      },
+      "stations": {
+        "title": "Choisir les stations",
+        "description": "{count} stations trouvées, triées par distance de votre domicile. Cochez « Nouvelle recherche » pour en ajouter d'autres ailleurs : la sélection est conservée.",
+        "data": { "stations": "Stations", "search_again": "Nouvelle recherche" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de joindre l'API des prix des carburants. Réessayez plus tard.",
+      "no_results": "Aucune station trouvée. Essayez un code postal, une autre ville ou un rayon plus grand.",
+      "no_station": "Choisissez au moins une station.",
+      "no_fuel": "Choisissez au moins un carburant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Meilleur prix {fuel}" },
+      "stations": { "name": "Stations" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} disponible" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Actualiser",
+      "description": "Récupère les prix maintenant.",
+      "fields": {
+        "config_entry_id": { "name": "Entrée", "description": "Seulement cette entrée. Par défaut, toutes." }
+      }
+    }
+  }
+}
