@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '0.2.0';
+var CARBURANTS_CARD_VERSION = '0.3.0';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -34,6 +34,10 @@ var CarburantsI18n = {
     hours: 'Horaires',
     services: 'Services',
     directions: 'Itinéraire',
+    show_all_one: 'Afficher la station en rupture',
+    show_all: 'Afficher les {n} stations en rupture',
+    hide_out: 'Masquer les stations en rupture',
+    all_out: 'Tous les carburants suivis sont en rupture dans ces stations.',
     highway: 'Autoroute',
     days: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'],
     editor: {
@@ -52,6 +56,7 @@ var CarburantsI18n = {
       show_out_of_stock: 'Carburants en rupture',
       highlight_best: 'Meilleur prix en vert',
       show_refresh: 'Bouton Actualiser',
+      hide_out_of_stock_stations: 'Masquer les stations en rupture',
     },
     sort_options: { price: 'Prix', distance: 'Distance', name: 'Nom', config: 'Ordre de configuration' },
   },
@@ -76,6 +81,10 @@ var CarburantsI18n = {
     hours: 'Opening hours',
     services: 'Services',
     directions: 'Directions',
+    show_all_one: 'Show the out of stock station',
+    show_all: 'Show the {n} out of stock stations',
+    hide_out: 'Hide out of stock stations',
+    all_out: 'Every followed fuel is out of stock at these stations.',
     highway: 'Motorway',
     days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     editor: {
@@ -94,6 +103,7 @@ var CarburantsI18n = {
       show_out_of_stock: 'Out of stock fuels',
       highlight_best: 'Best price in green',
       show_refresh: 'Refresh button',
+      hide_out_of_stock_stations: 'Hide out of stock stations',
     },
     sort_options: { price: 'Price', distance: 'Distance', name: 'Name', config: 'Configuration order' },
   },
@@ -110,6 +120,7 @@ var CARBURANTS_DEFAULTS = {
   show_updated: true,
   show_out_of_stock: true,
   highlight_best: true,
+  hide_out_of_stock_stations: true,
   show_refresh: true,
 };
 
@@ -141,6 +152,19 @@ function carbInitials(name) {
   var words = String(name || '').replace(/[^A-Za-zÀ-ÿ0-9 ]/g, ' ').trim().split(/\s+/).filter(Boolean);
   if (!words.length) return '';
   return (words.length === 1 ? words[0].slice(0, 2) : words[0][0] + words[1][0]).toUpperCase();
+}
+
+// True when none of the fuels is in stock at the station (all in shortage, or not sold).
+function carbAllOut(station, fuels) {
+  return !fuels.some(function (f) {
+    var fuel = station.fuels && station.fuels[f.key];
+    return fuel && fuel.available;
+  });
+}
+
+function carbToggleLabel(t, showAll, hidden) {
+  if (showAll) return t.hide_out;
+  return hidden === 1 ? t.show_all_one : t.show_all.replace('{n}', hidden);
 }
 
 function carbMinutes(hhmm) {
@@ -274,8 +298,13 @@ class CarburantsFranceCard extends HTMLElement {
     this._root = this.attachShadow({ mode: 'open' });
     this._root.innerHTML =
       '<style>' + CarburantsFranceCard._styles() + '</style>' +
-      '<ha-card><div class="header"></div><div class="list"></div></ha-card>';
+      '<ha-card><div class="header"></div><div class="list"></div><div class="footer" hidden></div></ha-card>';
     this._root.querySelector('.list').addEventListener('click', this._onListClick.bind(this));
+    this._root.querySelector('.footer').addEventListener('click', function (ev) {
+      if (!ev.target.closest('.toggle')) return;
+      this._showAll = !this._showAll;
+      this._render();
+    }.bind(this));
   }
 
   _fuels() {
@@ -304,8 +333,18 @@ class CarburantsFranceCard extends HTMLElement {
     var fuels = this._fuels();
     var stations = (st.attributes.stations || []).slice();
     var best = this._bestPrices(stations, fuels);
+    var hidden = this._config.hide_out_of_stock_stations
+      ? stations.filter(function (s) { return carbAllOut(s, fuels); }).length
+      : 0;
+    if (hidden && !this._showAll) stations = stations.filter(function (s) { return !carbAllOut(s, fuels); });
     stations = this._sorted(stations, fuels);
     if (this._config.max_stations > 0) stations = stations.slice(0, this._config.max_stations);
+    var footer = this._root.querySelector('.footer');
+    footer.hidden = !hidden;
+    footer.innerHTML = hidden
+      ? '<button type="button" class="toggle"><ha-icon icon="' + (this._showAll ? 'mdi:eye-off-outline' : 'mdi:eye-outline') + '"></ha-icon>' +
+        carbEsc(carbToggleLabel(t, this._showAll, hidden)) + '</button>'
+      : '';
 
     header.innerHTML =
       '<div class="title">' + icon + carbEsc(title) +
@@ -318,7 +357,7 @@ class CarburantsFranceCard extends HTMLElement {
     if (refreshBtn) refreshBtn.addEventListener('click', this._refresh.bind(this));
 
     if (!stations.length) {
-      list.innerHTML = '<div class="empty">' + carbEsc(t.empty) + '</div>';
+      list.innerHTML = '<div class="empty">' + carbEsc(hidden ? t.all_out : t.empty) + '</div>';
       return;
     }
     var self = this;
@@ -527,6 +566,10 @@ class CarburantsFranceCard extends HTMLElement {
       '.services span { border: 1px solid var(--divider-color, rgba(0,0,0,.12)); border-radius: 10px; padding: 1px 8px; font-size: 0.9em; }',
       '.directions { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; color: var(--primary-color); text-decoration: none; font-weight: 500; }',
       '.directions ha-icon { --mdc-icon-size: 18px; }',
+      '.footer { padding: 4px 16px 2px; border-top: 1px solid var(--divider-color, rgba(0,0,0,.12)); }',
+      '.footer[hidden] { display: none; }',
+      '.toggle { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 0.875em; font-weight: 500; padding: 6px 0; border: none; background: none; color: var(--primary-color); cursor: pointer; }',
+      '.toggle ha-icon { --mdc-icon-size: 18px; }',
     ].join('\n');
   }
 }
@@ -585,6 +628,7 @@ class CarburantsFranceCardEditor extends HTMLElement {
           { name: 'show_out_of_stock', selector: { boolean: {} } },
           { name: 'highlight_best', selector: { boolean: {} } },
           { name: 'show_refresh', selector: { boolean: {} } },
+          { name: 'hide_out_of_stock_stations', selector: { boolean: {} } },
         ],
       },
     ];
@@ -639,7 +683,7 @@ if (!customElements.get('carburants-france-card')) {
 // ── carburants-france-map-card ────────────────────────────────────────────────
 // Leaflet ships with the integration: no CDN, only the map tiles come from the network.
 var CARBURANTS_STATIC = '/carburants_france_static';
-var CARBURANTS_MAP_DEFAULTS = { height: 400, show_home: true, show_logo: true, theme: 'auto' };
+var CARBURANTS_MAP_DEFAULTS = { height: 400, show_home: true, show_logo: true, theme: 'auto', hide_out_of_stock_stations: true };
 
 var CarburantsMapI18n = {
   fr: {
@@ -654,6 +698,7 @@ var CarburantsMapI18n = {
       theme: 'Fond de carte',
       show_home: 'Domicile',
       show_logo: 'Logos des enseignes',
+      hide_out_of_stock_stations: 'Masquer les stations en rupture',
     },
     themes: { auto: 'Selon le thème', light: 'Clair', dark: 'Sombre' },
   },
@@ -669,6 +714,7 @@ var CarburantsMapI18n = {
       theme: 'Map style',
       show_home: 'Home',
       show_logo: 'Brand logos',
+      hide_out_of_stock_stations: 'Hide out of stock stations',
     },
     themes: { auto: 'Follow theme', light: 'Light', dark: 'Dark' },
   },
@@ -801,6 +847,20 @@ class CarburantsFranceMapCard extends HTMLElement {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
     }).addTo(this._map);
     this._layer = L.layerGroup().addTo(this._map);
+    var self = this;
+    var Toggle = L.Control.extend({
+      onAdd: function () {
+        var el = L.DomUtil.create('button', 'carb-toggle');
+        el.type = 'button';
+        L.DomEvent.disableClickPropagation(el);
+        L.DomEvent.on(el, 'click', function () {
+          self._showAll = !self._showAll;
+          self._drawMarkers(L);
+        });
+        return el;
+      },
+    });
+    this._toggle = new Toggle({ position: 'topright' }).addTo(this._map);
     this._fitted = false;
     var self = this;
     if (window.ResizeObserver) {
@@ -847,6 +907,13 @@ class CarburantsFranceMapCard extends HTMLElement {
     var key = this._fuelKey(fuels);
     var stations = (attrs.stations || []).filter(function (s) { return s.latitude != null && s.longitude != null; });
     var best = CarburantsFranceCard.prototype._bestPrices.call(null, stations, fuels);
+    var hidden = this._config.hide_out_of_stock_stations
+      ? stations.filter(function (s) { return carbAllOut(s, fuels); }).length
+      : 0;
+    if (hidden && !this._showAll) stations = stations.filter(function (s) { return !carbAllOut(s, fuels); });
+    var toggle = this._toggle.getContainer();
+    toggle.hidden = !hidden;
+    toggle.textContent = carbToggleLabel(t, this._showAll, hidden);
     var fuelName = (fuels.filter(function (f) { return f.key === key; })[0] || {}).name || '';
     var self = this;
     var now = new Date();
@@ -954,6 +1021,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.popup td.age { color: var(--secondary-text-color, #727272); font-size: 11px; text-align: right; padding-right: 0; }',
       '.popup b.best { color: var(--success-color, #43a047); }',
       '.popup .out { color: var(--warning-color, #ffa600); font-weight: 600; }',
+      '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 4px; border: 2px solid rgba(0,0,0,.2); background: var(--card-background-color, #fff); color: var(--primary-color, #03a9f4); cursor: pointer; background-clip: padding-box; }',
+      '.carb-toggle[hidden] { display: none; }',
       '.pdir { display: inline-block; margin-top: 8px; color: var(--primary-color, #03a9f4); text-decoration: none; font-weight: 500; }',
     ].join('\n');
   }
@@ -994,6 +1063,7 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
           { name: 'zoom', selector: { number: { min: 5, max: 18, mode: 'box' } } },
           { name: 'show_home', selector: { boolean: {} } },
           { name: 'show_logo', selector: { boolean: {} } },
+          { name: 'hide_out_of_stock_stations', selector: { boolean: {} } },
         ],
       },
     ];

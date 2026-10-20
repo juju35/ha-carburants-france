@@ -107,8 +107,11 @@ type: custom:carburants-france-card
 | `show_out_of_stock` | `true` | Afficher les carburants en rupture temporaire |
 | `highlight_best` | `true` | Meilleur prix de chaque carburant en vert avec une étoile |
 | `show_refresh` | `true` | Bouton d'actualisation |
+| `hide_out_of_stock_stations` | `true` | Masquer les stations où tous les carburants affichés sont en rupture |
 
 Cliquez sur une station pour voir ses horaires de la semaine, ses services et un lien d'itinéraire.
+
+Les stations où **tous les carburants affichés sont en rupture** sont masquées : le bouton **Afficher les stations en rupture**, en bas de la carte, les fait réapparaître.
 
 ## Carte géographique
 
@@ -129,6 +132,7 @@ fuel: gazole
 | `theme` | `auto` | Fond de carte `auto` (selon le thème de Home Assistant), `light` ou `dark` |
 | `show_home` | `true` | Afficher le domicile |
 | `show_logo` | `true` | Logo de l'enseigne sur les repères |
+| `hide_out_of_stock_stations` | `true` | Masquer les stations où tous les carburants suivis sont en rupture (bouton en haut à droite pour les afficher) |
 
 Chaque repère affiche le logo et le prix : vert pour le meilleur prix, orange en cas de rupture. Cliquez sur un repère pour voir tous les prix, l'ouverture et l'itinéraire. Le zoom à la molette est désactivé pour ne pas gêner le défilement du tableau de bord (utilisez les boutons ou le pincement).
 

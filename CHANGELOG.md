@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+### Nouveautés
+- Les stations où tous les carburants suivis sont en rupture sont masquées sur les deux cartes. Un bouton **Afficher les stations en rupture** les fait réapparaître, et les masque à nouveau.
+- Option `hide_out_of_stock_stations` (activée par défaut) dans l'éditeur visuel des deux cartes pour toujours tout afficher.
+
 ## 0.2.0
 
 ### Nouveautés
