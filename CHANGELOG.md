@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+### Nouveautés
+- Nouveau logo de l'intégration : une pompe à carburant flat avec une courbe de prix sur l'écran.
+
 ## 1.0.0
 
 Première version stable : elle reprend la 0.11.1, qu'elle remplace.
