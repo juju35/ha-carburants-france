@@ -1,9 +1,14 @@
 # Changelog
 
+## 1.0.2
+
+### Corrections
+- La carte affiche le nouveau logo en tête : elle gardait l'ancien dans la 1.0.1.
+
 ## 1.0.1
 
 ### Nouveautés
-- Nouveau logo de l'intégration : une pompe à carburant flat avec une courbe de prix sur l'écran, aussi affiché en tête de la carte.
+- Nouveau logo de l'intégration : une pompe à carburant flat avec une courbe de prix sur l'écran.
 
 ## 1.0.0
 
