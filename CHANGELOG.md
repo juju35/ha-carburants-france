@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.4
+
+### Nouveautés
+- Captures d'écran du README mises à jour avec le nouveau logo. Elles sont maintenant générées par `scripts/screenshots.py`, avec des stations fictives et une heure figée.
+
 ## 1.0.3
 
 ### Nouveautés
