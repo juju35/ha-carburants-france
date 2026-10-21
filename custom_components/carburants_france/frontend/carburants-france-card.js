@@ -3,12 +3,13 @@ var CARBURANTS_CARD_VERSION = '1.0.1';
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">' +
-  '<rect x="8" y="8" width="240" height="240" rx="56" fill="#0E7C66"/>' +
-  '<g fill="none" stroke="#fff" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">' +
-  '<rect x="60" y="58" width="92" height="144" rx="12"/><path d="M78 92 H134"/>' +
-  '<path d="M152 104 H170 a14 14 0 0 1 14 14 V172 a12 12 0 0 0 24 0 V102 L188 80"/>' +
-  '<path d="M48 202 H164"/></g>' +
-  '<rect x="78" y="78" width="56" height="30" rx="6" fill="#fff"/></svg>'
+  '<rect width="256" height="256" rx="56" fill="#1B2A41"/>' +
+  '<rect x="64" y="56" width="96" height="148" rx="14" fill="#F5A623"/>' +
+  '<rect x="78" y="72" width="68" height="52" rx="6" fill="#1B2A41"/>' +
+  '<polyline points="86,86 100,98 113,91 126,108 138,112" fill="none" stroke="#12A37F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '<rect x="88" y="142" width="48" height="8" rx="4" fill="#1B2A41" opacity="0.35"/>' +
+  '<rect x="52" y="196" width="120" height="14" rx="7" fill="#F5A623"/>' +
+  '<path d="M160 156 H176 Q192 156 192 140 V100 L176 82" fill="none" stroke="#F5A623" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 );
 
 // The government open data page the prices come from.
