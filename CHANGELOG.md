@@ -3,7 +3,7 @@
 ## 1.1.0
 
 ### Changes
-- Card headers aligned with the other juju35 cards: title 18px, with the number of stations as a subtitle on the list card, and the same padding on the map card.
+- Card headers aligned with the other ha-* cards: title 18px, with the number of stations as a subtitle on the list card, and the same padding on the map card.
 - Fuel tiles, directions buttons and service pills use the shared radii (10px tiles and buttons, 12px pills); best-price and shortage tints follow the theme colors.
 - README in English. Screenshots are now named `card.png` and `card-dark.png`, without the version.
 
