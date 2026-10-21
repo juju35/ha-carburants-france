@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3
+
+### Nouveautés
+- Logo plus grand en tête des cartes : 40 px au lieu de 28, comme sur la carte Roborock.
+
 ## 1.0.2
 
 ### Corrections
