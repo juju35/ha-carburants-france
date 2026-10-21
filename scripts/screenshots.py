@@ -149,8 +149,8 @@ STATES = {
 }
 
 SHOTS = [
-    {"file": "card", "theme": "light", "config": {}, "expand": None},
-    {"file": "card-dark", "theme": "dark",
+    {"file": "card", "theme": "light", "lang": "en", "config": {}, "expand": None},
+    {"file": "card-dark", "theme": "dark", "lang": "fr",
      "config": {"title": "Autour de la maison", "sort": "distance"}, "expand": "35000021"},
 ]
 
@@ -177,14 +177,14 @@ def main():
             page.add_script_tag(content=HA_ELEMENTS)
             page.add_script_tag(content=CARD_JS)
             page.evaluate(
-                """({config, states, dark}) => {
+                """({config, states, dark, lang}) => {
                   const el = document.createElement("carburants-france-card");
                   el.setConfig({type: "custom:carburants-france-card", ...config});
-                  el.hass = {states, language: "fr", locale: {language: "fr"}, themes: {darkMode: dark},
+                  el.hass = {states, language: lang, locale: {language: lang}, themes: {darkMode: dark},
                              callService: () => Promise.resolve(), callWS: () => Promise.resolve({})};
                   document.getElementById("root").appendChild(el);
                 }""",
-                {"config": shot["config"], "states": STATES, "dark": shot["theme"] == "dark"},
+                {"config": shot["config"], "states": STATES, "dark": shot["theme"] == "dark", "lang": shot["lang"]},
             )
             if shot["expand"]:
                 page.locator(f'.station[data-id="{shot["expand"]}"] .row').click()
