@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.1.2';
+var CARBURANTS_CARD_VERSION = '1.1.3';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -23,7 +23,7 @@ var CarburantsI18n = {
     empty: 'Aucune station à afficher',
     no_entity: 'Capteur Stations introuvable. Ajoutez l\'intégration Carburants France ou renseignez « entity ».',
     refresh: 'Actualiser',
-    refresh_failed: 'Actualisation impossible',
+    refresh_failed: 'Actualisation impossible :',
     open: 'Ouvert',
     closed: 'Fermé',
     closes_at: 'ferme à',
@@ -74,7 +74,7 @@ var CarburantsI18n = {
     empty: 'No station to show',
     no_entity: 'Stations sensor not found. Add the Carburants France integration or set "entity".',
     refresh: 'Refresh',
-    refresh_failed: 'Refresh failed',
+    refresh_failed: 'Refresh failed:',
     open: 'Open',
     closed: 'Closed',
     closes_at: 'closes at',
@@ -577,7 +577,7 @@ class CarburantsFranceCard extends HTMLElement {
     var t = this._t();
     this._hass.callService('carburants_france', 'refresh', data).catch(function (err) {
       var btn = self._root.querySelector('.refresh-btn');
-      if (btn) btn.title = t.refresh_failed + ' : ' + ((err && err.message) || err);
+      if (btn) btn.title = t.refresh_failed + ' ' + ((err && err.message) || err);
     }).finally(function () {
       self._refreshing = false;
       var btn = self._root.querySelector('.refresh-btn');
@@ -603,7 +603,7 @@ class CarburantsFranceCard extends HTMLElement {
       '.station:first-child { border-top: none; }',
       '.row { display: flex; align-items: center; gap: 12px; }',
       '.logo { width: 40px; height: 40px; flex: none; border-radius: 10px; object-fit: contain; background: #fff; padding: 3px; box-sizing: border-box; border: 1px solid var(--divider-color, rgba(0,0,0,.12)); }',
-      '.logo.badge { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.95em; letter-spacing: .5px; border: none; }',
+      '.logo.badge { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; letter-spacing: .5px; border: none; }',
       // A logo shipped with the card is a full square with its own rounded corners.
       '.logo.own { padding: 0; border: none; background: none; border-radius: 0; }',
       '.meta .brand { color: var(--primary-text-color); font-weight: 500; }',
@@ -611,39 +611,39 @@ class CarburantsFranceCard extends HTMLElement {
       '.main { flex: 1; min-width: 0; }',
       '.line1 { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; flex-wrap: wrap; }',
       '.name { font-weight: 500; color: var(--primary-text-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
-      '.opening { font-size: 0.8em; white-space: nowrap; }',
+      '.opening { font-size: 12px; white-space: nowrap; }',
       '.opening.open, .opening.always { color: var(--success-color, #43a047); }',
       '.opening.automate { color: var(--info-color, #039be5); }',
       '.opening.closed { color: var(--error-color, #db4437); }',
-      '.meta { font-size: 0.85em; color: var(--secondary-text-color); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
+      '.meta { font-size: 13px; color: var(--secondary-text-color); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
       '.chevron { flex: none; color: var(--secondary-text-color); --mdc-icon-size: 20px; transition: transform .2s ease; }',
       '.chevron.closed { transform: rotate(-90deg); }',
       '.fuels { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; margin: 8px 0 0 52px; }',
-      '.fuel { display: flex; flex-direction: column; padding: 5px 8px; border-radius: 10px; background: var(--secondary-background-color, rgba(0,0,0,.04)); border: 1px solid transparent; }',
-      '.fname { font-size: 0.75em; color: var(--secondary-text-color); display: flex; align-items: center; gap: 3px; }',
+      '.fuel { display: flex; flex-direction: column; padding: 5px 8px; border-radius: 10px; background: var(--secondary-background-color, rgba(127,127,127,.08)); border: 1px solid transparent; }',
+      '.fname { font-size: 12px; color: var(--secondary-text-color); display: flex; align-items: center; gap: 3px; }',
       '.fname ha-icon { --mdc-icon-size: 12px; }',
-      '.fprice { font-size: 1.05em; font-weight: 500; color: var(--primary-text-color); font-variant-numeric: tabular-nums; }',
-      '.fage { font-size: 0.7em; color: var(--secondary-text-color); }',
+      '.fprice { font-size: 15px; font-weight: 500; color: var(--primary-text-color); font-variant-numeric: tabular-nums; }',
+      '.fage { font-size: 11px; color: var(--secondary-text-color); }',
       '.fuel.empty { visibility: hidden; }',
       '.fuel.best { border-color: var(--success-color, #43a047); background: color-mix(in srgb, var(--success-color, #43a047) 10%, transparent); }',
       '.fuel.best .fprice, .fuel.best .fname { color: var(--success-color, #43a047); }',
       '.fuel.out { opacity: .85; border-color: var(--warning-color, #ffa600); background: color-mix(in srgb, var(--warning-color, #ffa600) 8%, transparent); }',
-      '.fuel.out .fprice { font-size: 0.9em; color: var(--warning-color, #ffa600); }',
+      '.fuel.out .fprice { font-size: 13px; color: var(--warning-color, #ffa600); }',
       '.fuel.nodata { border-style: dashed; border-color: var(--divider-color, rgba(0,0,0,.2)); }',
-      '.fuel.nodata .fprice { font-size: 0.9em; font-weight: 500; color: var(--secondary-text-color); }',
-      '.details { margin: 10px 0 2px 52px; font-size: 0.85em; color: var(--primary-text-color); }',
+      '.fuel.nodata .fprice { font-size: 13px; font-weight: 500; color: var(--secondary-text-color); }',
+      '.details { margin: 10px 0 2px 52px; font-size: 13px; color: var(--primary-text-color); }',
       '.dtitle { font-weight: 500; margin: 8px 0 4px; color: var(--secondary-text-color); }',
       '.details table { border-collapse: collapse; }',
       '.details td { padding: 1px 12px 1px 0; }',
       '.details tr.today td { font-weight: 500; }',
       '.services { display: flex; flex-wrap: wrap; gap: 4px; }',
       '.services span { border-radius: 12px; padding: 2px 10px; font-size: 12px; font-weight: 500; background: var(--secondary-background-color, rgba(127,127,127,.12)); color: var(--secondary-text-color); }',
-      '.directions { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 8px 16px; border-radius: 10px; background: var(--primary-color); color: var(--text-primary-color, #fff); text-decoration: none; font-weight: 500; font-size: 1.05em; box-shadow: 0 1px 3px rgba(0,0,0,.25); }',
+      '.directions { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 8px 16px; border-radius: 10px; background: var(--primary-color); color: var(--text-primary-color, #fff); text-decoration: none; font-weight: 500; font-size: 15px; box-shadow: 0 1px 3px rgba(0,0,0,.25); }',
       '.directions:hover { filter: brightness(1.1); }',
       '.directions ha-icon { --mdc-icon-size: 20px; }',
       '.footer { padding: 4px 16px 2px; border-top: 1px solid var(--divider-color, rgba(0,0,0,.12)); }',
       '.footer[hidden] { display: none; }',
-      '.toggle { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 0.875em; font-weight: 500; padding: 6px 0; border: none; background: none; color: var(--primary-color); cursor: pointer; }',
+      '.toggle { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; font-weight: 500; padding: 6px 0; border: none; background: none; color: var(--primary-color); cursor: pointer; }',
       '.toggle ha-icon { --mdc-icon-size: 18px; }',
     ].join('\n');
   }
@@ -1528,9 +1528,9 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.map.dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }',
       '.carb-marker { background: none; border: none; }',
       '.ptext { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }',
-      '.pfuel { font-size: 10px; font-weight: 600; opacity: .75; }',
+      '.pfuel { font-size: 10px; font-weight: 500; opacity: .75; }',
       '.pname-pin { max-width: 130px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--primary-text-color, #212121); }',
-      '.pin { position: absolute; transform: translate(-50%, calc(-100% - 7px)); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
+      '.pin { position: absolute; transform: translate(-50%, calc(-100% - 7px)); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
       '.pin::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--secondary-text-color, #727272); }',
       '.pin.best { border-color: var(--success-color, #43a047); color: var(--success-color, #43a047); }',
       '.pin.best::after { border-top-color: var(--success-color, #43a047); }',
@@ -1545,7 +1545,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.home { position: absolute; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--primary-color, #03a9f4); color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); --mdc-icon-size: 18px; }',
       '.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); }',
       '.leaflet-popup-content { margin: 10px 12px; font-size: 13px; }',
-      '.pname { font-weight: 600; font-size: 14px; }',
+      '.pname { font-weight: 500; font-size: 14px; }',
       '.pbrand { font-size: 12px; font-weight: 500; color: var(--secondary-text-color, #727272); }',
       '.paddr { color: var(--secondary-text-color, #727272); margin-top: 2px; }',
       '.popening { margin-top: 4px; font-size: 12px; }',
@@ -1556,7 +1556,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.popup td { padding: 2px 8px 2px 0; }',
       '.popup td.age { color: var(--secondary-text-color, #727272); font-size: 11px; text-align: right; padding-right: 0; }',
       '.popup b.best { color: var(--success-color, #43a047); }',
-      '.popup .out { color: var(--warning-color, #ffa600); font-weight: 600; }',
+      '.popup .out { color: var(--warning-color, #ffa600); font-weight: 500; }',
       '.popup .nodata { color: var(--secondary-text-color, #727272); }',
       '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 4px; border: 2px solid rgba(0,0,0,.2); background: var(--card-background-color, #fff); color: var(--primary-color, #03a9f4); cursor: pointer; background-clip: padding-box; }',
       '.carb-toggle[hidden] { display: none; }',
