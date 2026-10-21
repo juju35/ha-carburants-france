@@ -6,171 +6,179 @@
 [![Release](https://img.shields.io/github/v/release/juju35/ha-carburants-france)](https://github.com/juju35/ha-carburants-france/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Intégration Home Assistant pour les [prix des carburants en France](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/) : suivez les prix et la disponibilité des carburants dans vos stations, avec une carte Lovelace incluse qui affiche les logos des enseignes.
+Home Assistant integration for [fuel prices in France](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/): follow the prices and availability of fuels at your stations, with a Lovelace card included that shows the brand logos.
 
-<img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/carburants-france-card-1.0.4.png" alt="carburants-france-card" width="380"> <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/carburants-france-card-dark-1.0.4.png" alt="carburants-france-card, thème sombre, station dépliée" width="380">
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=juju35&repository=ha-carburants-france&category=integration)
 
-## Fonctionnalités
+<img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card.png" alt="carburants-france-card" width="380">
 
-- Données officielles du flux instantané de l'État, **sans clé d'API**, en une seule requête pour toutes vos stations
-- **Recherche des stations dans le formulaire de configuration** : autour du domicile (rayon réglable), par code postal, ville, département ou identifiant de station, avec les prix affichés pour faire votre choix
-- Choix des **carburants à suivre** : Gazole, SP95, SP98, E10, E85, GPLc
-- Par station et par carburant : un capteur **Prix** (€/L, avec historique) et un capteur binaire **Disponible** (rupture temporaire ou définitive, avec la date de début)
-- Par carburant : un capteur **Meilleur prix** parmi vos stations, avec la station en attributs
-- **Enseigne et logo** de chaque station, retrouvés automatiquement via OpenStreetMap et Wikidata
-- Action `carburants_france.refresh` pour forcer une mise à jour
-- Carte `custom:carburants-france-card` **incluse dans l'intégration** et chargée automatiquement : logos, prix, rupture, meilleur prix en vert, ouverture en temps réel, horaires, services et itinéraire au clic
-- Carte géographique `custom:carburants-france-map-card` : vos stations sur un plan, avec le logo et le prix d'un carburant sur chaque repère, le domicile, et le détail de la station au clic
-- Ajout ou retrait de stations et de carburants à tout moment depuis les options
-- Français / anglais
+## Features
 
-## Prérequis
+- Official data from the French government's live feed, **no API key**, one request for all your stations
+- **Station search in the configuration form**: around your home (adjustable radius), by postcode, town, department or station id, with the prices shown to help you choose
+- Choice of the **fuels to follow**: Gazole (diesel), SP95, SP98, E10, E85, GPLc (LPG)
+- Per station and per fuel: a **Price** sensor (€/L, with history) and an **In stock** binary sensor (temporary or permanent shortage, with its start date)
+- Per fuel: a **Best price** sensor across your stations, with the station as attributes
+- **Brand and logo** of each station, found automatically through OpenStreetMap and Wikidata
+- `carburants_france.refresh` action to force an update
+- `custom:carburants-france-card` card, **shipped with the integration** and loaded automatically: logos, prices, shortages, best price in green, live opening status, opening hours, services and directions on click
+- `custom:carburants-france-map-card` map card: your stations on a map, with the logo and the price of a fuel on each marker, your home, and the station details on click
+- Add or remove stations and fuels at any time from the options
+- English and French
 
-- Aucun compte ni clé d'API : les données sont publiques ([data.economie.gouv.fr](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/))
-- La position du domicile renseignée dans Home Assistant, pour la recherche autour de chez vous et les distances
+## Prerequisites
 
-## Installation via HACS (recommandé)
+- No account or API key: the data is public ([data.economie.gouv.fr](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/))
+- Your home location set in Home Assistant, for the search around your home and the distances
 
-[![Ajouter à HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=juju35&repository=ha-carburants-france&category=integration)
+## Installation
 
-Ou manuellement :
+### Via HACS (recommended)
 
-1. Ouvrir HACS → ⋮ → **Dépôts personnalisés**
-2. Ajouter `https://github.com/juju35/ha-carburants-france` — Catégorie : **Intégration**
-3. Rechercher **Carburants France** et l'installer
-4. Redémarrer Home Assistant
+Click the button below to add the repository directly:
 
-La carte est **incluse dans l'intégration** : au démarrage, elle est ajoutée automatiquement aux ressources du tableau de bord (`/carburants_france_static/carburants-france-card.js`, type module). Après une installation ou une mise à jour, redémarrez Home Assistant puis rafraîchissez le navigateur (vider le cache de l'application mobile si besoin).
+[![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=juju35&repository=ha-carburants-france&category=integration)
 
-Si vos tableaux de bord sont en mode YAML, la carte est chargée sur toutes les pages sans passer par les ressources.
+Then click **Download** and restart Home Assistant.
 
-## Installation manuelle
+Or manually:
 
-Copiez le dossier `custom_components/carburants_france/` dans `/config/custom_components/carburants_france/`, puis redémarrez Home Assistant.
+1. Open HACS → **⋮** (top right) → **Custom repositories**
+2. Add `https://github.com/juju35/ha-carburants-france` — Type: **Integration**
+3. Search for **Carburants France** and click **Download**
+4. Restart Home Assistant
+
+The cards are **part of the integration**: at startup they are added to the dashboard resources (`/carburants_france_static/carburants-france-card.js`, module). After an install or an update, restart Home Assistant and refresh the browser (clear the companion app cache if needed).
+
+If your dashboards are in YAML mode, the cards are loaded on every page without going through the resources.
+
+### Manual
+
+Copy `custom_components/carburants_france/` to `/config/custom_components/carburants_france/`, then restart Home Assistant.
 
 ## Configuration
 
-[![Ajouter l'intégration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=carburants_france)
+### Integration
 
-**Paramètres → Appareils et services → Ajouter une intégration → Carburants France**, puis :
+[![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=carburants_france)
 
-1. **Nom et carburants** : donnez un nom (« Carburants », « Travail »…) et cochez les carburants à suivre.
-2. **Recherche** : laissez vide pour chercher autour du domicile dans le rayon choisi, ou saisissez un code postal (`35000`), une ville (`Rennes`), un département (`35`) ou l'identifiant d'une station (`35000013`).
-3. **Stations** : cochez les stations à suivre. Chaque ligne affiche l'enseigne, l'adresse, les prix des carburants choisis (✕ en cas de rupture) et la distance. Cochez **Nouvelle recherche** pour ajouter des stations ailleurs : la sélection est conservée.
+**Settings → Devices & services → Add integration → Carburants France**, then:
 
-Options (bouton **Configurer**) :
+1. **Name and fuels**: give a name ("Fuel", "Work"…) and tick the fuels to follow.
+2. **Search**: leave empty to search around your home within the chosen radius, or enter a postcode (`35000`), a town (`Rennes`), a department (`35`) or a station id (`35000013`).
+3. **Stations**: tick the stations to follow. Each line shows the brand, the address, the prices of the chosen fuels (✕ when out of stock) and the distance. Tick **New search** to add stations elsewhere: the selection is kept.
 
-| Option | Défaut | Description |
+Options (**Configure** button):
+
+| Option | Default | Description |
 |---|---|---|
-| Carburants à suivre | Gazole | Carburants pour lesquels les capteurs sont créés |
-| Stations suivies | — | Décochez une station pour ne plus la suivre |
-| Ajouter des stations | — | Relance la recherche pour ajouter des stations |
-| Renommer les stations | — | Étape suivante : un nom par station, vide pour garder le nom automatique |
-| Intervalle de mise à jour | 15 min | Minimum 5 min : le flux de l'État est mis à jour toutes les 10 minutes |
+| Fuels to follow | Gazole | Fuels for which sensors are created |
+| Followed stations | — | Untick a station to stop following it |
+| Add stations | — | Runs the search again to add stations |
+| Rename stations | — | Next step: one name per station, empty to keep the automatic name |
+| Update interval | 15 min | Minimum 5 min: the government feed is updated every 10 minutes |
 
-Plusieurs entrées sont possibles, par exemple une autour de la maison et une sur le trajet du travail.
+Several entries are possible, for example one around your home and one along your commute.
 
-## Entités
+### Entities
 
-Chaque station est un appareil, nommé d'après son enseigne et sa ville (renommable dans Home Assistant).
+Each station is a device, named after its brand and town (can be renamed in Home Assistant). Entity ids are created in French.
 
-| Entité | Exemple | Description |
+| Entity | Example | Description |
 |---|---|---|
-| Prix | `sensor.leclerc_rennes_gazole` | Prix en €/L. Inconnu pendant une rupture. Attributs : date de mise à jour, rupture, adresse, distance |
-| Disponible | `binary_sensor.leclerc_rennes_gazole_disponible` | Allumé quand le carburant est disponible. Attributs : type de rupture (`temporaire`, `definitive`) et date de début |
-| Meilleur prix | `sensor.carburants_meilleur_prix_gazole` | Prix le plus bas parmi les stations où le carburant est disponible, avec la station en attributs |
-| Stations | `sensor.carburants_stations` | Nombre de stations suivies, toutes les données en attributs (utilisé par la carte) |
+| Price | `sensor.leclerc_rennes_gazole` | Price in €/L. Unknown during a shortage. Attributes: update date, shortage, address, distance |
+| In stock | `binary_sensor.leclerc_rennes_gazole_disponible` | On when the fuel is available. Attributes: shortage type (`temporaire`, `definitive`) and start date |
+| Best price | `sensor.carburants_meilleur_prix_gazole` | Lowest price across the stations where the fuel is available, with the station as attributes |
+| Stations | `sensor.carburants_stations` | Number of followed stations, all the data as attributes (used by the cards) |
 
-Un carburant en rupture définitive (plus vendu) n'a pas d'entité. Un carburant qui n'est pas suivi non plus.
+A fuel in permanent shortage (no longer sold) has no entity, nor has a fuel that is not followed.
 
-Il arrive que le flux ne publie pour un carburant ni prix ni rupture, en général juste après la levée d'une rupture, avant qu'un nouveau prix soit saisi. Le carburant reste alors affiché **Sans prix**, avec un prix et une disponibilité inconnus, jusqu'au prochain prix publié.
+The feed sometimes publishes neither a price nor a shortage for a fuel, usually right after a shortage ends, before a new price is entered. The fuel then shows **No price**, with an unknown price and availability, until the next published price.
 
-## Carte
+### Card
 
-Ajoutez la carte **Carburants France** depuis le sélecteur de cartes : toutes les options se règlent dans l'éditeur visuel. En YAML :
+Add the **Carburants France** card from the card picker: every option is set in the visual editor. In YAML:
 
 ```yaml
 type: custom:carburants-france-card
 ```
 
-| Option | Défaut | Description |
+| Option | Default | Description |
 |---|---|---|
-| `entity` | détectée | Capteur Stations à afficher (utile avec plusieurs entrées) |
-| `title` | « Carburants » | Titre de la carte |
-| `fuels` | tous | Carburants affichés, par exemple `[gazole, e10]` |
-| `sort` | `price` | `price`, `distance`, `name` ou `config` (ordre de configuration) |
-| `sort_fuel` | 1er carburant | Carburant utilisé pour le tri par prix |
-| `max_stations` | `0` | Nombre maximum de stations affichées (`0` = toutes) |
-| `show_icon` | `true` | Icône à côté du titre, qui ouvre la page des données sur data.economie.gouv.fr |
-| `show_logo` | `true` | Logo de l'enseigne (initiales en couleur si aucun logo n'est connu) |
-| `show_brand` | `true` | Enseigne en toutes lettres, avant l'adresse (« Total Access », « TotalEnergies »…) |
-| `show_address` | `true` | Adresse et ville |
-| `show_distance` | `true` | Distance depuis le domicile |
-| `show_hours` | `true` | Ouvert, fermé, 24h/24 ou automate 24/24, avec l'heure de fermeture ou d'ouverture |
-| `show_updated` | `true` | Ancienneté de chaque prix |
-| `show_out_of_stock` | `true` | Afficher les carburants en rupture temporaire |
-| `highlight_best` | `true` | Meilleur prix de chaque carburant en vert avec une étoile |
-| `show_refresh` | `true` | Bouton d'actualisation |
-| `hide_out_of_stock_stations` | `true` | Masquer les stations où tous les carburants affichés sont en rupture |
+| `entity` | detected | Stations sensor to show (useful with several entries) |
+| `title` | `Fuel` | Card title |
+| `fuels` | all | Fuels shown, for example `[gazole, e10]` |
+| `sort` | `price` | `price`, `distance`, `name` or `config` (configuration order) |
+| `sort_fuel` | first fuel | Fuel used to sort by price |
+| `max_stations` | `0` | Maximum number of stations shown (`0` = all) |
+| `show_icon` | `true` | Icon next to the title, opening the data page on data.economie.gouv.fr |
+| `show_logo` | `true` | Brand logo (colored initials when no logo is known) |
+| `show_brand` | `true` | Brand in full, before the address ("Total Access", "TotalEnergies"…) |
+| `show_address` | `true` | Address and town |
+| `show_distance` | `true` | Distance from home |
+| `show_hours` | `true` | Open, closed, 24/7 or 24/7 automatic pump, with the closing or opening time |
+| `show_updated` | `true` | Age of each price |
+| `show_out_of_stock` | `true` | Show fuels in temporary shortage |
+| `highlight_best` | `true` | Best price of each fuel in green with a star |
+| `show_refresh` | `true` | Refresh button |
+| `hide_out_of_stock_stations` | `true` | Hide the stations where every fuel shown is out of stock |
 
-Cliquez sur une station pour voir ses horaires de la semaine, ses services et un bouton d'itinéraire. Une seule station est dépliée à la fois ; un clic en dehors de la carte la replie et masque à nouveau les stations en rupture.
+Click a station to see its weekly opening hours, its services and a directions button. One station is expanded at a time; a click outside the card collapses it and hides the out-of-stock stations again.
 
-Les stations où **tous les carburants affichés sont en rupture** sont masquées : le bouton **Afficher les stations en rupture**, en bas de la carte, les fait réapparaître.
+Stations where **every fuel shown is out of stock** are hidden: the **Show the out of stock stations** button at the bottom of the card brings them back.
 
-## Carte géographique
+### Map card
 
-Ajoutez la carte **Carburants France — carte** depuis le sélecteur de cartes. En YAML :
+Add the **Carburants France — carte** card from the card picker. In YAML:
 
 ```yaml
 type: custom:carburants-france-map-card
 ```
 
-| Option | Défaut | Description |
+| Option | Default | Description |
 |---|---|---|
-| `entity` | détectée | Capteur Stations à afficher (utile avec plusieurs entrées) |
-| `title` | « Carte des stations » | Titre de la carte, `""` pour le masquer |
-| `show_icon` | `true` | Icône à côté du titre, qui ouvre la page des données sur data.economie.gouv.fr |
-| `show_fullscreen` | `true` | Bouton plein écran, sous les boutons de zoom |
-| `fuel` | le moins cher | Carburant affiché sur les repères. Sans valeur, chaque repère affiche le carburant disponible le moins cher de la station, avec son nom (« E10 1,990 € ») |
-| `height` | `400` | Hauteur de la carte en pixels |
-| `zoom` | ajusté | Zoom fixe ; par défaut, la carte s'ajuste pour montrer toutes les stations |
-| `map_style` | `ha` | Fond de carte, voir ci-dessous |
-| `theme` | `auto` | Thème du fond de carte : `auto` (selon le thème de Home Assistant), `light` ou `dark` (assombri, sauf photos aériennes) |
-| `tile_url` | — | Avec `map_style: custom` : URL des tuiles avec `{z}`, `{x}`, `{y}` (et `{s}` si besoin) |
-| `tile_attribution` | — | Avec `map_style: custom` : attribution affichée en bas de la carte |
-| `show_home` | `true` | Afficher le domicile |
-| `show_logo` | `true` | Logo de l'enseigne sur les repères |
-| `show_name` | `true` | Nom de la station sur les repères, au-dessus du prix |
-| `hide_out_of_stock_stations` | `true` | Masquer les stations où tous les carburants suivis sont en rupture (bouton en haut à droite pour les afficher) |
+| `entity` | detected | Stations sensor to show (useful with several entries) |
+| `title` | `Stations map` | Card title, `""` to hide it |
+| `show_icon` | `true` | Icon next to the title, opening the data page on data.economie.gouv.fr |
+| `show_fullscreen` | `true` | Full screen button, under the zoom buttons |
+| `fuel` | cheapest | Fuel shown on the markers. Without a value, each marker shows the cheapest available fuel of the station, with its name ("E10 1,990 €") |
+| `height` | `400` | Map height in pixels |
+| `zoom` | fitted | Fixed zoom; by default the map fits all the stations |
+| `map_style` | `ha` | Base map, see below |
+| `theme` | `auto` | Base map theme: `auto` (follows the Home Assistant theme), `light` or `dark` (darkened, except aerial photos) |
+| `tile_url` | — | With `map_style: custom`: tile URL with `{z}`, `{x}`, `{y}` (and `{s}` if needed) |
+| `tile_attribution` | — | With `map_style: custom`: attribution shown at the bottom of the map |
+| `show_home` | `true` | Show your home |
+| `show_logo` | `true` | Brand logo on the markers |
+| `show_name` | `true` | Station name on the markers, above the price |
+| `hide_out_of_stock_stations` | `true` | Hide the stations where every followed fuel is out of stock (button at the top right to show them) |
 
-Chaque repère affiche le logo et le prix : vert pour le meilleur prix de ce carburant, orange quand tous les carburants suivis sont en rupture. Cliquez sur un repère pour voir tous les prix, l'ouverture et l'itinéraire. Le bouton plein écran agrandit la carte sur tout l'écran (sur iPhone, où le plein écran n'est pas possible, elle recouvre la page) ; Échap ou le même bouton la referment. Le zoom à la molette est désactivé pour ne pas gêner le défilement du tableau de bord (utilisez les boutons ou le pincement).
+Each marker shows the logo and the price: green for the best price of that fuel, orange when every followed fuel is out of stock. Click a marker to see all the prices, the opening status and the directions. The full screen button enlarges the map to the whole screen (on iPhone, where full screen is not available, it covers the page); Escape or the same button closes it. Scroll-wheel zoom is disabled so it doesn't get in the way of scrolling the dashboard (use the buttons or pinch).
 
-Fonds de carte disponibles, tous sans clé d'API :
+Available base maps, all without an API key:
 
-| `map_style` | Fond |
+| `map_style` | Base map |
 |---|---|
-| `ha` | **Home Assistant** : le fond de la carte native de Home Assistant (2026.9 et plus), tuiles vectorielles OpenStreetMap avec son style clair ou sombre. Sans WebGL2, ou avant la 2026.9, la carte passe automatiquement sur `osm` |
-| `osm` | OpenStreetMap en tuiles raster, servi par Home Assistant lui-même (intégration intégrée **Map tiles**, 2026.9 et plus) ; directement depuis OpenStreetMap avant la 2026.9 |
+| `ha` | **Home Assistant**: the base map of the native Home Assistant map card (2026.9 and later), OpenStreetMap vector tiles with its light or dark style. Without WebGL2, or before 2026.9, the map falls back to `osm` |
+| `osm` | OpenStreetMap raster tiles, served by Home Assistant itself (built-in **Map tiles** integration, 2026.9 and later); straight from OpenStreetMap before 2026.9 |
 | `osm_fr` | [OpenStreetMap France](https://www.openstreetmap.fr) |
-| `ign` | Plan IGN ([Géoplateforme](https://geoservices.ign.fr)) |
-| `ign_photo` | Photos aériennes IGN (France uniquement) |
-| `topo` | [OpenTopoMap](https://opentopomap.org), avec le relief |
-| `cyclosm` | [CyclOSM](https://www.cyclosm.org), orienté vélo |
-| `satellite` | Imagerie satellite Esri World Imagery |
-| `custom` | Vos propres tuiles (`tile_url`), par exemple un serveur auto-hébergé |
+| `ign` | IGN map ([Géoplateforme](https://geoservices.ign.fr)) |
+| `ign_photo` | IGN aerial photos (France only) |
+| `topo` | [OpenTopoMap](https://opentopomap.org), with relief |
+| `cyclosm` | [CyclOSM](https://www.cyclosm.org), cycling oriented |
+| `satellite` | Esri World Imagery satellite imagery |
+| `custom` | Your own tiles (`tile_url`), for example a self-hosted server |
 
 ```yaml
 type: custom:carburants-france-map-card
 map_style: custom
-tile_url: https://tuiles.example.fr/{z}/{x}/{y}.png
+tile_url: https://tiles.example.org/{z}/{x}/{y}.png
 tile_attribution: © OpenStreetMap contributors
 ```
 
-La carte utilise [Leaflet](https://leafletjs.com) et, pour le fond `ha`, [MapLibre GL](https://maplibre.org) avec son adaptateur Leaflet, aux mêmes versions que Home Assistant ; tout est fourni avec l'intégration, sans CDN. Le fond `ha` reprend le style servi par votre instance (`/static/map/light.json` ou `dark.json`) et suit le thème clair ou sombre. Pour les autres fonds, le thème sombre assombrit les tuiles, sauf les photos aériennes.
+### Automations
 
-## Automatisations
-
-Être prévenu quand le gazole passe sous 2 € dans une de vos stations :
+Get notified when diesel drops below 2 € at one of your stations:
 
 ```yaml
 triggers:
@@ -178,13 +186,13 @@ triggers:
     entity_id: sensor.carburants_meilleur_prix_gazole
     below: 2
 actions:
-  - action: notify.mobile_app_telephone
+  - action: notify.mobile_app_phone
     data:
-      title: Gazole à {{ states('sensor.carburants_meilleur_prix_gazole') }} €
+      title: Diesel at {{ states('sensor.carburants_meilleur_prix_gazole') }} €
       message: "{{ state_attr('sensor.carburants_meilleur_prix_gazole', 'station_name') }}"
 ```
 
-Être prévenu d'une rupture :
+Get notified of a shortage:
 
 ```yaml
 triggers:
@@ -192,33 +200,74 @@ triggers:
     entity_id: binary_sensor.leclerc_rennes_gazole_disponible
     to: "off"
 actions:
-  - action: notify.mobile_app_telephone
+  - action: notify.mobile_app_phone
     data:
-      message: Rupture de gazole chez Leclerc Rennes
+      message: Diesel out of stock at Leclerc Rennes
 ```
 
-## Noms, enseignes et logos
+## Screenshots
 
-Le flux de l'État ne donne ni le nom ni l'enseigne des stations.
+| Light | Dark (station expanded, sorted by distance) |
+|---|---|
+| ![card](screenshots/card.png) | ![card dark](screenshots/card-dark.png) |
 
-**Nom et enseigne** viennent d'abord du fichier communautaire [`stations_name.json`](https://github.com/Aohzan/hass-prixcarburant/blob/master/custom_components/prix_carburant/stations_name.json) du projet [hass-prixcarburant](https://github.com/Aohzan/hass-prixcarburant) d'Aohzan (environ 9 200 stations, licence Apache 2.0), mis à jour chaque semaine et corrigé par ses utilisateurs. Il est téléchargé au plus une fois par semaine et gardé en cache. Pour corriger ou ajouter une station pour tout le monde, proposez une modification de ce fichier sur son dépôt.
+Screenshots are in French, like the station data.
 
-Pour les stations absentes de ce fichier, l'intégration cherche dans [OpenStreetMap](https://www.openstreetmap.org) (tag `ref:FR:prix-carburants`, sinon la station la plus proche à moins de 300 m). Si OpenStreetMap n'a qu'un nom générique (« Station-service ») ou le nom de l'enseigne, la station est nommée d'après son enseigne et sa ville, ou à défaut son adresse.
+## How it works
 
-Ordre de priorité du nom : nom personnalisé (option **Renommer les stations**), fichier communautaire, OpenStreetMap, enseigne et ville, adresse.
+The integration downloads the government's live feed at the update interval, in a single request for every followed station, and creates the price, availability and best-price entities from it.
 
-Les logos TotalEnergies (stations Total, TotalEnergies, Total Contact) et Total Access sont intégrés aux cartes : Wikidata donne le même logo aux deux enseignes, parfois dans une ancienne version. L'enseigne est aussi écrite en toutes lettres sur la carte liste et dans la bulle de la carte géographique.
+### Names, brands and logos
 
-Le **logo** vient de l'enseigne trouvée dans OpenStreetMap, via [Wikidata](https://www.wikidata.org) / Wikimedia Commons. La recherche est faite une fois, à l'ajout de la station ; si OpenStreetMap est injoignable, elle est retentée au démarrage suivant. Sans logo connu, la carte affiche les initiales de l'enseigne.
+The government feed gives neither the name nor the brand of the stations.
 
-## Données
+**Name and brand** come first from the community file [`stations_name.json`](https://github.com/Aohzan/hass-prixcarburant/blob/master/custom_components/prix_carburant/stations_name.json) of Aohzan's [hass-prixcarburant](https://github.com/Aohzan/hass-prixcarburant) project (about 9,200 stations, Apache 2.0 licence), updated every week and corrected by its users. It is downloaded at most once a week and cached. To fix or add a station for everyone, suggest a change to that file on its repository.
 
-- Prix et stations : Ministère de l'Économie, [flux instantané v2](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/), Licence Ouverte
-- Noms des stations : fichier communautaire [hass-prixcarburant](https://github.com/Aohzan/hass-prixcarburant) (Aohzan et contributeurs), Apache 2.0
-- Enseignes : © contributeurs [OpenStreetMap](https://www.openstreetmap.org/copyright), ODbL
-- Logos : Wikimedia Commons, via Wikidata ; logos TotalEnergies et Total Access intégrés aux cartes, marques de TotalEnergies, utilisés uniquement pour identifier les stations
-- Fonds de carte : © contributeurs OpenStreetMap, OpenStreetMap France, IGN, OpenTopoMap, CyclOSM, Esri selon le fond choisi
+For stations missing from that file, the integration looks in [OpenStreetMap](https://www.openstreetmap.org) (`ref:FR:prix-carburants` tag, otherwise the closest station within 300 m). If OpenStreetMap only has a generic name ("Station-service") or the brand name, the station is named after its brand and town, or failing that its address.
 
-## Licence
+Name priority: custom name (**Rename stations** option), community file, OpenStreetMap, brand and town, address.
 
-MIT
+The TotalEnergies (Total, TotalEnergies, Total Contact stations) and Total Access logos are built into the cards: Wikidata gives both brands the same logo, sometimes an old version. The brand is also written in full on the list card and in the map card popup.
+
+The **logo** comes from the brand found in OpenStreetMap, through [Wikidata](https://www.wikidata.org) / Wikimedia Commons. The lookup is done once, when the station is added; if OpenStreetMap can't be reached, it is retried at the next startup. Without a known logo, the card shows the brand initials.
+
+### Map
+
+The map card uses [Leaflet](https://leafletjs.com) and, for the `ha` base map, [MapLibre GL](https://maplibre.org) with its Leaflet adapter, at the same versions as Home Assistant; everything ships with the integration, no CDN. The `ha` base map reuses the style served by your instance (`/static/map/light.json` or `dark.json`) and follows the light or dark theme. For the other base maps, the dark theme darkens the tiles, except aerial photos.
+
+### Data sources
+
+- Prices and stations: French Ministry of the Economy, [live feed v2](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/), Licence Ouverte
+- Station names: [hass-prixcarburant](https://github.com/Aohzan/hass-prixcarburant) community file (Aohzan and contributors), Apache 2.0
+- Brands: © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, ODbL
+- Logos: Wikimedia Commons, through Wikidata; TotalEnergies and Total Access logos built into the cards, trademarks of TotalEnergies, used only to identify the stations
+- Base maps: © OpenStreetMap contributors, OpenStreetMap France, IGN, OpenTopoMap, CyclOSM, Esri depending on the base map chosen
+
+## Development
+
+```bash
+pip install -r requirements_test.txt && pytest
+pip install playwright && playwright install chromium
+python scripts/screenshots.py   # renders the list card with mock stations into screenshots/
+```
+
+### Releasing
+
+1. Bump the version in `custom_components/carburants_france/manifest.json`, `const.py` and `CARBURANTS_CARD_VERSION` in the card
+2. Add a `## <version>` section at the top of [CHANGELOG.md](CHANGELOG.md)
+3. Push to `main`: the **Release** workflow creates the tag and the GitHub release with the changelog section as notes
+
+## Translations
+
+The integration and the cards follow the language of Home Assistant. Currently supported:
+
+| Language | Code |
+|---|---|
+| English | `en` |
+| Français | `fr` |
+
+Contributions for additional languages are welcome!
+
+## License
+
+[MIT](LICENSE)

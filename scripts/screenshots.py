@@ -149,8 +149,8 @@ STATES = {
 }
 
 SHOTS = [
-    {"file": "carburants-france-card", "theme": "light", "config": {}, "expand": None},
-    {"file": "carburants-france-card-dark", "theme": "dark",
+    {"file": "card", "theme": "light", "config": {}, "expand": None},
+    {"file": "card-dark", "theme": "dark",
      "config": {"title": "Autour de la maison", "sort": "distance"}, "expand": "35000021"},
 ]
 
@@ -166,8 +166,6 @@ def page_html(theme):
 
 def main():
     out_dir = ROOT / "screenshots"
-    for old in out_dir.glob("carburants-france-card*.png"):
-        old.unlink()
     with sync_playwright() as p:
         browser = p.chromium.launch()
         context = browser.new_context(device_scale_factor=2, viewport={"width": 1000, "height": 2400},
@@ -191,7 +189,7 @@ def main():
             if shot["expand"]:
                 page.locator(f'.station[data-id="{shot["expand"]}"] .row').click()
             page.wait_for_timeout(600)
-            name = f'{shot["file"]}-{VERSION}.png'
+            name = f'{shot["file"]}.png'
             page.locator("carburants-france-card").screenshot(path=str(out_dir / name), animations="disabled")
             print(f"screenshots/{name}")
         browser.close()
