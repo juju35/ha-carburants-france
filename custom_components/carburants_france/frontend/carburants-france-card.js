@@ -525,7 +525,7 @@ class CarburantsFranceCard extends HTMLElement {
       (opening ? '<span class="opening ' + opening.key + '">' + carbEsc(opening.text) + '</span>' : '') + '</div>' +
       (meta.length ? '<div class="meta">' + meta.join(' · ') + '</div>' : '') +
       '</div>' +
-      '<ha-icon class="chevron" icon="' + (expanded ? 'mdi:chevron-up' : 'mdi:chevron-down') + '"></ha-icon>' +
+      '<ha-icon class="chevron' + (expanded ? '' : ' closed') + '" icon="mdi:chevron-down"></ha-icon>' +
       '</div>' +
       (chips.indexOf('fprice') !== -1
         ? '<div class="fuels"' + (fuels.length <= 4 ? ' style="grid-template-columns:repeat(' + fuels.length + ',minmax(0,1fr))"' : '') + '>' + chips + '</div>'
@@ -616,7 +616,8 @@ class CarburantsFranceCard extends HTMLElement {
       '.opening.automate { color: var(--info-color, #039be5); }',
       '.opening.closed { color: var(--error-color, #db4437); }',
       '.meta { font-size: 0.85em; color: var(--secondary-text-color); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
-      '.chevron { flex: none; color: var(--secondary-text-color); --mdc-icon-size: 20px; }',
+      '.chevron { flex: none; color: var(--secondary-text-color); --mdc-icon-size: 20px; transition: transform .2s ease; }',
+      '.chevron.closed { transform: rotate(-90deg); }',
       '.fuels { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; margin: 8px 0 0 52px; }',
       '.fuel { display: flex; flex-direction: column; padding: 5px 8px; border-radius: 10px; background: var(--secondary-background-color, rgba(0,0,0,.04)); border: 1px solid transparent; }',
       '.fname { font-size: 0.75em; color: var(--secondary-text-color); display: flex; align-items: center; gap: 3px; }',

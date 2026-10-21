@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+### Changes
+- Station chevron like the other ha-* cards: pointing right when the station is folded, down when it is unfolded, with a short rotation.
+
 ## 1.1.0
 
 ### Changes
