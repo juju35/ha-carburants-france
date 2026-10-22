@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+### Changes
+- More compact layout with the same information, like the other ha-* cards: 12 px card padding, 36 px header icon, 16 px name and 12 px subtitle, 11 px pills, tighter tiles and sections.
+- Fuel tiles on two lines instead of three: fuel name and price age on top, price underneath; 36 px logos; 12 px station details.
+
 ## 1.1.4
 
 ### Changes
