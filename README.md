@@ -28,6 +28,7 @@ Home Assistant integration for [fuel prices in France](https://data.economie.gou
 
 ## Prerequisites
 
+- Home Assistant 2024.11 or later
 - No account or API key: the data is public ([data.economie.gouv.fr](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/))
 - Your home location set in Home Assistant, for the search around your home and the distances
 

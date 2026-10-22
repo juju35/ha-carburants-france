@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "carburants_france"
-VERSION: Final = "1.1.3"
+VERSION: Final = "1.1.4"
 USER_AGENT: Final = f"ha-carburants-france/{VERSION} (+https://github.com/juju35/ha-carburants-france)"
 
 API_RECORDS: Final = (
