@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.4
+
+### Changes
+- The card picker links both cards to their documentation (`documentationURL`), like the other ha-* cards.
+
+### Maintenance
+- README: Home Assistant 2024.11 or later under **Prerequisites**.
+- The release is not published when its CHANGELOG section is empty.
+- LICENSE held by juju35, like the other ha-* repositories.
+
 ## 1.1.3
 
 ### Changes

@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.1.3';
+var CARBURANTS_CARD_VERSION = '1.1.4';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -752,6 +752,7 @@ if (!customElements.get('carburants-france-card')) {
     name: 'Carburants France',
     description: 'Fuel prices and availability of the followed stations, with brand logos.',
     preview: true,
+    documentationURL: 'https://github.com/juju35/ha-carburants-france',
   });
   console.info('%c CARBURANTS-FRANCE-CARD %c v' + CARBURANTS_CARD_VERSION + ' ', 'color:#fff;background:#0e7c66;font-weight:700', 'color:#0e7c66;background:#fff');
 }
@@ -1671,6 +1672,7 @@ if (!customElements.get('carburants-france-map-card')) {
     name: 'Carburants France — carte',
     description: 'Map of the followed stations, with the price of a fuel on each marker.',
     preview: true,
+    documentationURL: 'https://github.com/juju35/ha-carburants-france',
   });
 }
 
