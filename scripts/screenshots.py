@@ -10,7 +10,6 @@ import io
 import json
 import os
 import re
-import urllib.request
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -22,6 +21,7 @@ TILE_CACHE = Path(__file__).resolve().parent / ".tile-cache"
 # Pages are served from this made-up origin, so the card finds Leaflet at /carburants_france_static.
 ORIGIN = "https://card.test"  # HTTPS: the browser only gives the position to secure pages
 MAP_WIDTH = 520
+USER_AGENT = "ha-carburants-france screenshots (+https://github.com/juju35/ha-carburants-france)"
 VERSION = json.loads((ROOT / "custom_components/carburants_france/manifest.json").read_text())["version"]
 NOW = "2026-10-20T08:30:00+02:00"
 WIDTH = 410
@@ -467,30 +467,28 @@ MAP_SHOTS = [
 ]
 
 
-MISSING: set[str] = set()
-BLANK_TILE = bytes.fromhex(
-    "89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c4944415408d763f8f7f3e900"
-    "05bc02e7a8b3ef400000000049454e44ae426082"
-)
+class TileError(RuntimeError):
+    """An OpenStreetMap tile could not be downloaded: no blank map in the README."""
+
+
+# Playwright's own HTTP client (set in main): it has its own certificates, unlike python.org's
+# Python on macOS, which can't verify HTTPS until "Install Certificates.command" has run.
+HTTP = {}
 
 
 def osm_tile(z, x, y):
     """One OpenStreetMap tile, from the cache or downloaded once (tile usage policy: identify, cache)."""
     path = TILE_CACHE / str(z) / str(x) / f"{y}.png"
     if not path.exists():
-        req = urllib.request.Request(
-            f"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            headers={"User-Agent": f"ha-carburants-france/{VERSION} screenshots"},
-        )
+        url = f"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                data = resp.read()
-        except OSError:
-            # No network: an empty tile, and the list of the missing ones at the end.
-            MISSING.add(f"{z}/{x}/{y}")
-            return BLANK_TILE
+            resp = HTTP["client"].get(url, headers={"User-Agent": USER_AGENT}, timeout=30000)
+        except Exception as err:  # noqa: BLE001 - any network failure means the same thing here
+            raise TileError(f"{url}: {err}") from err
+        if not resp.ok or not resp.body().startswith(b"\x89PNG"):
+            raise TileError(f"{url}: HTTP {resp.status}")
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
+        path.write_bytes(resp.body())
     return path.read_bytes()
 
 
@@ -508,11 +506,18 @@ def retina_tile(z, x, y):
     return out.getvalue()
 
 
+ERRORS: list[str] = []
+
+
 def serve(route):
     """The made-up origin: pages, the integration's static files and the map tiles."""
     path = route.request.url[len(ORIGIN) :].split("?")[0]
     if match := re.fullmatch(r"/tiles/(\d+)/(\d+)/(\d+)\.png", path):
-        route.fulfill(body=retina_tile(*map(int, match.groups())), content_type="image/png")
+        try:
+            route.fulfill(body=retina_tile(*map(int, match.groups())), content_type="image/png")
+        except TileError as err:
+            ERRORS.append(str(err))
+            route.abort()
     elif path.startswith("/carburants_france_static/"):
         file = FRONTEND / path[len("/carburants_france_static/") :]
         types = {".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".png": "image/png"}
@@ -553,6 +558,8 @@ def map_shot(page, shot, out_dir):
         card.locator(".searchbar input").press("Enter")
         card.locator(".searchbar .clear:not(.empty)").wait_for()
     # Every tile loaded and the fit animation over.
+    if ERRORS:
+        raise TileError(ERRORS[0])
     page.wait_for_function(
         """() => {
           const root = document.querySelector("carburants-france-map-card").shadowRoot;
@@ -562,6 +569,8 @@ def map_shot(page, shot, out_dir):
         timeout=60000,
     )
     page.wait_for_timeout(800)
+    if ERRORS:
+        raise TileError(ERRORS[0])
     name = f"{shot['file']}.png"
     card.screenshot(path=str(out_dir / name), animations="disabled")
     print(f"screenshots/{name}")
@@ -630,13 +639,17 @@ def main():
                 else serve(route)
             ),
         )
+        HTTP["client"] = p.request.new_context()
         page = context.new_page()
         page.clock.set_fixed_time(NOW)
-        for shot in MAP_SHOTS:
-            map_shot(page, shot, out_dir)
+        try:
+            for shot in MAP_SHOTS:
+                map_shot(page, shot, out_dir)
+        except Exception as err:
+            raise SystemExit(
+                f"Map screenshots not made, OpenStreetMap tiles unreachable: {ERRORS[0] if ERRORS else err}"
+            ) from err
         browser.close()
-    if MISSING:
-        print(f"{len(MISSING)} map tiles could not be downloaded:", " ".join(sorted(MISSING)))
 
 
 if __name__ == "__main__":
