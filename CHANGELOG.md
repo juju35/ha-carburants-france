@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.1
+
+### Fixes
+- Map markers: compact fuel badge, so the markers keep their previous height and overlap less.
+
 ## 1.3.0
 
 ### Changes

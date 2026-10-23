@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.3.0';
+var CARBURANTS_CARD_VERSION = '1.3.1';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -1539,6 +1539,10 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.ptext { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }',
       '.pfuel { display: inline-flex; margin-right: 2px; }',
       ...CARBURANTS_BADGE_STYLES,
+      // Compact badge on the markers, so they stay about as tall as with plain text.
+      '.pin .fbadge { height: 14px; padding-left: 5px; gap: 2px; border-radius: 7px; font-size: 9px; box-shadow: none; }',
+      '.pin .fbadge:not(:has(.fcode)) { padding-right: 5px; }',
+      '.pin .fcode { min-width: 11px; height: 11px; border-radius: 6px; font-size: 7px; }',
       '.pname-pin { max-width: 130px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--primary-text-color, #212121); }',
       '.pin { position: absolute; transform: translate(-50%, calc(-100% - 7px)); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
       '.pin::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--secondary-text-color, #727272); }',
