@@ -5,6 +5,7 @@
 ### Features
 - 42 brand logos shipped with the integration (the aaos-carburants pack): Leclerc, Intermarché, Carrefour, U, Auchan, TotalEnergies, Total Access, Esso, Shell, BP, Avia… Found from the brand, then the station name, and used before the Wikidata logo, on the list card, the map markers and in the nearby and town searches. White logos (Roady) get a dark tile.
 - The two Total logos built into the card are replaced by those of the pack, served as files: the card is 18 KB lighter.
+- Map markers: the logo sits on a tile with small rounded corners instead of a pill, which cut the corners of wide logos (Avia).
 
 ### Fixes
 - Map card: "Locate me" and the town search are exclusive. Typing a town turns "Locate me" off at the first letter (before, it stayed on until the search answered, and for good under two letters). "Locate me" empties the search field and drops a town search still running.

@@ -1926,7 +1926,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.pin.out { border-color: var(--warning-color, #ffa600); color: var(--warning-color, #ffa600); }',
       '.pin.none { opacity: .6; }',
       // Leaflet forces width:auto and max-width:none on marker images: these selectors must outrank it.
-      '.leaflet-container .leaflet-marker-pane .pin img { flex: none; box-sizing: border-box; height: 22px !important; width: auto !important; max-width: 52px !important; max-height: 22px !important; padding: 2px 4px !important; border-radius: 11px; object-fit: contain; background: #fff; }',
+      // Rounded corners stay small: a pill shape would cut the corners of wide logos (Avia).
+      '.leaflet-container .leaflet-marker-pane .pin img { flex: none; box-sizing: border-box; height: 22px !important; width: auto !important; max-width: 52px !important; max-height: 22px !important; padding: 3px 5px !important; border-radius: 6px; object-fit: contain; background: #fff; }',
       '.leaflet-container .leaflet-marker-pane .pin img.own { width: 22px !important; padding: 0 !important; border-radius: 0; background: none; }',
       '.leaflet-container .leaflet-marker-pane .pin img.dark { background: #1f2a37; }',
       '.pin .ini { width: 22px; height: 22px; border-radius: 50%; flex: none; }',
