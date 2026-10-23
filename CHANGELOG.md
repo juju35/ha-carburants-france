@@ -4,6 +4,7 @@
 
 ### Fixes
 - Map markers: compact fuel badge, so the markers keep their previous height and overlap less.
+- Map markers without the arrow, centred on the station.
 
 ## 1.3.0
 
