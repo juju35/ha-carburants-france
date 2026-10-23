@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.4.0';
+var CARBURANTS_CARD_VERSION = '1.4.1';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 // bg: tile and screen colour. On a dark card the navy tile melts into the background, so the dark
@@ -1226,6 +1226,8 @@ class CarburantsFranceMapCard extends HTMLElement {
         if (this._results?.mode === 'city') this._resetResults();
         return;
       }
+      // Typing a town turns "Locate me" off at once, before the search answers.
+      this._stopNearby();
       // Waits for a pause in typing: one request per word, not per letter.
       if (query.length >= 2) this._searchTimer = setTimeout(() => { this._searchCity(query); }, 600);
     });
@@ -1268,12 +1270,25 @@ class CarburantsFranceMapCard extends HTMLElement {
     this._update();
   }
 
+  _nearbyOn() {
+    return this._results?.mode === 'near' || this._busy === 'near';
+  }
+
+  // Leaves "Locate me": back to the followed stations, position forgotten, a pending locate ignored.
+  _stopNearby() {
+    if (!this._nearbyOn()) return;
+    this._position = null;
+    this._resetResults();
+  }
+
   _toggleNearby() {
-    if (this._results?.mode === 'near' || this._busy === 'near') {
-      this._resetResults();
+    if (this._nearbyOn()) {
+      this._stopNearby();
       return;
     }
+    // "Locate me" replaces the town search: field emptied, a search being typed or running dropped.
     this._clearSearch();
+    if (this._busy === 'city') this._resetResults();
     this._busy = 'near';
     this._position = null;
     this._error = null;

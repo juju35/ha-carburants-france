@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.1
+
+### Fixes
+- Map card: "Locate me" and the town search are exclusive. Typing a town turns "Locate me" off at the first letter (before, it stayed on until the search answered, and for good under two letters). "Locate me" empties the search field and drops a town search still running.
+
 ## 1.4.0
 
 ### Features
