@@ -206,6 +206,15 @@ function carbLogo(s) {
   return s.logo ? { src: s.logo, own: false } : null;
 }
 
+// Fuel tile columns: 150 px tiles with one or two fuels, three in a row, four as 2 × 2 on a
+// narrow card (in a row once there is room), more wrap on their own.
+function carbFuelColumns(count) {
+  var columns = count <= 2 ? `repeat(${count},minmax(0,150px))`
+    : count === 3 ? 'repeat(3,minmax(0,1fr))'
+      : count === 4 ? 'repeat(auto-fill,minmax(max(140px,calc((100% - 18px) / 4)),1fr))' : '';
+  return columns ? ` style="grid-template-columns:${columns}"` : '';
+}
+
 // ── Fuel badges (pump colours, EU identifier from EN 16942) ───────────────────
 // label: the name at the pump, code: the EU identifier in its circle (none when it repeats the label).
 // Dark text on the light colours (gazole) for contrast, white on the dark ones.
@@ -547,7 +556,7 @@ class CarburantsFranceCard extends HTMLElement {
       '<ha-icon class="chevron' + (expanded ? '' : ' closed') + '" icon="mdi:chevron-down"></ha-icon>' +
       '</div>' +
       (chips.indexOf('fprice') !== -1
-        ? `<div class="fuels"${fuels.length <= 4 ? ` style="grid-template-columns:repeat(${fuels.length},${fuels.length <= 2 ? 'minmax(0,150px)' : 'minmax(0,1fr)'})"` : ''}>${chips}</div>`
+        ? `<div class="fuels"${carbFuelColumns(fuels.length)}>${chips}</div>`
         : '');
 
     if (expanded) html += this._renderDetails(s, t, now);
