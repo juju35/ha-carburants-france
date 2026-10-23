@@ -640,8 +640,9 @@ def main():
             ),
         )
         HTTP["client"] = p.request.new_context()
+        # No frozen clock here: Leaflet fades the tiles in with the current time, a fixed one
+        # leaves them transparent. The map shows no time, the popups stay closed.
         page = context.new_page()
-        page.clock.set_fixed_time(NOW)
         try:
             for shot in MAP_SHOTS:
                 map_shot(page, shot, out_dir)
