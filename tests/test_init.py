@@ -667,3 +667,60 @@ async def test_known_fuel_kept_without_price_nor_shortage(hass, aioclient_mock, 
     # A fuel that never had an entity, with no data, stays absent.
     assert "e10" not in stations[35000013]["fuels"]
     assert hass.states.get("sensor.totalenergies_rennes_e10") is None
+
+
+async def test_ws_search_nearby(hass, aioclient_mock, entry, hass_ws_client, community_names):
+    """Stations around a point, shown by the map card but not followed."""
+    community_names["35000025"] = {"name": "E.LECLERC RENNES SUD", "brand": "Leclerc"}
+    await _setup(hass, aioclient_mock, entry)
+    other = {**STATION_B, "id": 35000099}
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(API_RECORDS, json={"total_count": 2, "results": [STATION_A, other]})
+    client = await hass_ws_client(hass)
+    await client.send_json(
+        {"id": 1, "type": "carburants_france/search", "latitude": 48.1, "longitude": -1.67, "radius": 10}
+    )
+    msg = await client.receive_json()
+    assert msg["success"], msg
+    _, url, _, _ = aioclient_mock.mock_calls[0]
+    assert url.query["where"] == "within_distance(geom, geom'POINT(-1.67 48.1)', 10.0km)"
+    result = msg["result"]
+    assert [f["key"] for f in result["fuels"]] == ["gazole", "sp98", "e10"]
+    a, b = result["stations"]
+    # Followed: its stored name and logo. Not followed: name from the community file or brand + town.
+    assert (a["station_id"], a["followed"], a["logo"]) == (35000013, True, "https://logo")
+    assert a["station_name"] == "TotalEnergies Rennes"
+    assert (b["station_id"], b["followed"], b["logo"]) == (35000099, False, None)
+    assert b["distance"] is not None
+    assert set(b["fuels"]) == {"gazole", "sp98", "e10"}
+    # Nothing was added to the integration.
+    assert [s["id"] for s in entry.options["stations"]] == [35000013, 35000025]
+
+
+async def test_ws_search_city(hass, aioclient_mock, entry, hass_ws_client):
+    await _setup(hass, aioclient_mock, entry)
+    aioclient_mock.clear_requests()
+    # "RENNES" and "Rennes" are the same town; Saint-Jacques also matches the word, but is left out.
+    other_town = {**STATION_B, "id": 35136001, "ville": "Saint-Jacques-de-la-Lande Rennes"}
+    aioclient_mock.get(API_RECORDS, json={"total_count": 3, "results": [STATION_A, other_town, STATION_B]})
+    client = await hass_ws_client(hass)
+    await client.send_json({"id": 1, "type": "carburants_france/search", "query": "rennes"})
+    msg = await client.receive_json()
+    assert msg["success"], msg
+    assert msg["result"]["place"] == "Rennes"
+    assert [s["station_id"] for s in msg["result"]["stations"]] == [35000013, 35000025]
+    _, url, _, _ = aioclient_mock.mock_calls[0]
+    # The town name only: a "Rue de Rennes" elsewhere would pull the map away.
+    assert url.query["where"] == 'search(ville, "rennes")'
+    # Nearest to home first.
+    assert url.query["order_by"] == "distance(geom, geom'POINT(-1.68 48.11)')"
+
+    await client.send_json({"id": 2, "type": "carburants_france/search"})
+    msg = await client.receive_json()
+    assert not msg["success"] and msg["error"]["code"] == "invalid_format"
+
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(API_RECORDS, status=500, text="boom")
+    await client.send_json({"id": 3, "type": "carburants_france/search", "query": "35000"})
+    msg = await client.receive_json()
+    assert not msg["success"] and msg["error"]["code"] == "api_error"

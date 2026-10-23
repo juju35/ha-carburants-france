@@ -34,6 +34,7 @@ from .const import (
 )
 from .coordinator import CarburantsConfigEntry, CarburantsCoordinator
 from .names import async_get_names
+from .websocket import async_register_websocket
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Serve the Lovelace card and register the refresh action once."""
     await hass.http.async_register_static_paths([StaticPathConfig(FRONTEND_URL, str(CARD_PATH.parent), True)])
     await _async_register_card(hass)
+    async_register_websocket(hass)
 
     async def refresh(call: ServiceCall) -> None:
         entry_id = call.data.get(ATTR_CONFIG_ENTRY_ID)

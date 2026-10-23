@@ -22,7 +22,7 @@ Home Assistant integration for [fuel prices in France](https://data.economie.gou
 - **Brand and logo** of each station, found automatically through OpenStreetMap and Wikidata
 - `carburants_france.refresh` action to force an update
 - `custom:carburants-france-card` card, **shipped with the integration** and loaded automatically: logos, prices, shortages, best price in green, live opening status, opening hours, services and directions on click
-- `custom:carburants-france-map-card` map card: your stations on a map, with the logo and the price of a fuel on each marker, your home, and the station details on click
+- `custom:carburants-france-map-card` map card: your stations on a map, with the logo and the price of a fuel on each marker, your home, and the station details on click; **Locate me** button to see the stations around you (radius picked in the title) and **search by town**, without adding them to the integration
 - Add or remove stations and fuels at any time from the options
 - English and French
 
@@ -153,8 +153,15 @@ type: custom:carburants-france-map-card
 | `show_logo` | `true` | Brand logo on the markers |
 | `show_name` | `true` | Station name on the markers, above the price |
 | `hide_out_of_stock_stations` | `true` | Hide the stations where every followed fuel is out of stock (button at the top right to show them) |
+| `show_locate` | `true` | **Locate me** button and radius list in the title |
+| `radius` | `5` | Default radius of **Locate me**, in km (up to 50) |
+| `show_search` | `true` | Search field under the title, to show the stations of a town (or a postcode) |
 
-Each marker shows the logo and the price: green for the best price of that fuel, orange when every followed fuel is out of stock. Click a marker to see all the prices, the opening status and the directions. The full screen button enlarges the map to the whole screen (on iPhone, where full screen is not available, it covers the page); Escape or the same button closes it. Scroll-wheel zoom is disabled so it doesn't get in the way of scrolling the dashboard (use the buttons or pinch).
+Each marker shows the logo and the price: green for the best price of that fuel, orange when every followed fuel is out of stock. Click a marker to see all the prices, the opening status and the directions. The full screen button enlarges the map to the whole screen (on iPhone, where full screen is not available, it covers the page); Escape or the same button closes it.
+
+**Locate me** (crosshairs button in the title) shows the stations within the radius picked next to it (5 km by default) around you: your browser's position (HTTPS or the companion app), else your person's position, else your home. The title says so, the search area is drawn and your position is marked; changing the radius searches again. The **search field** shows the stations of a town (or a postcode, a department) and focuses the map on that town; the cross clears it. Neither adds anything to the integration: stations you already follow keep their name and logo and are marked as followed in their popup. Clicking **Locate me** again, or clearing the search, brings back your followed stations.
+
+Scroll-wheel zoom is disabled so it doesn't get in the way of scrolling the dashboard (use the buttons or pinch).
 
 Available base maps, all without an API key:
 

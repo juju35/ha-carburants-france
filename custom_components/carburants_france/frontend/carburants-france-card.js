@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.3.3';
+var CARBURANTS_CARD_VERSION = '1.4.0';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 // bg: tile and screen colour. On a dark card the navy tile melts into the background, so the dark
@@ -805,7 +805,15 @@ if (!customElements.get('carburants-france-card')) {
 // ── carburants-france-map-card ────────────────────────────────────────────────
 // Leaflet ships with the integration: no CDN, only the map tiles come from the network.
 var CARBURANTS_STATIC = '/carburants_france_static';
-var CARBURANTS_MAP_DEFAULTS = { height: 400, show_icon: true, show_fullscreen: true, show_home: true, show_logo: true, show_name: true, map_style: 'ha', theme: 'auto', hide_out_of_stock_stations: true };
+var CARBURANTS_MAP_DEFAULTS = { height: 400, show_icon: true, show_fullscreen: true, show_home: true, show_logo: true, show_name: true, map_style: 'ha', theme: 'auto', hide_out_of_stock_stations: true, show_locate: true, show_search: true, radius: 5 };
+// Radius choices of the nearby search, in km (the configured default is added when missing).
+var CARBURANTS_RADII = [1, 2, 5, 10, 15, 20, 30, 50];
+// Search icons, same drawings as ha-system-monitor-card.
+var CARBURANTS_SEARCH_PATH = 'M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z';
+var CARBURANTS_CLOSE_PATH = 'M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z';
+function carbSvg(path) {
+  return `<svg class="svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${path}"/></svg>`;
+}
 
 var CARBURANTS_OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
 var CARBURANTS_IGN_WMTS = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}';
@@ -859,6 +867,18 @@ var CarburantsMapI18n = {
     home: 'Domicile',
     fullscreen: 'Plein écran',
     exit_fullscreen: 'Quitter le plein écran',
+    locate: 'Me localiser : stations autour de moi',
+    back_to_followed: 'Revenir aux stations suivies',
+    radius: 'Rayon de recherche',
+    near_title: 'Stations à moins de {r} km',
+    near_home_title: 'Stations à moins de {r} km du domicile',
+    city_title: 'Stations : {q}',
+    you: 'Vous êtes ici',
+    search_city: 'Rechercher une ville ou un code postal',
+    clear_search: 'Effacer la recherche',
+    no_results: 'Aucune station trouvée.',
+    no_position: 'Position indisponible.',
+    followed: 'Station suivie',
     editor: {
       entity: 'Capteur Stations',
       title: 'Titre (vide pour aucun)',
@@ -875,6 +895,9 @@ var CarburantsMapI18n = {
       show_logo: 'Logos des enseignes',
       show_name: 'Nom des stations sur les repères',
       hide_out_of_stock_stations: 'Masquer les stations en rupture',
+      show_locate: 'Bouton « Me localiser »',
+      show_search: 'Recherche par ville',
+      radius: 'Rayon par défaut (km)',
     },
     themes: { auto: 'Selon le thème', light: 'Clair', dark: 'Sombre' },
     styles: {
@@ -894,6 +917,18 @@ var CarburantsMapI18n = {
     home: 'Home',
     fullscreen: 'Full screen',
     exit_fullscreen: 'Exit full screen',
+    locate: 'Locate me: stations around me',
+    back_to_followed: 'Back to the followed stations',
+    radius: 'Search radius',
+    near_title: 'Stations within {r} km',
+    near_home_title: 'Stations within {r} km of home',
+    city_title: 'Stations: {q}',
+    you: 'You are here',
+    search_city: 'Search a town or postcode',
+    clear_search: 'Clear the search',
+    no_results: 'No station found.',
+    no_position: 'Position unavailable.',
+    followed: 'Followed station',
     editor: {
       entity: 'Stations sensor',
       title: 'Title (empty for none)',
@@ -910,6 +945,9 @@ var CarburantsMapI18n = {
       show_logo: 'Brand logos',
       show_name: 'Station names on markers',
       hide_out_of_stock_stations: 'Hide out of stock stations',
+      show_locate: '"Locate me" button',
+      show_search: 'Search by town',
+      radius: 'Default radius (km)',
     },
     themes: { auto: 'Follow theme', light: 'Light', dark: 'Dark' },
     styles: {
@@ -988,6 +1026,8 @@ class CarburantsFranceMapCard extends HTMLElement {
     var previous = this._config;
     this._config = Object.assign({}, CARBURANTS_MAP_DEFAULTS, config || {});
     if (previous && this._tilesKey(previous) !== this._tilesKey(this._config)) this._vectorFailed = false;
+    // A new default radius in the editor replaces the one picked in the header.
+    if (previous && previous.radius !== this._config.radius) this._radius = null;
     this._reloadTilesIfNeeded();
     // Read the current state now: a config change must redraw at once, not at the next hass update.
     this._lastState = this._hass && this._entityId() ? this._hass.states[this._entityId()] || null : null;
@@ -1099,34 +1139,249 @@ class CarburantsFranceMapCard extends HTMLElement {
       '<link rel="stylesheet" href="' + CARBURANTS_STATIC + '/leaflet/leaflet.css?v=1.9.4">' +
       '<link rel="stylesheet" href="' + CARBURANTS_STATIC + '/maplibre/maplibre-gl.css?v=6.14.0">' +
       '<style>' + CarburantsFranceMapCard._styles() + '</style>' +
-      '<ha-card><div class="header" hidden></div><div class="message" hidden></div><div class="map"></div></ha-card>';
+      '<ha-card><div class="header" hidden></div><div class="searchbar" hidden></div><div class="message" hidden></div><div class="map"></div></ha-card>';
+    var header = this._root.querySelector('.header');
+    header.addEventListener('click', (ev) => {
+      if (ev.target.closest('.locate')) this._toggleNearby();
+    });
+    header.addEventListener('change', (ev) => {
+      if (!ev.target.classList.contains('radius')) return;
+      this._radius = Number(ev.target.value);
+      if (this._results?.mode === 'near') this._searchNearby();
+    });
   }
 
-  _update() {
-    if (!this._config || !this._hass) return;
-    this._ensureShell();
-    var mt = CarburantsMapI18n[carbLang(this._hass)];
+  _mt() {
+    return CarburantsMapI18n[carbLang(this._hass)];
+  }
+
+  // Radius of the nearby search: picked in the header, else the configured default.
+  _currentRadius() {
+    return this._radius || Number(this._config.radius) || CARBURANTS_MAP_DEFAULTS.radius;
+  }
+
+  _title(mt) {
+    var results = this._results;
+    if (results?.mode === 'near') {
+      return (results.home ? mt.near_home_title : mt.near_title).replace('{r}', String(results.radius));
+    }
+    if (results?.mode === 'city') return mt.city_title.replace('{q}', results.place || results.query);
+    return this._config.title === undefined ? mt.default_title : this._config.title;
+  }
+
+  // Rewritten only when something in it changes, so the radius list stays open across updates.
+  _renderHeader() {
+    var mt = this._mt();
     var header = this._root.querySelector('.header');
-    var title = this._config.title === undefined ? mt.default_title : this._config.title;
+    var title = this._title(mt);
     // Same icon as the list card, opening the government data page.
     var icon = this._config.show_icon
       ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
         '<img class="icon" src="' + carbIcon(this._hass) + '" alt="data.economie.gouv.fr"></a>'
       : '';
-    header.hidden = !title && !icon;
-    header.innerHTML = `${icon}<span class="hname">${carbEsc(title || '')}</span>`;
+    var tools = '';
+    if (this._config.show_locate) {
+      var radius = this._currentRadius();
+      var radii = CARBURANTS_RADII.indexOf(radius) === -1
+        ? CARBURANTS_RADII.concat(radius).sort((a, b) => a - b)
+        : CARBURANTS_RADII;
+      var active = this._results?.mode === 'near';
+      var label = active ? mt.back_to_followed : mt.locate;
+      tools = '<div class="tools">' +
+        `<select class="radius" title="${carbEsc(mt.radius)}" aria-label="${carbEsc(mt.radius)}">` +
+        radii.map((r) => `<option value="${r}"${r === radius ? ' selected' : ''}>${r} km</option>`).join('') +
+        '</select>' +
+        `<button type="button" class="locate${active ? ' active' : ''}${this._busy === 'near' ? ' busy' : ''}" title="${carbEsc(label)}" aria-label="${carbEsc(label)}" aria-pressed="${active}">` +
+        `<ha-icon icon="${active ? 'mdi:crosshairs-off' : 'mdi:crosshairs-gps'}"></ha-icon></button></div>`;
+    }
+    var html = `${icon}<span class="hname">${carbEsc(title || '')}</span>${tools}`;
+    header.hidden = !title && !icon && !tools;
+    if (html !== this._headerHtml) {
+      this._headerHtml = html;
+      header.innerHTML = html;
+    }
+  }
+
+  // Built once: re-rendering would lose the focus and the caret while typing.
+  _renderSearchbar() {
+    var bar = this._root.querySelector('.searchbar');
+    bar.hidden = !this._config.show_search;
+    if (!this._config.show_search || bar.firstChild) return;
+    var mt = this._mt();
+    bar.innerHTML = `<label class="search">${carbSvg(CARBURANTS_SEARCH_PATH)}` +
+      `<input type="search" placeholder="${carbEsc(mt.search_city)}" aria-label="${carbEsc(mt.search_city)}" autocomplete="off" spellcheck="false">` +
+      `<span class="clear empty" role="button" tabindex="-1" title="${carbEsc(mt.clear_search)}" aria-label="${carbEsc(mt.clear_search)}">${carbSvg(CARBURANTS_CLOSE_PATH)}</span></label>`;
+    var input = bar.querySelector('input');
+    var clear = bar.querySelector('.clear');
+    var sync = () => {
+      var empty = !input.value;
+      clear.classList.toggle('empty', empty);
+      clear.tabIndex = empty ? -1 : 0;
+    };
+    input.addEventListener('input', () => {
+      sync();
+      clearTimeout(this._searchTimer);
+      var query = input.value.trim();
+      if (!query) {
+        if (this._results?.mode === 'city') this._resetResults();
+        return;
+      }
+      // Waits for a pause in typing: one request per word, not per letter.
+      if (query.length >= 2) this._searchTimer = setTimeout(() => { this._searchCity(query); }, 600);
+    });
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' && input.value.trim()) {
+        clearTimeout(this._searchTimer);
+        this._searchCity(input.value.trim());
+      } else if (ev.key === 'Escape' && input.value) {
+        ev.preventDefault();
+        this._clearSearch();
+      }
+    });
+    var onClear = (ev) => {
+      if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+      ev.preventDefault();
+      this._clearSearch();
+      input.focus();
+    };
+    clear.addEventListener('click', onClear);
+    clear.addEventListener('keydown', onClear);
+    this._searchInput = input;
+    this._syncClear = sync;
+  }
+
+  _clearSearch() {
+    clearTimeout(this._searchTimer);
+    if (!this._searchInput) return;
+    this._searchInput.value = '';
+    this._syncClear();
+    if (this._results?.mode === 'city') this._resetResults();
+  }
+
+  // Back to the followed stations, as stored in the integration.
+  _resetResults() {
+    this._seq = (this._seq || 0) + 1;
+    this._results = null;
+    this._busy = null;
+    this._error = null;
+    this._fitted = false;
+    this._update();
+  }
+
+  _toggleNearby() {
+    if (this._results?.mode === 'near' || this._busy === 'near') {
+      this._resetResults();
+      return;
+    }
+    this._clearSearch();
+    this._busy = 'near';
+    this._position = null;
+    this._error = null;
+    this._update();
+    var seq = (this._seq = (this._seq || 0) + 1);
+    this._locate().then((pos) => {
+      if (seq !== this._seq) return;
+      this._position = pos;
+      this._searchNearby();
+    }, () => {
+      if (seq !== this._seq) return;
+      this._busy = null;
+      this._showError(this._mt().no_position);
+    });
+  }
+
+  // The browser position (HTTPS or the companion app), else the user's person entity, else home.
+  _locate() {
+    var hass = this._hass;
+    var fallback = () => {
+      var person = Object.values(hass.states).find((st) => st.entity_id.indexOf('person.') === 0 &&
+        st.attributes.user_id === hass.user?.id && st.attributes.latitude != null);
+      if (person) return { latitude: person.attributes.latitude, longitude: person.attributes.longitude };
+      var home = hass.states['zone.home'];
+      if (home?.attributes.latitude != null) return { latitude: home.attributes.latitude, longitude: home.attributes.longitude, home: true };
+      throw new Error('no position');
+    };
+    if (!navigator.geolocation) return Promise.resolve().then(fallback);
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (p) => { resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }); },
+        () => { try { resolve(fallback()); } catch (err) { reject(err); } },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+      );
+    });
+  }
+
+  _searchNearby() {
+    var pos = this._position;
+    if (!pos) return;
+    var radius = this._currentRadius();
+    this._busy = 'near';
+    this._renderHeader();
+    this._search({ latitude: pos.latitude, longitude: pos.longitude, radius: radius },
+      { mode: 'near', radius: radius, home: !!pos.home, latitude: pos.latitude, longitude: pos.longitude });
+  }
+
+  _searchCity(query) {
+    this._busy = 'city';
+    this._search({ query: query }, { mode: 'city', query: query });
+  }
+
+  // Asks the integration (it knows the community names and the followed stations' logos):
+  // nothing is added to it, the stations are only shown until the map is reset.
+  _search(params, results) {
+    var seq = (this._seq = (this._seq || 0) + 1);
+    this._error = null;
+    var fuels = (this._lastState?.attributes.fuels || []).map((f) => f.key);
+    var msg = Object.assign({ type: 'carburants_france/search' }, params);
+    if (fuels.length) msg.fuels = fuels;
+    this._hass.callWS(msg).then((res) => {
+      if (seq !== this._seq) return;
+      this._busy = null;
+      // The town as the feed spells it ("Rennes" for "renn"), the map then focuses on its stations.
+      this._results = Object.assign(results, { stations: res.stations, fuels: res.fuels, place: res.place });
+      this._showAll = false;
+      this._fitted = false;
+      this._signature = null;
+      this._update();
+    }, (err) => {
+      if (seq !== this._seq) return;
+      this._busy = null;
+      this._showError(String(err?.message || err));
+    });
+  }
+
+  // Kept until the next search or reset, so a sensor update does not wipe it.
+  _showError(text) {
+    this._error = text;
+    this._update();
+  }
+
+  // Stations and fuels shown: the search results, else the integration's Stations sensor.
+  _data() {
+    if (this._results) return this._results;
+    var attrs = this._lastState?.attributes || {};
+    return { stations: attrs.stations || [], fuels: attrs.fuels || [] };
+  }
+
+  _update() {
+    if (!this._config || !this._hass) return;
+    this._ensureShell();
+    this._renderHeader();
+    this._renderSearchbar();
     var mapEl = this._root.querySelector('.map');
     mapEl.style.height = `${Math.max(150, Number(this._config.height) || 400)}px`;
     // Follows the Home Assistant theme live when theme is auto.
     mapEl.classList.toggle('dark', this._darkTiles());
     this._reloadTilesIfNeeded();
     var message = this._root.querySelector('.message');
-    if (!this._lastState) {
+    if (!this._lastState && !this._results) {
       message.hidden = false;
       message.textContent = this._t().no_entity;
       return;
     }
-    message.hidden = true;
+    var text = this._error || (this._results && !this._results.stations.length ? this._mt().no_results : '');
+    message.hidden = !text;
+    message.textContent = text;
     carbLoadLeaflet().then((L) => {
       this._ensureMap(L);
       this._drawMarkers(L);
@@ -1443,10 +1698,10 @@ class CarburantsFranceMapCard extends HTMLElement {
 
   _drawMarkers(L) {
     var t = this._t();
-    var attrs = this._lastState.attributes;
-    var fuels = attrs.fuels || [];
+    var data = this._data();
+    var fuels = data.fuels || [];
     var key = this._fuelKey(fuels);
-    var stations = (attrs.stations || []).filter((s) => s.latitude != null && s.longitude != null);
+    var stations = (data.stations || []).filter((s) => s.latitude != null && s.longitude != null);
     var best = CarburantsFranceCard.prototype._bestPrices.call(null, stations, fuels);
     var hidden = this._config.hide_out_of_stock_stations
       ? stations.filter((s) => carbAllOut(s, fuels)).length
@@ -1500,9 +1755,25 @@ class CarburantsFranceMapCard extends HTMLElement {
       points.push([s.latitude, s.longitude]);
     });
 
+    var mt = this._mt();
+    var results = this._results;
+    var bounds = null;
+    if (results?.mode === 'near') {
+      // The search area, and where the search started from.
+      var circle = L.circle([results.latitude, results.longitude], {
+        // Colours in the styles: SVG attributes don't take the theme's CSS variables.
+        radius: results.radius * 1000, interactive: false, className: 'carb-area',
+      }).addTo(this._layer);
+      bounds = circle.getBounds();
+      L.marker([results.latitude, results.longitude], {
+        icon: L.divIcon({ className: 'carb-marker', html: `<div class="me" title="${carbEsc(results.home ? mt.home : mt.you)}"></div>`, iconSize: null, iconAnchor: [0, 0] }),
+        zIndexOffset: -1000,
+        keyboard: false,
+      }).addTo(this._layer);
+    }
     var home = this._hass.states['zone.home'];
-    if (this._config.show_home && home && home.attributes.latitude != null) {
-      var mt = CarburantsMapI18n[carbLang(this._hass)];
+    // Home only with the followed stations: a town far away would be zoomed out to fit it.
+    if (this._config.show_home && !results && home && home.attributes.latitude != null) {
       L.marker([home.attributes.latitude, home.attributes.longitude], {
         icon: L.divIcon({ className: 'carb-marker', html: `<div class="home" title="${carbEsc(mt.home)}"><ha-icon icon="mdi:home"></ha-icon></div>`, iconSize: null, iconAnchor: [0, 0] }),
         zIndexOffset: -1000,
@@ -1512,6 +1783,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     }
 
     this._bounds = points.length ? L.latLngBounds(points) : null;
+    if (bounds) this._bounds = this._bounds ? this._bounds.extend(bounds) : bounds;
     if (!this._fitted) this._fit();
   }
 
@@ -1536,6 +1808,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     return '<div class="popup">' +
       '<div class="pname">' + carbEsc(s.station_name) + '</div>' +
       (s.brand ? `<div class="pbrand">${carbEsc(s.brand)}</div>` : '') +
+      (this._results && s.followed ? `<div class="pfollowed"><ha-icon icon="mdi:star"></ha-icon>${carbEsc(this._mt().followed)}</div>` : '') +
       '<div class="paddr">' + carbEsc(s.address) + ', ' + carbEsc(carbTitleCase(s.city)) +
       (s.distance != null ? ` · ${new Intl.NumberFormat(this._locale(), { maximumFractionDigits: 1 }).format(s.distance)} km` : '') + '</div>' +
       (opening ? `<div class="popening ${opening.key}">${carbEsc(opening.text)}</div>` : '') +
@@ -1549,7 +1822,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       ':host { display: block; }',
       'ha-card { overflow: hidden; }',
       '.header { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 16px 16px 8px; }',
-      '.hname { font-size: 18px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+      '.hname { min-width: 0; font-size: 18px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.icon-link { display: flex; flex: none; }',
       '.icon { width: 40px; height: 40px; display: block; }',
       '.header[hidden], .message[hidden] { display: none; }',
@@ -1599,6 +1872,31 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.popup .nodata { color: var(--secondary-text-color, #727272); }',
       '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 4px; border: 2px solid rgba(0,0,0,.2); background: var(--card-background-color, #fff); color: var(--primary-color, #03a9f4); cursor: pointer; background-clip: padding-box; }',
       '.carb-toggle[hidden] { display: none; }',
+      // Header tools: radius of the nearby search and "locate me".
+      '.tools { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: none; }',
+      '.radius { font: inherit; font-size: 13px; height: 32px; padding: 0 6px; border-radius: 10px; border: 1px solid var(--divider-color, rgba(127,127,127,.3)); background: var(--secondary-background-color, rgba(127,127,127,.08)); color: var(--primary-text-color); cursor: pointer; }',
+      '.locate { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--secondary-text-color); cursor: pointer; --mdc-icon-size: 22px; }',
+      '.locate:hover { background: var(--divider-color, rgba(127,127,127,.25)); color: var(--primary-text-color); }',
+      '.locate.active { background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); }',
+      '.locate.busy ha-icon { animation: carb-pulse 1s ease-in-out infinite; }',
+      '@keyframes carb-pulse { 50% { opacity: .3; } }',
+      // Search field, as in ha-system-monitor-card.
+      '.searchbar { padding: 0 16px 8px; }',
+      '.searchbar[hidden] { display: none; }',
+      '.search { display: flex; align-items: center; gap: 6px; padding: 0 10px; height: 34px; border-radius: 10px; background: var(--secondary-background-color, rgba(127,127,127,.08)); color: var(--secondary-text-color); cursor: text; }',
+      '.search:focus-within { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: -2px; }',
+      '.search .svg { width: 16px; height: 16px; flex: none; }',
+      '.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 13px; color: var(--primary-text-color); }',
+      '.search input::placeholder { color: var(--secondary-text-color); }',
+      '.search input::-webkit-search-cancel-button { display: none; }',
+      '.search .clear { flex: none; width: 24px; height: 24px; margin-right: -4px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: var(--secondary-text-color); }',
+      '.search .clear.empty { opacity: .35; pointer-events: none; }',
+      '.search .clear:hover { background: var(--divider-color, rgba(127,127,127,.25)); color: var(--primary-text-color); }',
+      '.search .clear .svg { width: 16px; height: 16px; }',
+      // Nearby search: area and starting point.
+      '.leaflet-container path.carb-area { stroke: var(--primary-color, #03a9f4); stroke-width: 1.5; stroke-opacity: .7; fill: var(--primary-color, #03a9f4); fill-opacity: .06; }',
+      '.me { position: absolute; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: var(--primary-color, #03a9f4); border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(3,169,244,.25), 0 1px 4px rgba(0,0,0,.35); }',
+      '.pfollowed { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 12px; color: var(--primary-color, #03a9f4); --mdc-icon-size: 14px; }',
       // Leaflet colours every link in the map: the selector must outrank '.leaflet-container a'.
       '.leaflet-container a.pdir { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 8px 14px; border-radius: 10px; background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); text-decoration: none; font-weight: 500; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.25); }',
       '.leaflet-container a.pdir:hover { filter: brightness(1.1); }',
@@ -1661,8 +1959,12 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
           { name: 'show_logo', selector: { boolean: {} } },
           { name: 'show_name', selector: { boolean: {} } },
           { name: 'hide_out_of_stock_stations', selector: { boolean: {} } },
+          { name: 'show_search', selector: { boolean: {} } },
+          { name: 'show_locate', selector: { boolean: {} } },
         ],
       },
+    ], this._config.show_locate === false ? [] : [
+      { name: 'radius', selector: { number: { min: 1, max: 50, step: 1, mode: 'box', unit_of_measurement: 'km' } } },
     ]);
   }
 
@@ -1691,7 +1993,8 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
       delete value.tile_attribution;
     }
     // An empty title hides the header: keep it as "" rather than dropping it.
-    var rebuild = value.entity !== this._config.entity || value.map_style !== this._config.map_style;
+    var rebuild = value.entity !== this._config.entity || value.map_style !== this._config.map_style ||
+      value.show_locate !== this._config.show_locate;
     this._config = value;
     if (rebuild) this._form.schema = this._schema();
     this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: value }, bubbles: true, composed: true }));

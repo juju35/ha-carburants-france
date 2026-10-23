@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "carburants_france"
-VERSION: Final = "1.3.3"
+VERSION: Final = "1.4.0"
 USER_AGENT: Final = f"ha-carburants-france/{VERSION} (+https://github.com/juju35/ha-carburants-france)"
 
 API_RECORDS: Final = (
@@ -39,6 +39,8 @@ CONF_SEARCH_AGAIN: Final = "search_again"
 CONF_ADD_STATIONS: Final = "add_stations"
 CONF_RENAME_STATIONS: Final = "rename_stations"
 DEFAULT_RADIUS: Final = 5
+# Map card nearby search (websocket): largest radius, in km.
+MAX_SEARCH_RADIUS: Final = 50
 MAX_RESULTS: Final = 50
 
 # The feed is refreshed every 10 minutes on the government side.
