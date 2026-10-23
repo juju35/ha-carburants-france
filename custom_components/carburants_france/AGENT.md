@@ -21,6 +21,7 @@ custom_components/carburants_france/
 ├── const.py           # Constants, fuel keys
 ├── icons.json / services.yaml / translations/{en,fr}.json
 ├── frontend/carburants-france-card.js   # Both cards (list + map), vanilla JS
+├── frontend/brands/                     # Brand logos (PNG) shipped with the cards
 └── frontend/leaflet/                    # Leaflet 1.9.4 (BSD-2), loaded by the map card
 ```
 
@@ -40,6 +41,7 @@ custom_components/carburants_france/
 
 ## Card
 - Served from `/carburants_france_static`, added to the Lovelace resources at startup (like ha-parcel), URL versioned with the file's md5. Falls back to `add_extra_js_url` in YAML mode.
+- Brand logos: `frontend/brands/*.png` (42, the aaos-carburants pack, same keys as its `brand_logos.json`) listed in `CARBURANTS_BRAND_LOGOS`; `carbLogo` tries the brand, then `station_name` (key = NFD, lower case, a-z0-9 only; whole key or prefix when ≥ 4 letters, longest first), before the stored Wikidata `logo`. `tile` (Total Access) = drawn as is (`.own`), `dark` (Roady) = dark tile. Served at `/carburants_france_static/brands/`; screenshots load them from the made-up origin.
 - Reads the Stations sensor (`stations`, `fuels`, `config_entry_id` attributes). Opening status is computed in the browser every minute. Logo `<img>` falls back to an initials badge on error.
 
 ## Map card
