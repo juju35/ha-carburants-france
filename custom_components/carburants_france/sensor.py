@@ -44,6 +44,19 @@ def _station_attributes(station: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def card_station(station: dict[str, Any], fuels: list[str]) -> dict[str, Any]:
+    """A station as the cards read it (Stations sensor, nearby search)."""
+    return {
+        **_station_attributes(station),
+        "logo": station.get("logo"),
+        "highway": station.get("highway"),
+        "automate_24_24": station.get("automate_24_24"),
+        "hours": station.get("hours"),
+        "services": station.get("services"),
+        "fuels": {k: v for k, v in station["fuels"].items() if k in fuels},
+    }
+
+
 class FuelPriceSensor(StationFuelEntity, SensorEntity):
     """Price of one fuel at one station. Unknown while the fuel is out of stock."""
 
@@ -126,19 +139,8 @@ class StationsSensor(CoordinatorEntity[CarburantsCoordinator], SensorEntity):
         stations = []
         for station_id in self.coordinator.stations:
             station = (self.coordinator.data or {}).get(station_id)
-            if not station:
-                continue
-            stations.append(
-                {
-                    **_station_attributes(station),
-                    "logo": station.get("logo"),
-                    "highway": station.get("highway"),
-                    "automate_24_24": station.get("automate_24_24"),
-                    "hours": station.get("hours"),
-                    "services": station.get("services"),
-                    "fuels": {k: v for k, v in station["fuels"].items() if k in fuels},
-                }
-            )
+            if station:
+                stations.append(card_station(station, fuels))
         return {
             "config_entry_id": self.coordinator.config_entry.entry_id,
             "fuels": [{"key": k, "name": FUELS[k]} for k in fuels],

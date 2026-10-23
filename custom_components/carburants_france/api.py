@@ -64,12 +64,18 @@ class CarburantsApi:
         return stations
 
     async def search(
-        self, query: str, latitude: float | None, longitude: float | None, radius_km: float
+        self,
+        query: str,
+        latitude: float | None,
+        longitude: float | None,
+        radius_km: float,
+        towns_only: bool = False,
     ) -> list[dict[str, Any]]:
         """Search stations by postcode, station id, town or around a point.
 
         An empty query searches around the given point. Results are sorted by
-        distance from that point when it is known.
+        distance from that point when it is known. towns_only: a word matches the
+        town only, not the street address.
         """
         query = re.sub(r"[\"'\\]", " ", query or "").strip()
         point = None
@@ -86,6 +92,8 @@ class CarburantsApi:
             where = f'cp="{query}"'
         elif re.fullmatch(r"\d{2}|2[AB]", query, re.IGNORECASE):
             where = f'code_departement="{query.upper()}"'
+        elif towns_only:
+            where = f'search(ville, "{query}")'
         else:
             where = f'search(ville, "{query}") OR search(adresse, "{query}")'
 

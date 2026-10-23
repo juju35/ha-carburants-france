@@ -1,16 +1,28 @@
-"""Render the list card with mock stations and save the README screenshots.
+"""Render the list and map cards with mock stations and save the README screenshots.
 
-Usage: python scripts/screenshots.py  (needs `pip install playwright` and `playwright install chromium`)
+Usage: python scripts/screenshots.py  (needs `pip install playwright pillow` and `playwright install chromium`;
+CHROMIUM=/path/to/chrome to use another browser)
 The clock is frozen on a Tuesday at 08:30 in Paris, so opening hours and price ages stay the same.
+The map uses the OpenStreetMap tiles kept in scripts/tiles (committed, no network needed); a tile
+missing there, after a change of stations or zoom, is downloaded once and should be committed too.
 """
 
+import io
 import json
+import os
+import re
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
-CARD_JS = (ROOT / "custom_components/carburants_france/frontend/carburants-france-card.js").read_text()
+FRONTEND = ROOT / "custom_components/carburants_france/frontend"
+CARD_JS = (FRONTEND / "carburants-france-card.js").read_text()
+TILES_DIR = Path(__file__).resolve().parent / "tiles"
+# Pages are served from this made-up origin, so the card finds Leaflet at /carburants_france_static.
+ORIGIN = "https://card.test"  # HTTPS: the browser only gives the position to secure pages
+MAP_WIDTH = 520
+USER_AGENT = "ha-carburants-france screenshots (+https://github.com/juju35/ha-carburants-france)"
 VERSION = json.loads((ROOT / "custom_components/carburants_france/manifest.json").read_text())["version"]
 NOW = "2026-10-20T08:30:00+02:00"
 WIDTH = 410
@@ -50,6 +62,8 @@ ICONS = {
     "eye-off-outline": "M2,5.27L3.28,4L20,20.72L18.73,22L15.65,18.92C14.5,19.3 13.28,19.5 12,19.5C7,19.5 2.73,16.39 1,12C1.69,10.24 2.79,8.69 4.19,7.46L2,5.27M12,9A3,3 0 0,1 15,12C15,12.35 14.94,12.69 14.83,13L11,9.17C11.31,9.06 11.65,9 12,9M12,4.5C17,4.5 21.27,7.61 23,12C22.18,14.08 20.79,15.88 19,17.19L17.58,15.76C18.94,14.82 20.06,13.54 20.82,12C19.17,8.64 15.76,6.5 12,6.5C10.91,6.5 9.84,6.68 8.84,7L7.3,5.47C8.74,4.85 10.33,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C12.69,17.5 13.37,17.43 14,17.29L11.72,15C10.29,14.85 9.15,13.71 9,12.28L5.6,8.87C4.61,9.72 3.78,10.78 3.18,12Z",
     "eye-outline": "M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9M12,4.5C17,4.5 21.27,7.61 23,12C21.27,16.39 17,19.5 12,19.5C7,19.5 2.73,16.39 1,12C2.73,7.61 7,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C15.76,17.5 19.17,15.36 20.82,12C19.17,8.64 15.76,6.5 12,6.5C8.24,6.5 4.83,8.64 3.18,12Z",
     "gas-station": "M18,10A1,1 0 0,1 17,9A1,1 0 0,1 18,8A1,1 0 0,1 19,9A1,1 0 0,1 18,10M12,10H6V5H12M19.77,7.23L19.78,7.22L16.06,3.5L15,4.56L17.11,6.67C16.17,7 15.5,7.93 15.5,9A2.5,2.5 0 0,0 18,11.5C18.36,11.5 18.69,11.42 19,11.29V18.5A1,1 0 0,1 18,19.5A1,1 0 0,1 17,18.5V14C17,12.89 16.1,12 15,12H14V5C14,3.89 13.1,3 12,3H6C4.89,3 4,3.89 4,5V21H14V13.5H15.5V18.5A2.5,2.5 0 0,0 18,21A2.5,2.5 0 0,0 20.5,18.5V9C20.5,8.31 20.22,7.68 19.77,7.23Z",
+    "crosshairs-gps": "M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M3.05,13H1V11H3.05C3.5,6.83 6.83,3.5 11,3.05V1H13V3.05C17.17,3.5 20.5,6.83 20.95,11H23V13H20.95C20.5,17.17 17.17,20.5 13,20.95V23H11V20.95C6.83,20.5 3.5,17.17 3.05,13M12,5A7,7 0 0,0 5,12A7,7 0 0,0 12,19A7,7 0 0,0 19,12A7,7 0 0,0 12,5Z",
+    "crosshairs-off": "M1,4.27L2.28,3L21,21.72L19.73,23L16.95,20.22C15.79,20.61 14.43,20.89 13,20.95V23H11V20.95C6.83,20.5 3.5,17.17 3.05,13H1V11H3.05C3.13,10.18 3.33,9.39 3.63,8.65L1,4.27M5.15,9.92C5.05,10.27 5,10.63 5,11V12A7,7 0 0,0 12,19C12.58,19 13.15,18.93 13.69,18.8L5.15,9.92M20.95,13C20.89,13.62 20.74,14.22 20.5,14.79L19,13.28V12A7,7 0 0,0 12,5H10.72L9.21,3.5C9.78,3.26 10.38,3.11 11,3.05V1H13V3.05C17.17,3.5 20.5,6.83 20.95,11H23V13H20.95Z",
     "home": "M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z",
     "refresh": "M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z",
     "star": "M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z",
@@ -326,19 +340,257 @@ SHOTS = [
 ]
 
 
-def page_html(theme):
+# ── Map card ──────────────────────────────────────────────────────────────────
+# Position of "Locate me", in Rennes.
+HERE = {"latitude": 48.112, "longitude": -1.68}
+HOME_STATE = {
+    "zone.home": {"entity_id": "zone.home", "state": "0", "attributes": {"latitude": 48.105, "longitude": -1.66}}
+}
+MAP_STATES = {**STATES, **HOME_STATE}
+
+
+def station(station_id, name, brand, address, city, distance, lat, lon, fuels, followed=False):
+    return {
+        "station_id": station_id,
+        "station_name": name,
+        "brand": brand,
+        "address": address,
+        "postcode": "35000",
+        "city": city,
+        "distance": distance,
+        "latitude": lat,
+        "longitude": lon,
+        "logo": None,
+        "highway": False,
+        "automate_24_24": True,
+        "hours": hours("07:00", "21:00"),
+        "services": [],
+        "fuels": fuels,
+        "followed": followed,
+    }
+
+
+def three(gazole, e10, sp98, updated="2026-10-20T05:00:00Z"):
+    return {"gazole": fuel(gazole, updated), "e10": fuel(e10, updated), "sp98": fuel(sp98, updated)}
+
+
+# "Locate me", 2 km: a followed station nearby, and others the integration doesn't follow.
+NEARBY = [
+    station(
+        35000033,
+        "Esso Rennes Nord",
+        "Esso",
+        "Boulevard d'Armorique",
+        "Rennes",
+        1.5,
+        48.1255,
+        -1.676,
+        three(2.289, 2.279, 2.349),
+    ),
+    station(
+        35000035,
+        "Carrefour Market Thabor",
+        "Carrefour Market",
+        "Rue de Paris",
+        "Rennes",
+        1.2,
+        48.1188,
+        -1.6921,
+        three(2.259, 2.249, 2.329),
+    ),
+    station(
+        35000031,
+        "Leclerc Rennes Colombier",
+        "E.Leclerc",
+        "Boulevard de la Liberté",
+        "Rennes",
+        1.3,
+        48.112,
+        -1.6575,
+        three(2.199, 2.209, 2.289),
+    ),
+    {**STATIONS[2], "distance": 1.3, "latitude": 48.1052, "longitude": -1.6935, "followed": True},
+    station(
+        35000034,
+        "Super U Rennes Sud",
+        "Super U",
+        "Rue de Châtillon",
+        "Rennes",
+        1.6,
+        48.0985,
+        -1.6733,
+        three(2.219, 2.215, 2.299),
+    ),
+]
+# Search "Cesson": the stations of Cesson-Sévigné only.
+CESSON = [
+    {**STATIONS[1], "followed": True},
+    {**STATIONS[4], "followed": True},
+    station(
+        35510009,
+        "Leclerc Cesson-Sévigné",
+        "E.Leclerc",
+        "Rue de la Rigourdière",
+        "Cesson-Sévigné",
+        5.9,
+        48.124,
+        -1.597,
+        three(2.205, 2.199, 2.279),
+    ),
+    station(
+        35510010,
+        "Avia Cesson-Sévigné",
+        "Avia",
+        "Route de Paris",
+        "Cesson-Sévigné",
+        6.9,
+        48.130,
+        -1.585,
+        three(2.279, 2.269, 2.339),
+    ),
+]
+MAP_FUELS = STATES["sensor.carburants_stations"]["attributes"]["fuels"]
+SEARCH_RESULTS = {
+    "near": {"place": None, **HERE, "fuels": MAP_FUELS, "stations": NEARBY},
+    "city": {"place": "Cesson-Sévigné", **HERE, "fuels": MAP_FUELS, "stations": CESSON},
+}
+MAP_CONFIG = {
+    # OpenStreetMap raster tiles, like map_style: osm, served from the local cache.
+    "map_style": "custom",
+    "tile_url": f"{ORIGIN}/tiles/{{z}}/{{x}}/{{y}}.png",
+    "tile_attribution": "&copy; OpenStreetMap contributors",
+}
+MAP_SHOTS = [
+    {"file": "map", "theme": "light", "lang": "fr", "config": {}, "action": None},
+    {"file": "map-dark", "theme": "dark", "lang": "fr", "config": {}, "action": None},
+    {"file": "map-nearby", "theme": "light", "lang": "fr", "config": {"radius": 2}, "action": "near"},
+    {"file": "map-search", "theme": "dark", "lang": "fr", "config": {}, "action": "city"},
+]
+
+
+class TileError(RuntimeError):
+    """An OpenStreetMap tile could not be downloaded: no blank map in the README."""
+
+
+# Playwright's own HTTP client (set in main): it has its own certificates, unlike python.org's
+# Python on macOS, which can't verify HTTPS until "Install Certificates.command" has run.
+HTTP = {}
+
+
+def osm_tile(z, x, y):
+    """One OpenStreetMap tile, from scripts/tiles or downloaded once (tile usage policy: identify, cache)."""
+    path = TILES_DIR / str(z) / str(x) / f"{y}.png"
+    if not path.exists():
+        url = f"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        try:
+            resp = HTTP["client"].get(url, headers={"User-Agent": USER_AGENT}, timeout=30000)
+        except Exception as err:  # noqa: BLE001 - any network failure means the same thing here
+            raise TileError(f"{url}: {err}") from err
+        if not resp.ok or not resp.body().startswith(b"\x89PNG"):
+            raise TileError(f"{url}: HTTP {resp.status}")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(resp.body())
+        print(f"downloaded scripts/tiles/{z}/{x}/{y}.png")
+    return path.read_bytes()
+
+
+def retina_tile(z, x, y):
+    """Tile z/x/y at 512 px from its four children, so the map stays sharp at device_scale_factor 2."""
+    from PIL import Image
+
+    tile = Image.new("RGB", (512, 512), "#f2efe9")
+    for dx in (0, 1):
+        for dy in (0, 1):
+            child = Image.open(io.BytesIO(osm_tile(z + 1, 2 * x + dx, 2 * y + dy))).convert("RGB")
+            tile.paste(child, (256 * dx, 256 * dy))
+    out = io.BytesIO()
+    tile.save(out, "PNG", optimize=True)
+    return out.getvalue()
+
+
+ERRORS: list[str] = []
+
+
+def serve(route):
+    """The made-up origin: pages, the integration's static files and the map tiles."""
+    path = route.request.url[len(ORIGIN) :].split("?")[0]
+    if match := re.fullmatch(r"/tiles/(\d+)/(\d+)/(\d+)\.png", path):
+        try:
+            route.fulfill(body=retina_tile(*map(int, match.groups())), content_type="image/png")
+        except TileError as err:
+            ERRORS.append(str(err))
+            route.abort()
+    elif path.startswith("/carburants_france_static/"):
+        file = FRONTEND / path[len("/carburants_france_static/") :]
+        types = {".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".png": "image/png"}
+        route.fulfill(body=file.read_bytes(), content_type=types.get(file.suffix, "application/octet-stream"))
+    else:
+        route.fulfill(status=404, body="")
+
+
+def map_shot(page, shot, out_dir):
+    page.goto(f"{ORIGIN}/{shot['theme']}?width={MAP_WIDTH}")
+    page.add_script_tag(content=HA_ELEMENTS)
+    page.add_script_tag(content=CARD_JS)
+    page.evaluate(
+        """({config, states, dark, lang, results}) => {
+          const el = document.createElement("carburants-france-map-card");
+          el.setConfig({type: "custom:carburants-france-map-card", ...config});
+          el.hass = {states, language: lang, locale: {language: lang}, themes: {darkMode: dark}, user: {id: "u"},
+                     callService: () => Promise.resolve(),
+                     callWS: (msg) => Promise.resolve(msg.type === "carburants_france/search"
+                       ? structuredClone(msg.query ? results.city : results.near) : {})};
+          document.getElementById("root").appendChild(el);
+        }""",
+        {
+            "config": {**MAP_CONFIG, **shot["config"]},
+            "states": MAP_STATES,
+            "dark": shot["theme"] == "dark",
+            "lang": shot["lang"],
+            "results": SEARCH_RESULTS,
+        },
+    )
+    card = page.locator("carburants-france-map-card")
+    card.locator(".leaflet-marker-icon").first.wait_for(state="attached")
+    if shot["action"] == "near":
+        card.locator(".locate").click()
+        card.locator(".locate.active").wait_for()
+    elif shot["action"] == "city":
+        card.locator(".searchbar input").fill("Cesson")
+        card.locator(".searchbar input").press("Enter")
+        card.locator(".searchbar .clear:not(.empty)").wait_for()
+    # Every tile loaded and the fit animation over.
+    if ERRORS:
+        raise TileError(ERRORS[0])
+    page.wait_for_function(
+        """() => {
+          const root = document.querySelector("carburants-france-map-card").shadowRoot;
+          const tiles = [...root.querySelectorAll(".leaflet-tile")];
+          return tiles.length && tiles.every((t) => t.complete && t.classList.contains("leaflet-tile-loaded"));
+        }""",
+        timeout=60000,
+    )
+    page.wait_for_timeout(800)
+    if ERRORS:
+        raise TileError(ERRORS[0])
+    name = f"{shot['file']}.png"
+    card.screenshot(path=str(out_dir / name), animations="disabled")
+    print(f"screenshots/{name}")
+
+
+def page_html(theme, width=WIDTH):
     variables = "".join(f"{k}:{v};" for k, v in {**THEMES[theme], **COMMON}.items())
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
   :root {{ {variables} }}
   body {{ margin: 0; background: var(--primary-background-color); color: var(--primary-text-color);
-         font-family: Roboto, Inter, "Segoe UI", Helvetica, Arial, sans-serif; width: {WIDTH}px; }}
+         font-family: Roboto, Inter, "Segoe UI", Helvetica, Arial, sans-serif; width: {width}px; }}
 </style></head><body><div id="root"></div></body></html>"""
 
 
 def main():
     out_dir = ROOT / "screenshots"
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(executable_path=os.environ.get("CHROMIUM") or None)
         context = browser.new_context(
             device_scale_factor=2, viewport={"width": 1000, "height": 2400}, locale="fr-FR", timezone_id="Europe/Paris"
         )
@@ -369,6 +621,37 @@ def main():
             name = f"{shot['file']}.png"
             page.locator("carburants-france-card").screenshot(path=str(out_dir / name), animations="disabled")
             print(f"screenshots/{name}")
+
+        # The map card: Leaflet and the tiles come from the made-up origin, the position from the browser.
+        context = browser.new_context(
+            device_scale_factor=2,
+            viewport={"width": 1000, "height": 1400},
+            locale="fr-FR",
+            timezone_id="Europe/Paris",
+            geolocation=HERE,
+            permissions=["geolocation"],
+        )
+        context.route(
+            f"{ORIGIN}/**",
+            lambda route: (
+                route.fulfill(
+                    body=page_html(route.request.url.split("/")[3].split("?")[0], MAP_WIDTH), content_type="text/html"
+                )
+                if re.fullmatch(rf"{ORIGIN}/(light|dark)(\?.*)?", route.request.url)
+                else serve(route)
+            ),
+        )
+        HTTP["client"] = p.request.new_context()
+        # No frozen clock here: Leaflet fades the tiles in with the current time, a fixed one
+        # leaves them transparent. The map shows no time, the popups stay closed.
+        page = context.new_page()
+        try:
+            for shot in MAP_SHOTS:
+                map_shot(page, shot, out_dir)
+        except Exception as err:
+            raise SystemExit(
+                f"Map screenshots not made, OpenStreetMap tiles unreachable: {ERRORS[0] if ERRORS else err}"
+            ) from err
         browser.close()
 
 

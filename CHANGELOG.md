@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.0
+
+### Features
+- Map card: **Locate me** button in the title. Shows the stations within a radius around you (browser position, else your person, else home), the radius being picked in a list next to the button (5 km by default, `radius` option). The title becomes "Stations within 5 km", the search area and your position are drawn. Click again to go back to the followed stations.
+- Map card: **search by town** (or postcode) under the title, with a clear button as in ha-system-monitor-card. The map focuses on the town found, its name goes in the title.
+- Nothing is added to the integration: the stations are only shown. Stations already followed keep their name and logo and are marked "Followed station" in their popup.
+- New `show_locate`, `show_search` and `radius` options, also in the visual editor.
+- New websocket command `carburants_france/search` behind both.
+
 ## 1.3.3
 
 ### Fixes
