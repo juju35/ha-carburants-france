@@ -7,7 +7,6 @@ import re
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
@@ -40,6 +39,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     FUELS,
+    LOGO_VERSION,
     MIN_SCAN_INTERVAL,
     ST_BRAND,
     ST_BRAND_CHECKED,
@@ -48,7 +48,6 @@ from .const import (
     ST_LOGO_VERSION,
     ST_NAME,
     ST_OSM_NAME,
-    LOGO_VERSION,
 )
 from .coordinator import pretty_city, station_title
 from .names import async_get_names
@@ -120,7 +119,9 @@ class StationPickerMixin:
             {
                 vol.Optional(CONF_QUERY, description={"suggested_value": self._query}): TextSelector(),
                 vol.Required(CONF_RADIUS, default=self._radius): NumberSelector(
-                    NumberSelectorConfig(min=1, max=50, step=1, unit_of_measurement="km", mode=NumberSelectorMode.SLIDER)
+                    NumberSelectorConfig(
+                        min=1, max=50, step=1, unit_of_measurement="km", mode=NumberSelectorMode.SLIDER
+                    )
                 ),
             }
         )
@@ -196,9 +197,7 @@ class StationPickerMixin:
         if not missing:
             return
         try:
-            logos = await async_lookup_logos(
-                async_get_clientsession(self.hass), {s["wikidata"] for s in missing}
-            )
+            logos = await async_lookup_logos(async_get_clientsession(self.hass), {s["wikidata"] for s in missing})
         except BrandLookupError:
             return
         for station in missing:

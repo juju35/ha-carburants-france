@@ -7,7 +7,6 @@ import logging
 from pathlib import Path
 
 import voluptuous as vol
-
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntryState
@@ -46,9 +45,7 @@ REFRESH_SCHEMA = vol.Schema({vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string})
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Serve the Lovelace card and register the refresh action once."""
-    await hass.http.async_register_static_paths(
-        [StaticPathConfig(FRONTEND_URL, str(CARD_PATH.parent), True)]
-    )
+    await hass.http.async_register_static_paths([StaticPathConfig(FRONTEND_URL, str(CARD_PATH.parent), True)])
     await _async_register_card(hass)
 
     async def refresh(call: ServiceCall) -> None:

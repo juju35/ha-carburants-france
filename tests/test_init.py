@@ -3,17 +3,16 @@
 from unittest.mock import patch
 
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.carburants_france.api import parse_station
-from custom_components.carburants_france.coordinator import station_title, useful_osm_name
 from custom_components.carburants_france.const import API_RECORDS, DOMAIN, LOGO_VERSION, OVERPASS_URL, WIKIDATA_URL
+from custom_components.carburants_france.coordinator import station_title, useful_osm_name
 
 # Two real records from the feed (Rennes, October 2026), horaires shortened.
 HOURS_24 = (
@@ -26,47 +25,98 @@ HOURS_DAY = (
     '{"@id": "7", "@nom": "Dimanche", "@ferme": "1"}]}'
 )
 STATION_A = {
-    "id": 35000013, "latitude": "4812600", "longitude": "-168500", "cp": "35000", "pop": "R",
-    "adresse": "238 Rue Saint-Malo", "ville": "Rennes", "horaires": HOURS_24,
+    "id": 35000013,
+    "latitude": "4812600",
+    "longitude": "-168500",
+    "cp": "35000",
+    "pop": "R",
+    "adresse": "238 Rue Saint-Malo",
+    "ville": "Rennes",
+    "horaires": HOURS_24,
     "geom": {"lon": -1.685, "lat": 48.126},
-    "gazole_maj": "2026-09-25T08:23:31+00:00", "gazole_prix": 2.399,
-    "sp95_maj": "2026-09-25T08:23:31+00:00", "sp95_prix": 2.251,
-    "e85_prix": None, "gplc_prix": None, "e10_prix": None,
-    "sp98_maj": "2026-09-25T08:23:31+00:00", "sp98_prix": 2.3,
-    "e10_rupture_debut": "2021-02-02T08:32:57+00:00", "e10_rupture_type": "definitive",
-    "e85_rupture_debut": "2021-02-02T08:33:34+00:00", "e85_rupture_type": "definitive",
-    "gplc_rupture_debut": "2021-02-02T08:33:34+00:00", "gplc_rupture_type": "definitive",
-    "gazole_rupture_type": None, "sp95_rupture_type": None, "sp98_rupture_type": None,
-    "horaires_automate_24_24": "Oui", "services_service": ["Station de gonflage", "Lavage manuel"],
+    "gazole_maj": "2026-09-25T08:23:31+00:00",
+    "gazole_prix": 2.399,
+    "sp95_maj": "2026-09-25T08:23:31+00:00",
+    "sp95_prix": 2.251,
+    "e85_prix": None,
+    "gplc_prix": None,
+    "e10_prix": None,
+    "sp98_maj": "2026-09-25T08:23:31+00:00",
+    "sp98_prix": 2.3,
+    "e10_rupture_debut": "2021-02-02T08:32:57+00:00",
+    "e10_rupture_type": "definitive",
+    "e85_rupture_debut": "2021-02-02T08:33:34+00:00",
+    "e85_rupture_type": "definitive",
+    "gplc_rupture_debut": "2021-02-02T08:33:34+00:00",
+    "gplc_rupture_type": "definitive",
+    "gazole_rupture_type": None,
+    "sp95_rupture_type": None,
+    "sp98_rupture_type": None,
+    "horaires_automate_24_24": "Oui",
+    "services_service": ["Station de gonflage", "Lavage manuel"],
 }
 STATION_B = {
-    "id": 35000025, "latitude": "4809890.2183757", "longitude": "-165400.71882227", "cp": "35000", "pop": "R",
-    "adresse": "19, BD LEON BOURGEOIS", "ville": "RENNES", "horaires": HOURS_DAY,
+    "id": 35000025,
+    "latitude": "4809890.2183757",
+    "longitude": "-165400.71882227",
+    "cp": "35000",
+    "pop": "R",
+    "adresse": "19, BD LEON BOURGEOIS",
+    "ville": "RENNES",
+    "horaires": HOURS_DAY,
     "geom": {"lon": -1.6540071882226999, "lat": 48.098902183757},
-    "gazole_maj": "2026-10-16T19:40:07+00:00", "gazole_prix": 2.25,
-    "sp95_prix": None, "sp98_prix": None, "e10_prix": None,
-    "e10_rupture_debut": "2026-10-16T18:40:48+00:00", "e10_rupture_type": "temporaire",
-    "sp98_rupture_debut": "2026-10-17T16:32:46+00:00", "sp98_rupture_type": "temporaire",
-    "sp95_rupture_debut": "2026-03-27T18:43:44+00:00", "sp95_rupture_type": "definitive",
-    "horaires_automate_24_24": "Oui", "services_service": ["Relais colis"],
+    "gazole_maj": "2026-10-16T19:40:07+00:00",
+    "gazole_prix": 2.25,
+    "sp95_prix": None,
+    "sp98_prix": None,
+    "e10_prix": None,
+    "e10_rupture_debut": "2026-10-16T18:40:48+00:00",
+    "e10_rupture_type": "temporaire",
+    "sp98_rupture_debut": "2026-10-17T16:32:46+00:00",
+    "sp98_rupture_type": "temporaire",
+    "sp95_rupture_debut": "2026-03-27T18:43:44+00:00",
+    "sp95_rupture_type": "definitive",
+    "horaires_automate_24_24": "Oui",
+    "services_service": ["Relais colis"],
 }
 OVERPASS = {
     "elements": [
-        {"type": "node", "id": 1, "lat": 48.12601, "lon": -1.68502,
-         "tags": {"amenity": "fuel", "brand": "TotalEnergies", "brand:wikidata": "Q154037",
-                  "name": "TotalEnergies Access Rennes Saint-Malo", "ref:FR:prix-carburants": "35000013"}},
-        {"type": "way", "id": 2, "center": {"lat": 48.0989, "lon": -1.6541},
-         "tags": {"amenity": "fuel", "brand": "Leclerc", "name": "Leclerc", "brand:wikidata": "Q1273376"}},
+        {
+            "type": "node",
+            "id": 1,
+            "lat": 48.12601,
+            "lon": -1.68502,
+            "tags": {
+                "amenity": "fuel",
+                "brand": "TotalEnergies",
+                "brand:wikidata": "Q154037",
+                "name": "TotalEnergies Access Rennes Saint-Malo",
+                "ref:FR:prix-carburants": "35000013",
+            },
+        },
+        {
+            "type": "way",
+            "id": 2,
+            "center": {"lat": 48.0989, "lon": -1.6541},
+            "tags": {"amenity": "fuel", "brand": "Leclerc", "name": "Leclerc", "brand:wikidata": "Q1273376"},
+        },
     ]
 }
 WIKIDATA = {
     "entities": {
         # The old logo stays listed, with an end time.
-        "Q154037": {"claims": {"P154": [
-            {"rank": "normal", "mainsnak": {"datavalue": {"value": "Total logo.svg"}},
-             "qualifiers": {"P582": [{"datavalue": {"value": {"time": "+2021-05-28T00:00:00Z"}}}]}},
-            {"rank": "normal", "mainsnak": {"datavalue": {"value": "TotalEnergies logo.svg"}}},
-        ]}},
+        "Q154037": {
+            "claims": {
+                "P154": [
+                    {
+                        "rank": "normal",
+                        "mainsnak": {"datavalue": {"value": "Total logo.svg"}},
+                        "qualifiers": {"P582": [{"datavalue": {"value": {"time": "+2021-05-28T00:00:00Z"}}}]},
+                    },
+                    {"rank": "normal", "mainsnak": {"datavalue": {"value": "TotalEnergies logo.svg"}}},
+                ]
+            }
+        },
         "Q1273376": {"claims": {}},
     }
 }
@@ -75,9 +125,17 @@ WIKIDATA = {
 def _stored(record, brand=None, logo=None):
     s = parse_station(record)
     return {
-        "id": s["id"], "address": s["address"], "postcode": s["postcode"], "city": s["city"],
-        "latitude": s["latitude"], "longitude": s["longitude"],
-        "brand": brand, "wikidata": None, "logo": logo, "brand_checked": True, "logo_version": LOGO_VERSION,
+        "id": s["id"],
+        "address": s["address"],
+        "postcode": s["postcode"],
+        "city": s["city"],
+        "latitude": s["latitude"],
+        "longitude": s["longitude"],
+        "brand": brand,
+        "wikidata": None,
+        "logo": logo,
+        "brand_checked": True,
+        "logo_version": LOGO_VERSION,
     }
 
 
@@ -109,8 +167,12 @@ def test_parse_station():
     a = parse_station(STATION_A)
     assert a["latitude"] == 48.126
     assert a["fuels"]["gazole"] == {
-        "price": 2.399, "updated": "2026-09-25T08:23:31+00:00", "available": True,
-        "rupture": None, "rupture_since": None, "rupture_end": None,
+        "price": 2.399,
+        "updated": "2026-09-25T08:23:31+00:00",
+        "available": True,
+        "rupture": None,
+        "rupture_since": None,
+        "rupture_end": None,
     }
     assert a["fuels"]["e10"]["rupture"] == "definitive"
     assert "e85" in a["fuels"] and not a["fuels"]["e85"]["available"]
@@ -217,8 +279,8 @@ async def test_config_flow(hass, aioclient_mock):
     assert result["step_id"] == "search"
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"query": "", "radius": 5})
     assert result["step_id"] == "stations"
-    search_call = [c for c in aioclient_mock.mock_calls if str(c[1]).startswith(API_RECORDS)][0]
-    assert "within_distance(geom, geom'POINT(-1.68 48.11)', 5.0km)" == search_call[1].query["where"]
+    search_call = next(c for c in aioclient_mock.mock_calls if str(c[1]).startswith(API_RECORDS))
+    assert search_call[1].query["where"] == "within_distance(geom, geom'POINT(-1.68 48.11)', 5.0km)"
     labels = {o["value"]: o["label"] for o in result["data_schema"].schema["stations"].config["options"]}
     assert labels["35000013"].startswith(
         "TotalEnergies Access Rennes Saint-Malo · 238 Rue Saint-Malo, 35000 Rennes — Gazole 2,399 € · SP98 2,300 €"
@@ -343,7 +405,12 @@ async def test_old_logos_looked_up_again(hass, aioclient_mock, entry):
 @pytest.mark.parametrize(
     ("osm_name", "brand", "expected"),
     [
-        pytest.param("TotalEnergies Access Rennes Saint-Malo", "TotalEnergies", "TotalEnergies Access Rennes Saint-Malo", id="real-name"),
+        pytest.param(
+            "TotalEnergies Access Rennes Saint-Malo",
+            "TotalEnergies",
+            "TotalEnergies Access Rennes Saint-Malo",
+            id="real-name",
+        ),
         pytest.param("Station-service", "Esso", "Esso Rennes", id="generic"),
         pytest.param("E. Leclerc", "E.Leclerc", "E.Leclerc Rennes", id="repeats-brand"),
         pytest.param("Total", "TotalEnergies", "TotalEnergies Rennes", id="short-brand"),
@@ -382,8 +449,13 @@ async def test_options_flow_rename(hass, aioclient_mock, entry):
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        {"fuels": ["gazole"], "stations": ["35000013", "35000025"], "add_stations": False,
-         "rename_stations": True, "scan_interval": 15},
+        {
+            "fuels": ["gazole"],
+            "stations": ["35000013", "35000025"],
+            "add_stations": False,
+            "rename_stations": True,
+            "scan_interval": 15,
+        },
     )
     assert result["step_id"] == "names"
     fields = [str(key) for key in result["data_schema"].schema]
@@ -407,13 +479,23 @@ async def test_options_flow_rename(hass, aioclient_mock, entry):
 
 async def test_brand_found_250_m_away(hass, aioclient_mock):
     """The feed's coordinates can be a couple hundred metres off the forecourt."""
-    from custom_components.carburants_france.brands import async_lookup_brands
     from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-    aioclient_mock.post(OVERPASS_URL, json={"elements": [
-        {"type": "way", "id": 3, "center": {"lat": 48.1050, "lon": -1.7376},
-         "tags": {"amenity": "fuel", "brand": "Intermarché", "name": "Intermarché Vezin-le-Coquet"}},
-    ]})
+    from custom_components.carburants_france.brands import async_lookup_brands
+
+    aioclient_mock.post(
+        OVERPASS_URL,
+        json={
+            "elements": [
+                {
+                    "type": "way",
+                    "id": 3,
+                    "center": {"lat": 48.1050, "lon": -1.7376},
+                    "tags": {"amenity": "fuel", "brand": "Intermarché", "name": "Intermarché Vezin-le-Coquet"},
+                },
+            ]
+        },
+    )
     found = await async_lookup_brands(
         async_get_clientsession(hass), [{"id": 35132004, "latitude": 48.105, "longitude": -1.741}]
     )
@@ -439,10 +521,12 @@ def test_pretty_name(raw, expected):
 
 
 async def test_community_names_first(hass, aioclient_mock, entry, community_names):
-    community_names.update({
-        "35000013": {"name": "RELAIS SAINT-MALO", "brand": "Total Access"},
-        "99999999": {"name": "Ailleurs", "brand": "Esso"},
-    })
+    community_names.update(
+        {
+            "35000013": {"name": "RELAIS SAINT-MALO", "brand": "Total Access"},
+            "99999999": {"name": "Ailleurs", "brand": "Esso"},
+        }
+    )
     await _setup(hass, aioclient_mock, entry)
     stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
     assert stations[35000013]["station_name"] == "Relais Saint-Malo"
@@ -530,21 +614,27 @@ async def test_ai_leftovers_removed(hass, aioclient_mock, entry):
     await _setup(hass, aioclient_mock, entry)
     assert "ai_task_entity" not in entry.options
     assert not any("ai_name" in s or "ai_checked" in s for s in entry.options["stations"])
-    names = {s["station_id"]: s["station_name"] for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    names = {
+        s["station_id"]: s["station_name"] for s in hass.states.get("sensor.carburants_stations").attributes["stations"]
+    }
     assert names == {35000013: "TotalEnergies Rennes", 35000025: "Leclerc Rennes"}
-
 
 
 def test_parse_shortage_just_lifted():
     """Neither price nor flat shortage, but the raw shortage has an end date: kept, with no price."""
     record = {
         **STATION_B,
-        "e10_rupture_type": None, "e10_rupture_debut": None,
+        "e10_rupture_type": None,
+        "e10_rupture_debut": None,
         "rupture": '[{"@nom": "E10", "@id": "5", "@debut": "2026-10-16 18:40:48", "@fin": "2026-10-20 18:05:00", "@type": "temporaire"}]',
     }
     fuel = parse_station(record)["fuels"]["e10"]
     assert fuel == {
-        "price": None, "updated": None, "available": False, "rupture": None, "rupture_since": None,
+        "price": None,
+        "updated": None,
+        "available": False,
+        "rupture": None,
+        "rupture_since": None,
         "rupture_end": "2026-10-20T18:05:00+00:00",
     }
 
@@ -567,7 +657,12 @@ async def test_known_fuel_kept_without_price_nor_shortage(hass, aioclient_mock, 
     assert hass.states.get("binary_sensor.leclerc_rennes_sp98_in_stock").state == "unknown"
     stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
     assert stations[35000025]["fuels"]["sp98"] == {
-        "price": None, "updated": None, "available": False, "rupture": None, "rupture_since": None, "rupture_end": None,
+        "price": None,
+        "updated": None,
+        "available": False,
+        "rupture": None,
+        "rupture_since": None,
+        "rupture_end": None,
     }
     # A fuel that never had an entity, with no data, stays absent.
     assert "e10" not in stations[35000013]["fuels"]

@@ -8,13 +8,12 @@ once a week and kept in .storage, so a GitHub outage only means the cached copy.
 
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
 import re
+from datetime import timedelta
 from typing import Any
 
 import aiohttp
-
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
@@ -50,7 +49,10 @@ def pretty_name(name: str) -> str:
             words.append(word)
             continue
         parts = re.split(r"([-'’])", word.lower())
-        parts = [p if p in "-'’" or (p in SMALL_WORDS and (index or n)) else p[:1].upper() + p[1:] for n, p in enumerate(parts)]
+        parts = [
+            p if p in "-'’" or (p in SMALL_WORDS and (index or n)) else p[:1].upper() + p[1:]
+            for n, p in enumerate(parts)
+        ]
         words.append("".join(parts))
     return " ".join(words)
 
@@ -90,8 +92,11 @@ async def async_get_names(hass: HomeAssistant) -> dict[str, dict[str, str]]:
         try:
             names = await _async_download(hass)
         except (aiohttp.ClientError, TimeoutError, ValueError) as err:
-            _LOGGER.warning("Could not download the station names (%s); %s", err,
-                            "using the cached copy" if names else "names will come from OpenStreetMap only")
+            _LOGGER.warning(
+                "Could not download the station names (%s); %s",
+                err,
+                "using the cached copy" if names else "names will come from OpenStreetMap only",
+            )
         else:
             await store.async_save({"fetched": dt_util.utcnow().isoformat(), "names": names})
             _LOGGER.debug("Downloaded %d station names", len(names))

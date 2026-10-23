@@ -31,7 +31,9 @@ class CarburantsApi:
     def __init__(self, session: aiohttp.ClientSession) -> None:
         self._session = session
 
-    async def _records(self, where: str, order_by: str | None = None, limit: int = API_PAGE_SIZE) -> list[dict[str, Any]]:
+    async def _records(
+        self, where: str, order_by: str | None = None, limit: int = API_PAGE_SIZE
+    ) -> list[dict[str, Any]]:
         params = {"where": where, "limit": str(limit)}
         if order_by:
             params["order_by"] = order_by
@@ -87,9 +89,7 @@ class CarburantsApi:
         else:
             where = f'search(ville, "{query}") OR search(adresse, "{query}")'
 
-        records = await self._records(
-            where, order_by=f"distance(geom, {point})" if point else None, limit=MAX_RESULTS
-        )
+        records = await self._records(where, order_by=f"distance(geom, {point})" if point else None, limit=MAX_RESULTS)
         stations = [s for s in (parse_station(r) for r in records) if s]
         if latitude is not None and longitude is not None:
             for station in stations:
@@ -158,7 +158,7 @@ def _services(record: dict[str, Any]) -> list[str]:
 
 
 def _raw_time(value: Any) -> str:
-    """"2026-10-20 18:05:00" -> ISO. The flat fields show these raw times are UTC."""
+    """ "2026-10-20 18:05:00" -> ISO. The flat fields show these raw times are UTC."""
     value = str(value or "").strip()
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?", value):
         return ""
@@ -190,7 +190,14 @@ def _raw_ruptures(raw: Any) -> dict[str, dict[str, str]]:
 
 def empty_fuel() -> dict[str, Any]:
     """A fuel the station sells but has no price nor shortage for right now."""
-    return {"price": None, "updated": None, "available": False, "rupture": None, "rupture_since": None, "rupture_end": None}
+    return {
+        "price": None,
+        "updated": None,
+        "available": False,
+        "rupture": None,
+        "rupture_since": None,
+        "rupture_end": None,
+    }
 
 
 def parse_station(record: dict[str, Any]) -> dict[str, Any] | None:

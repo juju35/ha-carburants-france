@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
+from datetime import timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -60,8 +60,10 @@ def useful_osm_name(name: str | None, brand: str | None) -> str | None:
         compact = key.replace(" ", "")
         brand_compact = _key(brand.replace("-", " ")).replace(" ", "")
         # Shorter than the brand, or the brand plus a few letters ("Energies", an initial).
-        if compact and brand_compact and (
-            compact in brand_compact or (brand_compact in compact and len(compact) - len(brand_compact) <= 8)
+        if (
+            compact
+            and brand_compact
+            and (compact in brand_compact or (brand_compact in compact and len(compact) - len(brand_compact) <= 8))
         ):
             return None
     return name.strip()
@@ -115,9 +117,7 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
         # Community station names, {id: {name, brand}} (names.py).
         self.names = names or {}
         self.fuels: list[str] = list(entry.options.get(CONF_FUELS, DEFAULT_FUELS))
-        self.stations: dict[int, dict[str, Any]] = {
-            int(s[ST_ID]): s for s in entry.options.get(CONF_STATIONS, [])
-        }
+        self.stations: dict[int, dict[str, Any]] = {int(s[ST_ID]): s for s in entry.options.get(CONF_STATIONS, [])}
         # (station id, fuel) pairs sold at some point: those with an entity, plus those seen since.
         # A fuel can briefly have neither price nor shortage in the feed (shortage just lifted,
         # no new price yet); it must not vanish from the card nor lose its entities.
