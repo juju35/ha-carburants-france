@@ -223,6 +223,14 @@ actions:
 |---|---|
 | ![card with every fuel](screenshots/card-all-fuels.png) | ![card with every fuel, dark](screenshots/card-all-fuels-dark.png) |
 
+| Map | Map, dark |
+|---|---|
+| ![map card](screenshots/map.png) | ![map card, dark](screenshots/map-dark.png) |
+
+| Locate me (2 km) | Search by town, dark |
+|---|---|
+| ![stations around me](screenshots/map-nearby.png) | ![stations of a town](screenshots/map-search.png) |
+
 Screenshots are in French, like the station data.
 
 ## How it works
