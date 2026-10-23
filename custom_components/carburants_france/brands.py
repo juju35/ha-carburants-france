@@ -119,7 +119,8 @@ def _current_logo(claims: list[dict[str, Any]]) -> str | None:
     Preferred rank first, then a logo with no end time (P582), then the last one listed.
     """
     usable = [
-        c for c in claims
+        c
+        for c in claims
         if c.get("rank") != "deprecated"
         and isinstance(((c.get("mainsnak") or {}).get("datavalue") or {}).get("value"), str)
     ]
@@ -131,9 +132,7 @@ def _current_logo(claims: list[dict[str, Any]]) -> str | None:
     return claim["mainsnak"]["datavalue"]["value"]
 
 
-async def async_enrich(
-    session: aiohttp.ClientSession, stations: list[dict[str, Any]], with_logos: bool = True
-) -> bool:
+async def async_enrich(session: aiohttp.ClientSession, stations: list[dict[str, Any]], with_logos: bool = True) -> bool:
     """Add brand, name and logo to the stations in place. Return False if a lookup failed."""
     ok = True
     try:

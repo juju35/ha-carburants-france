@@ -78,7 +78,7 @@ customElements.define("ha-icon-button", class extends HTMLElement {
     this.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;color:var(--secondary-text-color)";
   }
 });
-""" % json.dumps(ICONS)
+""" % json.dumps(ICONS)  # noqa: UP031 - percent-format keeps the embedded JS braces un-escaped
 
 
 def hours(open_, close, days=range(1, 8)):
@@ -86,52 +86,128 @@ def hours(open_, close, days=range(1, 8)):
 
 
 def fuel(price, updated):
-    return {"price": price, "updated": updated, "available": True, "rupture": None, "rupture_since": None, "rupture_end": None}
+    return {
+        "price": price,
+        "updated": updated,
+        "available": True,
+        "rupture": None,
+        "rupture_since": None,
+        "rupture_end": None,
+    }
 
 
 def out(since):
-    return {"price": None, "updated": None, "available": False, "rupture": "temporaire", "rupture_since": since, "rupture_end": None}
+    return {
+        "price": None,
+        "updated": None,
+        "available": False,
+        "rupture": "temporaire",
+        "rupture_since": since,
+        "rupture_end": None,
+    }
 
 
 STATIONS = [
     {
-        "station_id": 35000021, "station_name": "Relais Rennes Alma", "brand": "Total Access",
-        "address": "Centre commercial Alma", "postcode": "35200", "city": "Rennes", "distance": 2.3,
-        "latitude": 48.083, "longitude": -1.676, "logo": None, "highway": False, "automate_24_24": True,
-        "hours": hours("07:00", "21:00"), "services": ["Relais colis", "Piste poids lourds", "Automate CB 24/24"],
-        "fuels": {"gazole": fuel(2.249, "2026-10-19T16:30:00Z"), "e10": fuel(2.259, "2026-10-19T16:30:00Z"),
-                  "sp98": fuel(2.319, "2026-10-19T16:30:00Z")},
+        "station_id": 35000021,
+        "station_name": "Relais Rennes Alma",
+        "brand": "Total Access",
+        "address": "Centre commercial Alma",
+        "postcode": "35200",
+        "city": "Rennes",
+        "distance": 2.3,
+        "latitude": 48.083,
+        "longitude": -1.676,
+        "logo": None,
+        "highway": False,
+        "automate_24_24": True,
+        "hours": hours("07:00", "21:00"),
+        "services": ["Relais colis", "Piste poids lourds", "Automate CB 24/24"],
+        "fuels": {
+            "gazole": fuel(2.249, "2026-10-19T16:30:00Z"),
+            "e10": fuel(2.259, "2026-10-19T16:30:00Z"),
+            "sp98": fuel(2.319, "2026-10-19T16:30:00Z"),
+        },
     },
     {
-        "station_id": 35510001, "station_name": "Intermarché Cesson-Sévigné", "brand": "Intermarché",
-        "address": "Rue de Rennes", "postcode": "35510", "city": "Cesson-Sévigné", "distance": 4.6,
-        "latitude": 48.118, "longitude": -1.606, "logo": None, "highway": False, "automate_24_24": True,
-        "hours": hours("08:00", "20:00"), "services": ["Boutique alimentaire", "Lavage automatique"],
-        "fuels": {"gazole": fuel(2.265, "2026-10-19T09:00:00Z"), "e10": fuel(2.239, "2026-10-19T09:00:00Z"),
-                  "sp98": out("2026-10-18T09:00:00Z")},
+        "station_id": 35510001,
+        "station_name": "Intermarché Cesson-Sévigné",
+        "brand": "Intermarché",
+        "address": "Rue de Rennes",
+        "postcode": "35510",
+        "city": "Cesson-Sévigné",
+        "distance": 4.6,
+        "latitude": 48.118,
+        "longitude": -1.606,
+        "logo": None,
+        "highway": False,
+        "automate_24_24": True,
+        "hours": hours("08:00", "20:00"),
+        "services": ["Boutique alimentaire", "Lavage automatique"],
+        "fuels": {
+            "gazole": fuel(2.265, "2026-10-19T09:00:00Z"),
+            "e10": fuel(2.239, "2026-10-19T09:00:00Z"),
+            "sp98": out("2026-10-18T09:00:00Z"),
+        },
     },
     {
-        "station_id": 35000023, "station_name": "Relais Malifeu", "brand": "Total Access",
-        "address": "100-102 Route de Saint-Brieuc", "postcode": "35000", "city": "Rennes", "distance": 2.1,
-        "latitude": 48.116, "longitude": -1.709, "logo": None, "highway": False, "automate_24_24": True,
-        "hours": [{"day": d, "closed": False, "ranges": []} for d in range(1, 8)], "services": ["Relais colis"],
+        "station_id": 35000023,
+        "station_name": "Relais Malifeu",
+        "brand": "Total Access",
+        "address": "100-102 Route de Saint-Brieuc",
+        "postcode": "35000",
+        "city": "Rennes",
+        "distance": 2.1,
+        "latitude": 48.116,
+        "longitude": -1.709,
+        "logo": None,
+        "highway": False,
+        "automate_24_24": True,
+        "hours": [{"day": d, "closed": False, "ranges": []} for d in range(1, 8)],
+        "services": ["Relais colis"],
         "fuels": {"gazole": fuel(2.299, "2026-10-20T01:30:00Z"), "sp98": fuel(2.349, "2026-10-20T01:30:00Z")},
     },
     {
-        "station_id": 35760004, "station_name": "Relais Saint-Grégoire", "brand": "Total",
-        "address": "Rue du Général de Gaulle", "postcode": "35760", "city": "Saint-Grégoire", "distance": 6.8,
-        "latitude": 48.159, "longitude": -1.689, "logo": None, "highway": False, "automate_24_24": False,
-        "hours": hours("10:00", "19:30"), "services": ["Relais colis", "Lavage manuel"],
-        "fuels": {"gazole": fuel(2.319, "2026-10-20T03:30:00Z"), "e10": fuel(2.299, "2026-10-20T03:30:00Z"),
-                  "sp98": fuel(2.369, "2026-10-20T03:30:00Z")},
+        "station_id": 35760004,
+        "station_name": "Relais Saint-Grégoire",
+        "brand": "Total",
+        "address": "Rue du Général de Gaulle",
+        "postcode": "35760",
+        "city": "Saint-Grégoire",
+        "distance": 6.8,
+        "latitude": 48.159,
+        "longitude": -1.689,
+        "logo": None,
+        "highway": False,
+        "automate_24_24": False,
+        "hours": hours("10:00", "19:30"),
+        "services": ["Relais colis", "Lavage manuel"],
+        "fuels": {
+            "gazole": fuel(2.319, "2026-10-20T03:30:00Z"),
+            "e10": fuel(2.299, "2026-10-20T03:30:00Z"),
+            "sp98": fuel(2.369, "2026-10-20T03:30:00Z"),
+        },
     },
     {
-        "station_id": 35510005, "station_name": "Relais Cesson-Sévigné", "brand": "Total",
-        "address": "27 Route de Rennes", "postcode": "35510", "city": "Cesson-Sévigné", "distance": 6.4,
-        "latitude": 48.114, "longitude": -1.614, "logo": None, "highway": False, "automate_24_24": True,
-        "hours": hours("07:00", "20:00"), "services": [],
-        "fuels": {"gazole": out("2026-10-17T07:50:00Z"), "e10": out("2026-10-18T10:20:00Z"),
-                  "sp98": out("2026-10-17T07:50:00Z")},
+        "station_id": 35510005,
+        "station_name": "Relais Cesson-Sévigné",
+        "brand": "Total",
+        "address": "27 Route de Rennes",
+        "postcode": "35510",
+        "city": "Cesson-Sévigné",
+        "distance": 6.4,
+        "latitude": 48.114,
+        "longitude": -1.614,
+        "logo": None,
+        "highway": False,
+        "automate_24_24": True,
+        "hours": hours("07:00", "20:00"),
+        "services": [],
+        "fuels": {
+            "gazole": out("2026-10-17T07:50:00Z"),
+            "e10": out("2026-10-18T10:20:00Z"),
+            "sp98": out("2026-10-17T07:50:00Z"),
+        },
     },
 ]
 
@@ -141,7 +217,11 @@ STATES = {
         "state": str(len(STATIONS)),
         "attributes": {
             "config_entry_id": "mock",
-            "fuels": [{"key": "gazole", "name": "Gazole"}, {"key": "e10", "name": "E10"}, {"key": "sp98", "name": "SP98"}],
+            "fuels": [
+                {"key": "gazole", "name": "Gazole"},
+                {"key": "e10", "name": "E10"},
+                {"key": "sp98", "name": "SP98"},
+            ],
             "stations": STATIONS,
             "friendly_name": "Carburants Stations",
         },
@@ -150,8 +230,13 @@ STATES = {
 
 SHOTS = [
     {"file": "card", "theme": "light", "lang": "en", "config": {}, "expand": None},
-    {"file": "card-dark", "theme": "dark", "lang": "fr",
-     "config": {"title": "Autour de la maison", "sort": "distance"}, "expand": "35000021"},
+    {
+        "file": "card-dark",
+        "theme": "dark",
+        "lang": "fr",
+        "config": {"title": "Autour de la maison", "sort": "distance"},
+        "expand": "35000021",
+    },
 ]
 
 
@@ -168,8 +253,9 @@ def main():
     out_dir = ROOT / "screenshots"
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        context = browser.new_context(device_scale_factor=2, viewport={"width": 1000, "height": 2400},
-                                      locale="fr-FR", timezone_id="Europe/Paris")
+        context = browser.new_context(
+            device_scale_factor=2, viewport={"width": 1000, "height": 2400}, locale="fr-FR", timezone_id="Europe/Paris"
+        )
         page = context.new_page()
         page.clock.set_fixed_time(NOW)
         for shot in SHOTS:
@@ -189,7 +275,7 @@ def main():
             if shot["expand"]:
                 page.locator(f'.station[data-id="{shot["expand"]}"] .row').click()
             page.wait_for_timeout(600)
-            name = f'{shot["file"]}.png'
+            name = f"{shot['file']}.png"
             page.locator("carburants-france-card").screenshot(path=str(out_dir / name), animations="disabled")
             print(f"screenshots/{name}")
         browser.close()
