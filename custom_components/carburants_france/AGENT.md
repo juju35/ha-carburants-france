@@ -21,6 +21,7 @@ custom_components/carburants_france/
 ├── const.py           # Constants, fuel keys
 ├── icons.json / services.yaml / translations/{en,fr}.json
 ├── frontend/carburants-france-card.js   # Both cards (list + map), vanilla JS
+├── frontend/brands/                     # Brand logos (PNG) shipped with the cards
 └── frontend/leaflet/                    # Leaflet 1.9.4 (BSD-2), loaded by the map card
 ```
 
@@ -40,6 +41,7 @@ custom_components/carburants_france/
 
 ## Card
 - Served from `/carburants_france_static`, added to the Lovelace resources at startup (like ha-parcel), URL versioned with the file's md5. Falls back to `add_extra_js_url` in YAML mode.
+- Brand logos: `frontend/brands/*.png` (42, the aaos-carburants pack, same keys as its `brand_logos.json`) listed in `CARBURANTS_BRAND_LOGOS`; `carbLogo` tries the brand, then `station_name` (key = NFD, lower case, a-z0-9 only; whole key or prefix when ≥ 4 letters, longest first), before the stored Wikidata `logo`. `tile` (Total Access) = drawn as is (`.own`), `dark` (Roady) = dark tile. Served at `/carburants_france_static/brands/`; screenshots load them from the made-up origin.
 - Reads the Stations sensor (`stations`, `fuels`, `config_entry_id` attributes). Opening status is computed in the browser every minute. Logo `<img>` falls back to an initials badge on error.
 
 ## Map card
@@ -48,7 +50,7 @@ custom_components/carburants_france/
 - ha: MapLibre GL 6.14.0 (ESM, `frontend/maplibre/`, worker found next to the module) + @maplibre/maplibre-gl-leaflet 0.1.4 (UMD, needs `window.L` and `window.maplibregl`), the versions HA's frontend pins. Style fetched from the instance at `/static/map/light.json` / `dark.json` (shipped by the HA frontend 2026.9+), sprite made absolute, requests to `/api/map_tiles/` get the token in the `X-Map-Tiles-Token` header like `withMapTilesToken` in the HA frontend. `_tilesKey` includes dark for vector, `_reloadTilesIfNeeded` swaps the layer on config or theme change. No WebGL2, no token command or no style file -> `_vectorFailed`, raster osm.
 - osm tiles: HA's built-in Map tiles proxy (2026.9+), `/api/map_tiles/raster/{z}/{x}/{y}.png?token=…`, token from websocket `map_tiles/access_token` (rotates every 30 min, two valid; refreshed every 20 min with `setUrl(url, true)` and on reconnect). Without it (older HA), tiles come straight from tile.openstreetmap.org. CARTO now requires an API key: don't use it. Dark theme = CSS filter on the tile pane. Markers are `divIcon` pins (logo + price) without an arrow, centred on the point; `fitBounds` uses extra padding on every side and `zoomSnap: 0.25`.
 
-- Nearby / town search (`show_locate`, `radius`, `show_search`): websocket `carburants_france/search` (`latitude`+`longitude`+`radius`, or `query`; `fuels` = the sensor's fuels). Backend reuses `api.search(..., towns_only=True)`, names file and followed stations' stored name/logo (`followed: true`); a town query keeps one town (`_town`: exact folded name, else prefix, else most stations) and returns its name in `place`, so the map fits that town only. Results live in `this._results` (`_data()` picks them over the sensor); `_resetResults` goes back. Header is rewritten only when its HTML changes (radius `<select>` stays usable); the search bar is built once (focus and caret survive hass updates). Position: `navigator.geolocation`, else the user's `person.*`, else `zone.home`. Home marker hidden while results are shown; near mode draws `path.carb-area` (colours in CSS, SVG attributes can't use theme variables) and a `.me` dot.
+- Nearby / town search (`show_locate`, `radius`, `show_search`): websocket `carburants_france/search` (`latitude`+`longitude`+`radius`, or `query`; `fuels` = the sensor's fuels). Backend reuses `api.search(..., towns_only=True)`, names file and followed stations' stored name/logo (`followed: true`); a town query keeps one town (`_town`: exact folded name, else prefix, else most stations) and returns its name in `place`, so the map fits that town only. Results live in `this._results` (`_data()` picks them over the sensor); `_resetResults` goes back. Header is rewritten only when its HTML changes (radius `<select>` stays usable); the search bar is built once (focus and caret survive hass updates). Locate and town search are exclusive: typing calls `_stopNearby`, `_toggleNearby` clears the field and drops a running town search. Position: `navigator.geolocation`, else the user's `person.*`, else `zone.home`. Home marker hidden while results are shown; near mode draws `path.carb-area` (colours in CSS, SVG attributes can't use theme variables) and a `.me` dot.
 
 - 0.6.0 to 0.7.1 could ask an AI (`ai_task`) for names; removed in 0.8.0. `_async_drop_ai_options` strips the leftover `ai_task_entity` option and per-station `ai_name` / `ai_checked` at setup.
 

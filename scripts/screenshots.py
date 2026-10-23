@@ -512,9 +512,12 @@ ERRORS: list[str] = []
 
 
 def serve(route):
-    """The made-up origin: pages, the integration's static files and the map tiles."""
-    path = route.request.url[len(ORIGIN) :].split("?")[0]
-    if match := re.fullmatch(r"/tiles/(\d+)/(\d+)/(\d+)\.png", path):
+    """The made-up origin: pages (/light or /dark, ?width=), the integration's static files and the map tiles."""
+    path, _, query = route.request.url[len(ORIGIN) :].partition("?")
+    if path in ("/light", "/dark"):
+        width = int(re.search(r"width=(\d+)", query).group(1)) if "width=" in query else WIDTH
+        route.fulfill(body=page_html(path[1:], width), content_type="text/html")
+    elif match := re.fullmatch(r"/tiles/(\d+)/(\d+)/(\d+)\.png", path):
         try:
             route.fulfill(body=retina_tile(*map(int, match.groups())), content_type="image/png")
         except TileError as err:
@@ -594,10 +597,12 @@ def main():
         context = browser.new_context(
             device_scale_factor=2, viewport={"width": 1000, "height": 2400}, locale="fr-FR", timezone_id="Europe/Paris"
         )
+        # Served from the made-up origin too, so the cards find the brand logos.
+        context.route(f"{ORIGIN}/**", serve)
         page = context.new_page()
         page.clock.set_fixed_time(NOW)
         for shot in SHOTS:
-            page.set_content(page_html(shot["theme"]))
+            page.goto(f"{ORIGIN}/{shot['theme']}")
             page.add_script_tag(content=HA_ELEMENTS)
             page.add_script_tag(content=CARD_JS)
             page.evaluate(
@@ -617,6 +622,11 @@ def main():
             )
             if shot["expand"]:
                 page.locator(f'.station[data-id="{shot["expand"]}"] .row').click()
+            # Every logo loaded (lazy images: scrolled into view by the tall viewport).
+            page.wait_for_function(
+                """() => [...document.querySelector("carburants-france-card").shadowRoot.querySelectorAll("img")]
+                  .every((img) => img.complete)"""
+            )
             page.wait_for_timeout(600)
             name = f"{shot['file']}.png"
             page.locator("carburants-france-card").screenshot(path=str(out_dir / name), animations="disabled")
@@ -631,16 +641,7 @@ def main():
             geolocation=HERE,
             permissions=["geolocation"],
         )
-        context.route(
-            f"{ORIGIN}/**",
-            lambda route: (
-                route.fulfill(
-                    body=page_html(route.request.url.split("/")[3].split("?")[0], MAP_WIDTH), content_type="text/html"
-                )
-                if re.fullmatch(rf"{ORIGIN}/(light|dark)(\?.*)?", route.request.url)
-                else serve(route)
-            ),
-        )
+        context.route(f"{ORIGIN}/**", serve)
         HTTP["client"] = p.request.new_context()
         # No frozen clock here: Leaflet fades the tiles in with the current time, a fixed one
         # leaves them transparent. The map shows no time, the popups stay closed.

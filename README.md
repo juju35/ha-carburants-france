@@ -19,7 +19,7 @@ Home Assistant integration for [fuel prices in France](https://data.economie.gou
 - Choice of the **fuels to follow**: Gazole (diesel), SP95, SP98, E10, E85, GPLc (LPG)
 - Per station and per fuel: a **Price** sensor (€/L, with history) and an **In stock** binary sensor (temporary or permanent shortage, with its start date)
 - Per fuel: a **Best price** sensor across your stations, with the station as attributes
-- **Brand and logo** of each station, found automatically through OpenStreetMap and Wikidata
+- **Brand and logo** of each station: 42 French networks' logos built in, the others found automatically through OpenStreetMap and Wikidata
 - `carburants_france.refresh` action to force an update
 - `custom:carburants-france-card` card, **shipped with the integration** and loaded automatically: logos, prices, shortages, best price in green, live opening status, opening hours, services and directions on click
 - `custom:carburants-france-map-card` map card: your stations on a map, with the logo and the price of a fuel on each marker, your home, and the station details on click; **Locate me** button to see the stations around you (radius picked in the title) and **search by town**, without adding them to the integration
@@ -247,7 +247,7 @@ For stations missing from that file, the integration looks in [OpenStreetMap](ht
 
 Name priority: custom name (**Rename stations** option), community file, OpenStreetMap, brand and town, address.
 
-The TotalEnergies (Total, TotalEnergies, Total Contact stations) and Total Access logos are built into the cards: Wikidata gives both brands the same logo, sometimes an old version. The brand is also written in full on the list card and in the map card popup.
+The logos of 42 French networks ship with the integration (`frontend/brands`): Leclerc, Intermarché, Carrefour, U, Auchan, Casino, Lidl, TotalEnergies, Total Access, Esso, Shell, BP, Avia, Agip… The card finds them from the brand, then from the station name ("Intermarché Cesson-Sévigné"), and uses them before the Wikidata logo, which is often missing, an old version, or the same for sister brands (Total and Total Access). The brand is also written in full on the list card and in the map card popup. Brand logos are trademarks of their owners.
 
 The **logo** comes from the brand found in OpenStreetMap, through [Wikidata](https://www.wikidata.org) / Wikimedia Commons. The lookup is done once, when the station is added; if OpenStreetMap can't be reached, it is retried at the next startup. Without a known logo, the card shows the brand initials.
 
