@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.3.0';
+var CARBURANTS_CARD_VERSION = '1.3.1';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -1382,9 +1382,9 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (this._config.zoom && this._bounds) {
       this._map.setView(this._bounds.getCenter(), this._config.zoom);
     } else if (this._bounds) {
-      // Pins sit above their point and are ~120 px wide: leave room on top and on the sides.
+      // Pins are centred on their point and ~120 px wide: leave room on every side.
       var side = this._config.show_name ? 110 : 80;
-      this._map.fitBounds(this._bounds, { paddingTopLeft: [side, 80], paddingBottomRight: [side, 30], maxZoom: 15 });
+      this._map.fitBounds(this._bounds, { paddingTopLeft: [side, 40], paddingBottomRight: [side, 40], maxZoom: 15 });
     }
     this._fitted = true;
   }
@@ -1539,13 +1539,14 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.ptext { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }',
       '.pfuel { display: inline-flex; margin-right: 2px; }',
       ...CARBURANTS_BADGE_STYLES,
+      // Compact badge on the markers, so they stay about as tall as with plain text.
+      '.pin .fbadge { height: 14px; padding-left: 5px; gap: 2px; border-radius: 7px; font-size: 9px; box-shadow: none; }',
+      '.pin .fbadge:not(:has(.fcode)) { padding-right: 5px; }',
+      '.pin .fcode { min-width: 11px; height: 11px; border-radius: 6px; font-size: 7px; }',
       '.pname-pin { max-width: 130px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--primary-text-color, #212121); }',
-      '.pin { position: absolute; transform: translate(-50%, calc(-100% - 7px)); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
-      '.pin::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--secondary-text-color, #727272); }',
+      '.pin { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
       '.pin.best { border-color: var(--success-color, #43a047); color: var(--success-color, #43a047); }',
-      '.pin.best::after { border-top-color: var(--success-color, #43a047); }',
       '.pin.out { border-color: var(--warning-color, #ffa600); color: var(--warning-color, #ffa600); }',
-      '.pin.out::after { border-top-color: var(--warning-color, #ffa600); }',
       '.pin.none { opacity: .6; }',
       // Leaflet forces width:auto and max-width:none on marker images: these selectors must outrank it.
       '.leaflet-container .leaflet-marker-pane .pin img { flex: none; box-sizing: border-box; height: 22px !important; width: auto !important; max-width: 52px !important; max-height: 22px !important; padding: 2px 4px !important; border-radius: 11px; object-fit: contain; background: #fff; }',
