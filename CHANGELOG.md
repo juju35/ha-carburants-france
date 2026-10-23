@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.3
+
+### Fixes
+- Dark theme: the header icon gets a lighter navy tile with a thin light outline, so it no longer melts into the card background. Follows the theme switch without reloading.
+
 ## 1.3.2
 
 ### Changes
