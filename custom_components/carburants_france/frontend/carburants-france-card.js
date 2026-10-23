@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.2.1';
+var CARBURANTS_CARD_VERSION = '1.3.0';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -205,6 +205,33 @@ function carbLogo(s) {
   }
   return s.logo ? { src: s.logo, own: false } : null;
 }
+
+// ── Fuel badges (pump colours, EU identifier from EN 16942) ───────────────────
+// label: the name at the pump, code: the EU identifier in its circle (none when it repeats the label).
+// Dark text on the light colours (gazole) for contrast, white on the dark ones.
+var CARBURANTS_FUEL_BADGES = {
+  gazole: { label: 'Gazole', code: 'B7', bg: '#E8A000', fg: '#1A1A1A' },
+  sp95: { label: 'SP95', code: 'E5', bg: '#00A651', fg: '#FFFFFF' },
+  sp98: { label: 'SP98', code: 'E5', bg: '#00703C', fg: '#FFFFFF' },
+  e10: { label: 'SP95', code: 'E10', bg: '#009A3E', fg: '#FFFFFF' },
+  e85: { label: 'E85', code: '', bg: '#0057A8', fg: '#FFFFFF' },
+  gplc: { label: 'GPLc', code: '', bg: '#C62828', fg: '#FFFFFF' },
+};
+
+// Badge for a fuel; plain text for a key the card doesn't know.
+function carbFuelBadge(key, name) {
+  var b = CARBURANTS_FUEL_BADGES[key];
+  if (!b) return `<span class="ftext">${carbEsc(name)}</span>`;
+  var title = b.code ? `${name} (${b.code})` : name;
+  return '<span class="fbadge" role="img" aria-label="' + carbEsc(title) + '" title="' + carbEsc(title) + '" style="--fb-bg:' + b.bg + ';--fb-fg:' + b.fg + '">' +
+    carbEsc(b.label) + (b.code ? `<span class="fcode">${carbEsc(b.code)}</span>` : '') + '</span>';
+}
+
+var CARBURANTS_BADGE_STYLES = [
+  '.fbadge { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 2px 0 7px; border-radius: 9px; background: var(--fb-bg); color: var(--fb-fg); font-size: 11px; font-weight: 700; letter-spacing: .02em; line-height: 1; white-space: nowrap; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); vertical-align: middle; }',
+  '.fbadge:not(:has(.fcode)) { padding-right: 7px; }',
+  '.fcode { display: inline-flex; align-items: center; justify-content: center; min-width: 14px; height: 14px; padding: 0 2px; box-sizing: border-box; border-radius: 7px; background: #fff; color: var(--fb-bg); font-size: 9px; font-weight: 800; letter-spacing: 0; }',
+];
 
 function carbMinutes(hhmm) {
   var p = String(hhmm).split(':');
@@ -491,19 +518,19 @@ class CarburantsFranceCard extends HTMLElement {
         // Shortage just lifted, or no price published yet: the fuel is still sold here.
         var ended = fuel.rupture_end ? carbRelative(fuel.rupture_end, this._locale()) : '';
         return '<div class="fuel nodata" title="' + carbEsc(t.no_price_hint) + '">' +
-          '<span class="fname">' + carbEsc(f.name) + '</span><span class="fprice">' + carbEsc(t.no_price) + '</span>' +
+          '<span class="fname">' + carbFuelBadge(f.key, f.name) + '</span><span class="fprice">' + carbEsc(t.no_price) + '</span>' +
           (cfg.show_updated && ended ? `<span class="fage">${carbEsc(`${t.rupture_ended} ${ended}`)}</span>` : '') + '</div>';
       }
       if (!fuel.available) {
         if (!cfg.show_out_of_stock || fuel.rupture === 'definitive') return slot;
         var since = fuel.rupture_since ? carbRelative(fuel.rupture_since, this._locale()) : '';
         return '<div class="fuel out" title="' + carbEsc(t.out_of_stock + (since ? ` ${t.since} ${since}` : '')) + '">' +
-          '<span class="fname">' + carbEsc(f.name) + '</span><span class="fprice">' + carbEsc(t.out_of_stock) + '</span>' +
+          '<span class="fname">' + carbFuelBadge(f.key, f.name) + '</span><span class="fprice">' + carbEsc(t.out_of_stock) + '</span>' +
           (cfg.show_updated && since ? `<span class="fage">${carbEsc(since)}</span>` : '') + '</div>';
       }
       var isBest = cfg.highlight_best && best[f.key] === fuel.price && Object.keys(this._lastState.attributes.stations).length > 1;
       return '<div class="fuel' + (isBest ? ' best' : '') + '"' + (isBest ? ` title="${carbEsc(t.best)}"` : '') + '>' +
-        '<span class="fname">' + carbEsc(f.name) + (isBest ? ' <ha-icon icon="mdi:star"></ha-icon>' : '') + '</span>' +
+        '<span class="fname">' + carbFuelBadge(f.key, f.name) + (isBest ? ' <ha-icon icon="mdi:star"></ha-icon>' : '') + '</span>' +
         '<span class="fprice">' + this._price(fuel.price) + '</span>' +
         (cfg.show_updated ? `<span class="fage">${carbEsc(carbRelative(fuel.updated, this._locale()))}</span>` : '') +
         '</div>';
@@ -610,14 +637,15 @@ class CarburantsFranceCard extends HTMLElement {
       '.chevron { flex: none; color: var(--secondary-text-color); --mdc-icon-size: 20px; transition: transform .2s ease; }',
       '.chevron.closed { transform: rotate(-90deg); }',
       '.fuels { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin: 6px 0 0 46px; }',
-      '.fuel { display: grid; flex-direction: column; padding: 4px 8px; border-radius: 10px; background: var(--secondary-background-color, rgba(127,127,127,.08)); border: 1px solid transparent; grid-template-columns: auto auto; justify-content: space-between; align-items: baseline; column-gap: 4px; }',
+      '.fuel { display: grid; flex-direction: column; padding: 4px 8px; border-radius: 10px; background: var(--secondary-background-color, rgba(127,127,127,.08)); border: 1px solid transparent; grid-template-columns: auto auto; justify-content: space-between; align-items: center; column-gap: 4px; row-gap: 2px; }',
       '.fname { font-size: 11px; color: var(--secondary-text-color); display: flex; align-items: center; gap: 3px; grid-column: 1; grid-row: 1; white-space: nowrap; }',
       '.fname ha-icon { --mdc-icon-size: 12px; }',
+      ...CARBURANTS_BADGE_STYLES,
       '.fprice { font-size: 14px; font-weight: 500; color: var(--primary-text-color); font-variant-numeric: tabular-nums; grid-column: 1 / -1; grid-row: 2; white-space: nowrap; }',
-      '.fage { font-size: 10px; color: var(--secondary-text-color); grid-column: 2; grid-row: 1; white-space: nowrap; }',
+      '.fage { font-size: 10px; color: var(--secondary-text-color); grid-column: 1 / -1; grid-row: 3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.fuel.empty { visibility: hidden; }',
       '.fuel.best { border-color: var(--success-color, #43a047); background: color-mix(in srgb, var(--success-color, #43a047) 10%, transparent); }',
-      '.fuel.best .fprice, .fuel.best .fname { color: var(--success-color, #43a047); }',
+      '.fuel.best .fprice, .fuel.best .fname ha-icon { color: var(--success-color, #43a047); }',
       '.fuel.out { opacity: .85; border-color: var(--warning-color, #ffa600); background: color-mix(in srgb, var(--warning-color, #ffa600) 8%, transparent); }',
       '.fuel.out .fprice { font-size: 13px; color: var(--warning-color, #ffa600); }',
       '.fuel.nodata { border-style: dashed; border-color: var(--divider-color, rgba(0,0,0,.2)); }',
@@ -1418,7 +1446,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       var label = state === 'ok' || state === 'best' ? this._price(fuel.price)
         : state === 'out' ? t.out_of_stock : state === 'nodata' ? t.no_price : '—';
       // Without a chosen fuel, say which one the price is for.
-      var priceHtml = (!key && fuelName && (state === 'ok' || state === 'best') ? `<span class="pfuel">${carbEsc(fuelName)}</span> ` : '') + carbEsc(label);
+      var priceHtml = (!key && fuelName && (state === 'ok' || state === 'best') ? `<span class="pfuel">${carbFuelBadge(shown.key, fuelName)}</span> ` : '') + carbEsc(label);
       var logo = '';
       if (this._config.show_logo) {
         var name = s.brand || s.station_name || '';
@@ -1475,7 +1503,7 @@ class CarburantsFranceMapCard extends HTMLElement {
           : `<span class="nodata">${carbEsc(t.no_price)}</span>`;
       var age = fuel.available ? carbRelative(fuel.updated, this._locale())
         : carbRelative(fuel.rupture ? fuel.rupture_since : fuel.rupture_end, this._locale());
-      return `<tr><td>${carbEsc(f.name)}</td><td>${value}</td><td class="age">${carbEsc(age)}</td></tr>`;
+      return `<tr><td>${carbFuelBadge(f.key, f.name)}</td><td>${value}</td><td class="age">${carbEsc(age)}</td></tr>`;
     }).join('');
     return '<div class="popup">' +
       '<div class="pname">' + carbEsc(s.station_name) + '</div>' +
@@ -1509,7 +1537,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.map.dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }',
       '.carb-marker { background: none; border: none; }',
       '.ptext { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }',
-      '.pfuel { font-size: 10px; font-weight: 500; opacity: .75; }',
+      '.pfuel { display: inline-flex; margin-right: 2px; }',
+      ...CARBURANTS_BADGE_STYLES,
       '.pname-pin { max-width: 130px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--primary-text-color, #212121); }',
       '.pin { position: absolute; transform: translate(-50%, calc(-100% - 7px)); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
       '.pin::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--secondary-text-color, #727272); }',

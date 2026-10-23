@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+
+### Changes
+- Fuel names replaced by badges in the pump colours with their EU identifier: Gazole (B7, yellow), SP95 (E5), SP95-E10 (E10), SP98 (E5) in greens, E85 in blue, GPLc in red. Used in the list card tiles, the map markers and the map popups; the full name stays in the tooltip.
+- Price age moved under the price in the fuel tiles, so it no longer collides with the badge.
+
 ## 1.2.1
 
 ### Maintenance
