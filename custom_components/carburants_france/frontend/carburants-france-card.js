@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.3.1';
+var CARBURANTS_CARD_VERSION = '1.3.2';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -204,6 +204,15 @@ function carbLogo(s) {
     if (CARBURANTS_BRAND_LOGOS[i].match.test(String(s.brand || ''))) return { src: CARBURANTS_BRAND_LOGOS[i].src, own: true };
   }
   return s.logo ? { src: s.logo, own: false } : null;
+}
+
+// Fuel tile columns: 150 px tiles with one or two fuels, three in a row, four as 2 × 2 on a
+// narrow card (in a row once there is room), more wrap on their own.
+function carbFuelColumns(count) {
+  var columns = count <= 2 ? `repeat(${count},minmax(0,150px))`
+    : count === 3 ? 'repeat(3,minmax(0,1fr))'
+      : count === 4 ? 'repeat(auto-fill,minmax(max(140px,calc((100% - 18px) / 4)),1fr))' : '';
+  return columns ? ` style="grid-template-columns:${columns}"` : '';
 }
 
 // ── Fuel badges (pump colours, EU identifier from EN 16942) ───────────────────
@@ -547,7 +556,7 @@ class CarburantsFranceCard extends HTMLElement {
       '<ha-icon class="chevron' + (expanded ? '' : ' closed') + '" icon="mdi:chevron-down"></ha-icon>' +
       '</div>' +
       (chips.indexOf('fprice') !== -1
-        ? `<div class="fuels"${fuels.length <= 4 ? ` style="grid-template-columns:repeat(${fuels.length},minmax(0,1fr))"` : ''}>${chips}</div>`
+        ? `<div class="fuels"${carbFuelColumns(fuels.length)}>${chips}</div>`
         : '');
 
     if (expanded) html += this._renderDetails(s, t, now);
@@ -643,6 +652,9 @@ class CarburantsFranceCard extends HTMLElement {
       ...CARBURANTS_BADGE_STYLES,
       '.fprice { font-size: 14px; font-weight: 500; color: var(--primary-text-color); font-variant-numeric: tabular-nums; grid-column: 1 / -1; grid-row: 2; white-space: nowrap; }',
       '.fage { font-size: 10px; color: var(--secondary-text-color); grid-column: 1 / -1; grid-row: 3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+      // Wide tile (one or two fuels, 150 px wide): the age goes back next to the badge, two lines instead of three.
+      '.fuel { container-type: inline-size; }',
+      '@container (min-width: 130px) { .fage { grid-column: 2; grid-row: 1; justify-self: end; } }',
       '.fuel.empty { visibility: hidden; }',
       '.fuel.best { border-color: var(--success-color, #43a047); background: color-mix(in srgb, var(--success-color, #43a047) 10%, transparent); }',
       '.fuel.best .fprice, .fuel.best .fname ha-icon { color: var(--success-color, #43a047); }',
