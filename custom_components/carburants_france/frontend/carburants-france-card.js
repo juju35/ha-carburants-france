@@ -547,7 +547,7 @@ class CarburantsFranceCard extends HTMLElement {
       '<ha-icon class="chevron' + (expanded ? '' : ' closed') + '" icon="mdi:chevron-down"></ha-icon>' +
       '</div>' +
       (chips.indexOf('fprice') !== -1
-        ? `<div class="fuels"${fuels.length <= 4 ? ` style="grid-template-columns:repeat(${fuels.length},minmax(0,1fr))"` : ''}>${chips}</div>`
+        ? `<div class="fuels"${fuels.length <= 4 ? ` style="grid-template-columns:repeat(${fuels.length},${fuels.length <= 2 ? 'minmax(0,150px)' : 'minmax(0,1fr)'})"` : ''}>${chips}</div>`
         : '');
 
     if (expanded) html += this._renderDetails(s, t, now);
@@ -643,7 +643,7 @@ class CarburantsFranceCard extends HTMLElement {
       ...CARBURANTS_BADGE_STYLES,
       '.fprice { font-size: 14px; font-weight: 500; color: var(--primary-text-color); font-variant-numeric: tabular-nums; grid-column: 1 / -1; grid-row: 2; white-space: nowrap; }',
       '.fage { font-size: 10px; color: var(--secondary-text-color); grid-column: 1 / -1; grid-row: 3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
-      // Wide tile (one or two columns): the age goes back next to the badge, two lines instead of three.
+      // Wide tile (one or two fuels, 150 px wide): the age goes back next to the badge, two lines instead of three.
       '.fuel { container-type: inline-size; }',
       '@container (min-width: 130px) { .fage { grid-column: 2; grid-row: 1; justify-self: end; } }',
       '.fuel.empty { visibility: hidden; }',

@@ -3,7 +3,8 @@
 ## 1.3.2
 
 ### Changes
-- Fuel tiles back on two lines when they are wide enough (one or two columns): the price age sits next to the badge again. Narrow tiles (three columns and more) keep the age under the price.
+- Fuel tiles back on two lines when they are wide enough (one or two fuels): the price age sits next to the badge again. Narrow tiles (three fuels and more) keep the age under the price.
+- With one or two fuels, the tiles keep a fixed width (150 px) instead of stretching across the card.
 
 ## 1.3.1
 
