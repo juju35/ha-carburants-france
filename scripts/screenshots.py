@@ -3,7 +3,8 @@
 Usage: python scripts/screenshots.py  (needs `pip install playwright pillow` and `playwright install chromium`;
 CHROMIUM=/path/to/chrome to use another browser)
 The clock is frozen on a Tuesday at 08:30 in Paris, so opening hours and price ages stay the same.
-The map uses OpenStreetMap tiles, downloaded once into scripts/.tile-cache (not committed).
+The map uses the OpenStreetMap tiles kept in scripts/tiles (committed, no network needed); a tile
+missing there, after a change of stations or zoom, is downloaded once and should be committed too.
 """
 
 import io
@@ -17,7 +18,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "custom_components/carburants_france/frontend"
 CARD_JS = (FRONTEND / "carburants-france-card.js").read_text()
-TILE_CACHE = Path(__file__).resolve().parent / ".tile-cache"
+TILES_DIR = Path(__file__).resolve().parent / "tiles"
 # Pages are served from this made-up origin, so the card finds Leaflet at /carburants_france_static.
 ORIGIN = "https://card.test"  # HTTPS: the browser only gives the position to secure pages
 MAP_WIDTH = 520
@@ -477,8 +478,8 @@ HTTP = {}
 
 
 def osm_tile(z, x, y):
-    """One OpenStreetMap tile, from the cache or downloaded once (tile usage policy: identify, cache)."""
-    path = TILE_CACHE / str(z) / str(x) / f"{y}.png"
+    """One OpenStreetMap tile, from scripts/tiles or downloaded once (tile usage policy: identify, cache)."""
+    path = TILES_DIR / str(z) / str(x) / f"{y}.png"
     if not path.exists():
         url = f"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         try:
@@ -489,6 +490,7 @@ def osm_tile(z, x, y):
             raise TileError(f"{url}: HTTP {resp.status}")
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(resp.body())
+        print(f"downloaded scripts/tiles/{z}/{x}/{y}.png")
     return path.read_bytes()
 
 
