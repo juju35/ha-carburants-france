@@ -228,6 +228,76 @@ STATES = {
     },
 }
 
+
+def empty_fuel(rupture_end=None):
+    return {
+        "price": None,
+        "updated": None,
+        "available": False,
+        "rupture": None,
+        "rupture_since": None,
+        "rupture_end": rupture_end,
+    }
+
+
+ALL_FUELS = [
+    {"key": "gazole", "name": "Gazole"},
+    {"key": "sp95", "name": "SP95"},
+    {"key": "e10", "name": "E10"},
+    {"key": "sp98", "name": "SP98"},
+    {"key": "e85", "name": "E85"},
+    {"key": "gplc", "name": "GPLc"},
+]
+
+# Every fuel the feed knows, with a shortage and a fuel without price yet.
+ALL_FUEL_STATIONS = [
+    {
+        **STATIONS[0],
+        "fuels": {
+            "gazole": fuel(2.249, "2026-10-19T16:30:00Z"),
+            "sp95": fuel(2.289, "2026-10-19T16:30:00Z"),
+            "e10": fuel(2.259, "2026-10-19T16:30:00Z"),
+            "sp98": fuel(2.319, "2026-10-19T16:30:00Z"),
+            "e85": fuel(0.899, "2026-10-19T16:30:00Z"),
+            "gplc": fuel(1.049, "2026-10-19T16:30:00Z"),
+        },
+    },
+    {
+        **STATIONS[1],
+        "fuels": {
+            "gazole": fuel(2.265, "2026-10-19T09:00:00Z"),
+            "sp95": fuel(2.279, "2026-10-19T09:00:00Z"),
+            "e10": fuel(2.239, "2026-10-19T09:00:00Z"),
+            "sp98": out("2026-10-18T09:00:00Z"),
+            "e85": fuel(0.879, "2026-10-19T09:00:00Z"),
+            "gplc": empty_fuel("2026-10-19T20:00:00Z"),
+        },
+    },
+    {
+        **STATIONS[3],
+        "fuels": {
+            "gazole": fuel(2.319, "2026-10-20T03:30:00Z"),
+            "sp95": fuel(2.309, "2026-10-20T03:30:00Z"),
+            "e10": fuel(2.299, "2026-10-20T03:30:00Z"),
+            "sp98": fuel(2.369, "2026-10-20T03:30:00Z"),
+            "e85": fuel(0.919, "2026-10-20T03:30:00Z"),
+            "gplc": fuel(1.029, "2026-10-20T03:30:00Z"),
+        },
+    },
+]
+
+ALL_FUEL_STATES = {
+    "sensor.carburants_stations": {
+        **STATES["sensor.carburants_stations"],
+        "state": str(len(ALL_FUEL_STATIONS)),
+        "attributes": {
+            **STATES["sensor.carburants_stations"]["attributes"],
+            "fuels": ALL_FUELS,
+            "stations": ALL_FUEL_STATIONS,
+        },
+    },
+}
+
 SHOTS = [
     {"file": "card", "theme": "light", "lang": "en", "config": {}, "expand": None},
     {
@@ -236,6 +306,22 @@ SHOTS = [
         "lang": "fr",
         "config": {"title": "Autour de la maison", "sort": "distance"},
         "expand": "35000021",
+    },
+    {
+        "file": "card-all-fuels",
+        "theme": "light",
+        "lang": "fr",
+        "config": {"title": "Tous les carburants"},
+        "expand": None,
+        "states": ALL_FUEL_STATES,
+    },
+    {
+        "file": "card-all-fuels-dark",
+        "theme": "dark",
+        "lang": "fr",
+        "config": {"title": "Tous les carburants"},
+        "expand": None,
+        "states": ALL_FUEL_STATES,
     },
 ]
 
@@ -270,7 +356,12 @@ def main():
                              callService: () => Promise.resolve(), callWS: () => Promise.resolve({})};
                   document.getElementById("root").appendChild(el);
                 }""",
-                {"config": shot["config"], "states": STATES, "dark": shot["theme"] == "dark", "lang": shot["lang"]},
+                {
+                    "config": shot["config"],
+                    "states": shot.get("states", STATES),
+                    "dark": shot["theme"] == "dark",
+                    "lang": shot["lang"],
+                },
             )
             if shot["expand"]:
                 page.locator(f'.station[data-id="{shot["expand"]}"] .row').click()

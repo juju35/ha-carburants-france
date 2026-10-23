@@ -212,6 +212,10 @@ actions:
 |---|---|
 | ![card](screenshots/card.png) | ![card dark](screenshots/card-dark.png) |
 
+| All fuels | All fuels, dark |
+|---|---|
+| ![card with every fuel](screenshots/card-all-fuels.png) | ![card with every fuel, dark](screenshots/card-all-fuels-dark.png) |
+
 Screenshots are in French, like the station data.
 
 ## How it works
