@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.3.1';
+var CARBURANTS_CARD_VERSION = '1.3.2';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 var CARBURANTS_ICON = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -643,6 +643,9 @@ class CarburantsFranceCard extends HTMLElement {
       ...CARBURANTS_BADGE_STYLES,
       '.fprice { font-size: 14px; font-weight: 500; color: var(--primary-text-color); font-variant-numeric: tabular-nums; grid-column: 1 / -1; grid-row: 2; white-space: nowrap; }',
       '.fage { font-size: 10px; color: var(--secondary-text-color); grid-column: 1 / -1; grid-row: 3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+      // Wide tile (one or two columns): the age goes back next to the badge, two lines instead of three.
+      '.fuel { container-type: inline-size; }',
+      '@container (min-width: 130px) { .fage { grid-column: 2; grid-row: 1; justify-self: end; } }',
       '.fuel.empty { visibility: hidden; }',
       '.fuel.best { border-color: var(--success-color, #43a047); background: color-mix(in srgb, var(--success-color, #43a047) 10%, transparent); }',
       '.fuel.best .fprice, .fuel.best .fname ha-icon { color: var(--success-color, #43a047); }',

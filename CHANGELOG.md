@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.2
+
+### Changes
+- Fuel tiles back on two lines when they are wide enough (one or two columns): the price age sits next to the badge again. Narrow tiles (three columns and more) keep the age under the price.
+
 ## 1.3.1
 
 ### Fixes
