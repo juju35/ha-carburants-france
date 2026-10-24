@@ -275,8 +275,6 @@ async def test_card_added_to_resources(hass, aioclient_mock, entry, stub_fronten
     stub_frontend.assert_not_called()
 
 
-<<<<<<< Updated upstream
-=======
 async def _start_flow(hass):
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
     # Starting the flow sets up the dependencies: let http finish its setup (its start_server task saves its
@@ -286,7 +284,6 @@ async def _start_flow(hass):
     return result
 
 
->>>>>>> Stashed changes
 @pytest.mark.parametrize("key", ["mode", "resource_mode"])
 async def test_card_resource_with_lovelace_data_variants(hass, aioclient_mock, entry, stub_frontend, key):
     """Before 2025.2 hass.data["lovelace"] is a dict, and 2025.2-2025.3 call the field `mode`."""
