@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from pathlib import Path
+from typing import Any
 
 import voluptuous as vol
 from homeassistant.components.frontend import add_extra_js_url
@@ -83,17 +84,21 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-def _storage_resources(hass: HomeAssistant):
-    """The dashboard resources collection when it can be edited (storage mode), else None.
+def _lovelace_resources(lovelace: Any) -> tuple[Any, str]:
+    """Lovelace resources collection and its mode, whatever the Home Assistant version.
 
-    Home Assistant 2025.2+ stores a LovelaceData object, older releases a plain dict.
+    hass.data["lovelace"] is a dict before 2025.2, then a dataclass whose `mode` field became `resource_mode` in 2025.4.
     """
-    lovelace = hass.data.get("lovelace")
     if isinstance(lovelace, dict):
-        resources, mode = lovelace.get("resources"), lovelace.get("mode", "storage")
-    else:
-        resources = getattr(lovelace, "resources", None)
-        mode = getattr(lovelace, "resource_mode", "storage")
+        return lovelace.get("resources"), lovelace.get("resource_mode", lovelace.get("mode", "storage"))
+    return getattr(lovelace, "resources", None), getattr(
+        lovelace, "resource_mode", getattr(lovelace, "mode", "storage")
+    )
+
+
+def _storage_resources(hass: HomeAssistant):
+    """The dashboard resources collection when it can be edited (storage mode), else None."""
+    resources, mode = _lovelace_resources(hass.data.get("lovelace"))
     return resources if mode == "storage" else None
 
 

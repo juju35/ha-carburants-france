@@ -275,6 +275,38 @@ async def test_card_added_to_resources(hass, aioclient_mock, entry, stub_fronten
     stub_frontend.assert_not_called()
 
 
+@pytest.mark.parametrize("key", ["mode", "resource_mode"])
+async def test_card_resource_with_lovelace_data_variants(hass, aioclient_mock, entry, stub_frontend, key):
+    """Before 2025.2 hass.data["lovelace"] is a dict, and 2025.2-2025.3 call the field `mode`."""
+    assert await async_setup_component(hass, "lovelace", {})
+    resources = _storage_resources(hass)
+    hass.data["lovelace"] = {key: "storage", "resources": resources, "dashboards": {}}
+    await _setup(hass, aioclient_mock, entry)
+    await hass.async_block_till_done()
+    urls = [item["url"] for item in resources.async_items()]
+    assert len(urls) == 1 and urls[0].startswith("/carburants_france_static/carburants-france-card.js?v=")
+    stub_frontend.assert_not_called()
+
+
+@pytest.mark.parametrize("as_dict", [True, False])
+@pytest.mark.parametrize("key", ["mode", "resource_mode"])
+async def test_card_resource_yaml_mode_uses_extra_js(hass, aioclient_mock, entry, stub_frontend, caplog, key, as_dict):
+    """Resources in YAML mode can't be edited, whatever the shape of hass.data["lovelace"]: the card is loaded on
+    every page instead."""
+    from types import SimpleNamespace
+
+    from homeassistant.components.lovelace.resources import ResourceYAMLCollection
+
+    assert await async_setup_component(hass, "lovelace", {})
+    data = {key: "yaml", "resources": ResourceYAMLCollection([]), "dashboards": {}}
+    hass.data["lovelace"] = data if as_dict else SimpleNamespace(**data)
+    await _setup(hass, aioclient_mock, entry)
+    await hass.async_block_till_done()
+    stub_frontend.assert_called_once()
+    # Not taken for storage mode: no attempt to edit the read-only resources.
+    assert "Could not add the Carburants France card" not in caplog.text
+
+
 async def test_config_flow(hass, aioclient_mock):
     hass.config.latitude, hass.config.longitude = 48.11, -1.68
     aioclient_mock.get(API_RECORDS, json={"total_count": 2, "results": [STATION_A, STATION_B]})
