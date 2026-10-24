@@ -981,3 +981,69 @@ async def test_migration_shared_device_both_with_entities(hass, aioclient_mock):
     # The old shared device is gone once both entries left it.
     assert dev_reg.async_get(old_device.id) is None or not dev_reg.async_get(old_device.id).config_entries
     assert not [e for e in ent_reg.entities.values() if e.platform == DOMAIN and e.entity_id.endswith("_2")]
+
+
+async def test_unload_entry(hass, aioclient_mock, entry):
+    await _setup(hass, aioclient_mock, entry)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.NOT_LOADED
+    assert hass.states.get("sensor.carburants_stations").state == "unavailable"
+
+
+async def test_card_resource_removed_with_last_entry(hass, aioclient_mock, entry, stub_frontend):
+    """The dashboard resource goes with the last entry, and comes back with a new one."""
+    assert await async_setup_component(hass, "lovelace", {})
+    other = MockConfigEntry(
+        domain=DOMAIN,
+        title="Trajet",
+        data={},
+        options={"fuels": ["gazole"], "stations": [_stored(STATION_A, "TotalEnergies")], "scan_interval": 15},
+    )
+    other.add_to_hass(hass)
+    await _setup(hass, aioclient_mock, entry)
+    resources = hass.data["lovelace"].resources
+
+    def card_urls():
+        return [i["url"] for i in resources.async_items() if "carburants-france-card.js" in i["url"]]
+
+    assert len(card_urls()) == 1
+    await hass.config_entries.async_remove(other.entry_id)
+    await hass.async_block_till_done()
+    assert len(card_urls()) == 1
+    await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert card_urls() == []
+
+    again = MockConfigEntry(domain=DOMAIN, title="Carburants", data={}, options=dict(entry.options))
+    again.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(again.entry_id)
+    await hass.async_block_till_done()
+    assert len(card_urls()) == 1
+
+
+async def test_options_flow_error_keeps_input(hass, aioclient_mock, entry):
+    """The form shown again after an error keeps what was entered, not the stored options."""
+    await _setup(hass, aioclient_mock, entry)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"fuels": ["e10"], "stations": [], "add_stations": False, "rename_stations": True, "scan_interval": 45},
+    )
+    assert result["errors"] == {"base": "no_station"}
+    defaults = {str(key): key.default() for key in result["data_schema"].schema}
+    assert defaults == {
+        "fuels": ["e10"],
+        "stations": [],
+        "add_stations": False,
+        "rename_stations": True,
+        "scan_interval": 45,
+    }
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"fuels": [], "stations": ["35000025"], "add_stations": False, "rename_stations": False, "scan_interval": 45},
+    )
+    assert result["errors"] == {"fuels": "no_fuel"}
+    defaults = {str(key): key.default() for key in result["data_schema"].schema}
+    assert defaults["fuels"] == []
+    assert defaults["stations"] == ["35000025"]

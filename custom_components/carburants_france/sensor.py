@@ -2,22 +2,25 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import FUELS
 from .coordinator import CarburantsConfigEntry, CarburantsCoordinator
 from .entity import StationFuelEntity, async_track_station_entities, entry_device
 
+if TYPE_CHECKING:
+    # Home Assistant 2025.2+; annotation only, so 2024.12 still loads the platform.
+    from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+
 PRICE_UNIT = "€/L"
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: CarburantsConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: CarburantsConfigEntry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
     coordinator = entry.runtime_data
     entities: list[SensorEntity] = [StationsSensor(coordinator)]
