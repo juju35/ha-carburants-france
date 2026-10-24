@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.5.2';
+var CARBURANTS_CARD_VERSION = '1.6.0';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 // bg: tile and screen colour. On a dark card the navy tile melts into the background, so the dark
