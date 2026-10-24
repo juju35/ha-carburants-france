@@ -1,8 +1,16 @@
 # Changelog
 
+## 1.5.1
+
+### Changes
+- Map card: same compact header as the other ha-* cards (36 px icon, 16 px title, 12 px padding).
+
+### Maintenance
+- CHANGELOG headings aligned on the other ha-* repositories.
+
 ## 1.5.0
 
-### Features
+### What's new
 - 42 brand logos shipped with the integration (the aaos-carburants pack): Leclerc, Intermarché, Carrefour, U, Auchan, TotalEnergies, Total Access, Esso, Shell, BP, Avia… Found from the brand, then the station name, and used before the Wikidata logo, on the list card, the map markers and in the nearby and town searches. White logos (Roady) get a dark tile.
 - The two Total logos built into the card are replaced by those of the pack, served as files: the card is 18 KB lighter.
 - Map markers: the logo sits on a tile with small rounded corners instead of a pill, which cut the corners of wide logos (Avia).
@@ -12,7 +20,7 @@
 
 ## 1.4.0
 
-### Features
+### What's new
 - Map card: **Locate me** button in the title. Shows the stations within a radius around you (browser position, else your person, else home), the radius being picked in a list next to the button (5 km by default, `radius` option). The title becomes "Stations within 5 km", the search area and your position are drawn. Click again to go back to the followed stations.
 - Map card: **search by town** (or postcode) under the title, with a clear button as in ha-system-monitor-card. The map focuses on the town found, its name goes in the title.
 - Nothing is added to the integration: the stations are only shown. Stations already followed keep their name and logo and are marked "Followed station" in their popup.

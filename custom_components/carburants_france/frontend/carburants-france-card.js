@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.5.0';
+var CARBURANTS_CARD_VERSION = '1.5.1';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 // bg: tile and screen colour. On a dark card the navy tile melts into the background, so the dark
@@ -1897,10 +1897,10 @@ class CarburantsFranceMapCard extends HTMLElement {
     return [
       ':host { display: block; }',
       'ha-card { overflow: hidden; }',
-      '.header { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 16px 16px 8px; }',
-      '.hname { min-width: 0; font-size: 18px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+      '.header { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 12px 12px 8px; }',
+      '.hname { min-width: 0; font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.icon-link { display: flex; flex: none; }',
-      '.icon { width: 40px; height: 40px; display: block; }',
+      '.icon { width: 36px; height: 36px; display: block; }',
       '.header[hidden], .message[hidden] { display: none; }',
       '.message { padding: 12px 16px; color: var(--secondary-text-color); }',
       '.map { width: 100%; background: var(--secondary-background-color, #e5e5e5); z-index: 0; }',
