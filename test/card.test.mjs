@@ -10,12 +10,20 @@ const context = {
   customElements: { get: () => true, define() {} },
   window: {},
   navigator: { language: 'en' },
-  document: {},
+  document: { addEventListener() {}, removeEventListener() {} },
   console,
+  // Timers are queued, never run on their own: tests call runTimers().
+  setTimeout: (fn) => timers.push(fn) - 1,
+  clearTimeout: (id) => { if (id != null && timers[id]) timers[id] = null; },
+  clearInterval() {},
+};
+const timers = [];
+const runTimers = () => {
+  for (const fn of timers.splice(0)) fn?.();
 };
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, CarburantsFranceCard };`, context);
-const { carbBestPrices, carbVisibleStations, carbSetSchema, CarburantsFranceCard } = context.carb;
+vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
+const { carbBestPrices, carbVisibleStations, carbSetSchema, CarburantsFranceCard, CarburantsFranceMapCard } = context.carb;
 
 const fuels = [{ key: 'gazole' }, { key: 'e10' }];
 const station = (id, gazole, e10) => ({
@@ -67,4 +75,58 @@ test('carbSetSchema only hands ha-form a schema that changed', () => {
   assert.equal(sets, 1);
   carbSetSchema(form, [{ name: 'entity' }, { name: 'fuels' }]);
   assert.equal(sets, 2);
+});
+
+test('detaching the map card leaves the pseudo full screen (iOS) for good', () => {
+  const classes = new Set(['fullscreen', 'pseudo']);
+  const haCard = { classList: { toggle: (name, on) => (on ? classes.add(name) : classes.delete(name)) } };
+  const fsLink = { setAttribute() {} };
+  const card = Object.assign(Object.create(CarburantsFranceMapCard.prototype), {
+    _root: { querySelector: (sel) => (sel === 'ha-card' ? haCard : null) },
+    _pseudoFs: true,
+    _fsLink: fsLink,
+    _hass: { language: 'en' },
+    matches: () => false,
+  });
+  card._listenFullscreen();
+  card.disconnectedCallback();
+  assert.equal(card._pseudoFs, false);
+  assert.deepEqual([...classes], []);
+  assert.equal(fsLink.title, 'Full screen');
+});
+
+test('the map is torn down after a long detach only, and rebuilt when the card comes back', () => {
+  const mapCard = (connected) => {
+    let removed = 0;
+    let updates = 0;
+    const card = Object.assign(Object.create(CarburantsFranceMapCard.prototype), {
+      _map: { remove: () => { removed += 1; } },
+      _config: { show_fullscreen: false },
+      _hass: {},
+      _root: { querySelector: () => null },
+      _update: () => { updates += 1; },
+    });
+    Object.defineProperty(card, 'isConnected', { get: () => connected.value });
+    return { card, removed: () => removed, updates: () => updates };
+  };
+  // Straight back (view switch, editor preview): the pending teardown is cancelled.
+  const connected = { value: false };
+  let c = mapCard(connected);
+  c.card.disconnectedCallback();
+  connected.value = true;
+  c.card._invalidate = () => {};
+  c.card.connectedCallback();
+  runTimers();
+  assert.equal(c.removed(), 0);
+  assert.ok(c.card._map);
+  // Gone for good: the map (and its WebGL context) is freed, then rebuilt on reattach.
+  connected.value = false;
+  c = mapCard(connected);
+  c.card.disconnectedCallback();
+  runTimers();
+  assert.equal(c.removed(), 1);
+  assert.equal(c.card._map, null);
+  connected.value = true;
+  c.card.connectedCallback();
+  assert.equal(c.updates(), 1);
 });

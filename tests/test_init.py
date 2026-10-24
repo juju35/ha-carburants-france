@@ -10,9 +10,11 @@ from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.carburants_france import _storage_resources
 from custom_components.carburants_france.api import parse_station
 from custom_components.carburants_france.const import API_RECORDS, DOMAIN, LOGO_VERSION, OVERPASS_URL, WIKIDATA_URL
 from custom_components.carburants_france.coordinator import station_title, useful_osm_name
+from custom_components.carburants_france.registry_compat import device_entry_ids, get_device
 
 # Two real records from the feed (Rennes, October 2026), horaires shortened.
 HOURS_24 = (
@@ -246,29 +248,73 @@ async def test_card_served(hass, aioclient_mock, entry, hass_client):
     assert "customElements.define('carburants-france-card'" in text
     assert "customElements.define('carburants-france-map-card'" in text
     # Leaflet ships with the integration, no CDN.
-    resp = await client.get("/carburants_france_static/leaflet/leaflet.js")
-    assert resp.status == 200
-    resp = await client.get("/carburants_france_static/leaflet/leaflet.css")
-    assert resp.status == 200
+    # Bodies are read so each connection goes back to the pool (older aiohttp otherwise stalls).
+    for path in ("leaflet/leaflet.js", "leaflet/leaflet.css"):
+        resp = await client.get(f"/carburants_france_static/{path}")
+        assert resp.status == 200, path
+        await resp.read()
     # Brand logos from the card's table.
     for brand in ("leclerc", "total_access", "totalenergies"):
         resp = await client.get(f"/carburants_france_static/brands/{brand}.png")
         assert resp.status == 200, brand
+        await resp.read()
         assert f"file: '{brand}'" in text
     # MapLibre and its Leaflet adapter, for Home Assistant's vector base map; the worker sits next to it.
     for path in ("maplibre-gl.mjs", "maplibre-gl-worker.mjs", "maplibre-gl.css", "leaflet-maplibre-gl.js"):
         resp = await client.get(f"/carburants_france_static/maplibre/{path}")
         assert resp.status == 200, path
+        await resp.read()
 
 
 async def test_card_added_to_resources(hass, aioclient_mock, entry, stub_frontend):
     assert await async_setup_component(hass, "lovelace", {})
     await _setup(hass, aioclient_mock, entry)
-    resources = hass.data["lovelace"].resources
+    resources = _storage_resources(hass)
     urls = [item["url"] for item in resources.async_items()]
     assert len(urls) == 1
     assert urls[0].startswith("/carburants_france_static/carburants-france-card.js?v=")
     stub_frontend.assert_not_called()
+
+
+async def _start_flow(hass):
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    # Starting the flow sets up the dependencies: let http finish its setup (its start_server task saves its
+    # settings with a delayed write) while Home Assistant runs. Left to the teardown, that write is scheduled after
+    # the final write and its timer lingers (Home Assistant 2024.12).
+    await hass.async_block_till_done()
+    return result
+
+
+@pytest.mark.parametrize("key", ["mode", "resource_mode"])
+async def test_card_resource_with_lovelace_data_variants(hass, aioclient_mock, entry, stub_frontend, key):
+    """Before 2025.2 hass.data["lovelace"] is a dict, and 2025.2-2025.3 call the field `mode`."""
+    assert await async_setup_component(hass, "lovelace", {})
+    resources = _storage_resources(hass)
+    hass.data["lovelace"] = {key: "storage", "resources": resources, "dashboards": {}}
+    await _setup(hass, aioclient_mock, entry)
+    await hass.async_block_till_done()
+    urls = [item["url"] for item in resources.async_items()]
+    assert len(urls) == 1 and urls[0].startswith("/carburants_france_static/carburants-france-card.js?v=")
+    stub_frontend.assert_not_called()
+
+
+@pytest.mark.parametrize("as_dict", [True, False])
+@pytest.mark.parametrize("key", ["mode", "resource_mode"])
+async def test_card_resource_yaml_mode_uses_extra_js(hass, aioclient_mock, entry, stub_frontend, caplog, key, as_dict):
+    """Resources in YAML mode can't be edited, whatever the shape of hass.data["lovelace"]: the card is loaded on
+    every page instead."""
+    from types import SimpleNamespace
+
+    from homeassistant.components.lovelace.resources import ResourceYAMLCollection
+
+    assert await async_setup_component(hass, "lovelace", {})
+    data = {key: "yaml", "resources": ResourceYAMLCollection([]), "dashboards": {}}
+    hass.data["lovelace"] = data if as_dict else SimpleNamespace(**data)
+    await _setup(hass, aioclient_mock, entry)
+    await hass.async_block_till_done()
+    stub_frontend.assert_called_once()
+    # Not taken for storage mode: no attempt to edit the read-only resources.
+    assert "Could not add the Carburants France card" not in caplog.text
 
 
 async def test_config_flow(hass, aioclient_mock):
@@ -277,7 +323,7 @@ async def test_config_flow(hass, aioclient_mock):
     aioclient_mock.post(OVERPASS_URL, json=OVERPASS)
     aioclient_mock.get(WIKIDATA_URL, json=WIKIDATA)
 
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await _start_flow(hass)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "Maison", "fuels": ["gazole", "sp98"]}
     )
@@ -311,7 +357,7 @@ async def test_config_flow(hass, aioclient_mock):
 async def test_config_flow_search_again_keeps_selection(hass, aioclient_mock):
     aioclient_mock.get(API_RECORDS, json={"total_count": 1, "results": [STATION_A]})
     aioclient_mock.post(OVERPASS_URL, status=504)
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await _start_flow(hass)
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"name": "C", "fuels": ["gazole"]})
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"query": "35000", "radius": 5})
     call = [c for c in aioclient_mock.mock_calls if str(c[1]).startswith(API_RECORDS)][-1]
@@ -339,7 +385,7 @@ async def test_config_flow_search_again_keeps_selection(hass, aioclient_mock):
 
 async def test_config_flow_no_results(hass, aioclient_mock):
     aioclient_mock.get(API_RECORDS, json={"total_count": 0, "results": []})
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await _start_flow(hass)
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"name": "C", "fuels": ["gazole"]})
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"query": "Nulle part", "radius": 5})
     assert result["errors"] == {"base": "no_results"}
@@ -377,7 +423,7 @@ async def test_brands_retried_at_startup(hass, aioclient_mock, entry):
 
 
 async def test_config_flow_unexpected_error(hass, aioclient_mock):
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await _start_flow(hass)
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"name": "C", "fuels": ["gazole"]})
     with patch(
         "custom_components.carburants_france.config_flow.CarburantsApi.search", side_effect=RuntimeError("boom")
@@ -540,7 +586,7 @@ async def test_community_names_first(hass, aioclient_mock, entry, community_name
     # The device follows; entity ids keep the name they were created with.
     from homeassistant.helpers import device_registry as dr
 
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000013")})
+    device = get_device(dr.async_get(hass), (DOMAIN, f"{entry.entry_id}_35000013"), entry.entry_id)
     assert device.name == "Relais Saint-Malo"
     assert hass.states.get("sensor.relais_saint_malo_gazole") is not None
 
@@ -802,7 +848,7 @@ async def test_migration_keeps_entity_ids(hass, aioclient_mock):
     dev_reg = dr.async_get(hass)
     device = dev_reg.async_get(old_device.id)
     assert device.identifiers == {(DOMAIN, f"{entry.entry_id}_35000013")}
-    assert dev_reg.async_get_device(identifiers={(DOMAIN, "35000013")}) is None
+    assert get_device(dev_reg, (DOMAIN, "35000013"), entry.entry_id) is None
     devices = [
         d for d in dr.async_entries_for_config_entry(dev_reg, entry.entry_id) if "35000013" in str(d.identifiers)
     ]
@@ -830,16 +876,18 @@ async def test_migration_shared_station_device(hass, aioclient_mock):
     old_device, _ = _v1_registry(hass, first, 35000013, "My Total")
     dev_reg = dr.async_get(hass)
     dev_reg.async_get_or_create(config_entry_id=second.entry_id, identifiers={(DOMAIN, "35000013")})
-    assert dev_reg.async_get(old_device.id).config_entries == {first.entry_id, second.entry_id}
+    if not hasattr(dr.DeviceEntry, "config_entry_id"):
+        # Before 2026.8 the registry merged them into one device; since, each entry has its own.
+        assert dev_reg.async_get(old_device.id).config_entries == {first.entry_id, second.entry_id}
 
     await _setup(hass, aioclient_mock, first)
     assert second.state is ConfigEntryState.LOADED
     ent_reg = er.async_get(hass)
     # The first entry keeps its device and entities.
-    assert dev_reg.async_get(old_device.id).config_entries == {first.entry_id}
+    assert device_entry_ids(dev_reg.async_get(old_device.id)) == {first.entry_id}
     assert ent_reg.async_get("sensor.my_total_gazole").device_id == old_device.id
     # The second gets its own device and entities for the same station.
-    own = dev_reg.async_get_device(identifiers={(DOMAIN, f"{second.entry_id}_35000013")})
+    own = get_device(dev_reg, (DOMAIN, f"{second.entry_id}_35000013"), second.entry_id)
     assert own is not None and own.id != old_device.id
     second_entities = [
         e for e in er.async_entries_for_config_entry(ent_reg, second.entry_id) if "35000013" in e.unique_id
@@ -872,8 +920,8 @@ async def test_two_entries_same_station(hass, aioclient_mock, entry):
     assert all(hass.states.get(i).state == "2.399" for i in ids)
     dev_reg = dr.async_get(hass)
     for config_entry in (entry, other):
-        device = dev_reg.async_get_device(identifiers={(DOMAIN, f"{config_entry.entry_id}_35000013")})
-        assert device.config_entries == {config_entry.entry_id}
+        device = get_device(dev_reg, (DOMAIN, f"{config_entry.entry_id}_35000013"), config_entry.entry_id)
+        assert device_entry_ids(device) == {config_entry.entry_id}
 
 
 async def test_unfollowed_station_and_fuel_removed(hass, aioclient_mock, entry):
@@ -897,9 +945,9 @@ async def test_unfollowed_station_and_fuel_removed(hass, aioclient_mock, entry):
     assert ent_reg.async_get("sensor.carburants_best_price_sp98") is None
     assert ent_reg.async_get("sensor.leclerc_rennes_gazole") is not None
     assert ent_reg.async_get("sensor.carburants_best_price_gazole") is not None
-    assert dev_reg.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000013")}) is None
-    assert dev_reg.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000025")}) is not None
-    assert dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)}) is not None
+    assert get_device(dev_reg, (DOMAIN, f"{entry.entry_id}_35000013"), entry.entry_id) is None
+    assert get_device(dev_reg, (DOMAIN, f"{entry.entry_id}_35000025"), entry.entry_id) is not None
+    assert get_device(dev_reg, (DOMAIN, entry.entry_id), entry.entry_id) is not None
 
 
 async def test_entities_for_station_missing_at_startup(hass, aioclient_mock, entry):
@@ -942,7 +990,7 @@ async def test_brand_lookup_does_not_reload(hass, aioclient_mock, entry):
     stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
     assert stations[35000013]["station_name"] == "TotalEnergies Access Rennes Saint-Malo"
     assert stations[35000013]["logo"].endswith("TotalEnergies_logo.svg?width=96")
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000013")})
+    device = get_device(dr.async_get(hass), (DOMAIN, f"{entry.entry_id}_35000013"), entry.entry_id)
     assert device.name == "TotalEnergies Access Rennes Saint-Malo"
     assert device.manufacturer == "TotalEnergies"
 
@@ -970,16 +1018,22 @@ async def test_migration_shared_device_both_with_entities(hass, aioclient_mock):
     await _setup(hass, aioclient_mock, first)
     assert second.state is ConfigEntryState.LOADED
     for config_entry, entity_ids in ((first, first_ids), (second, second_ids)):
-        device = dev_reg.async_get_device(identifiers={(DOMAIN, f"{config_entry.entry_id}_35000013")})
-        assert device is not None and device.config_entries == {config_entry.entry_id}
+        device = get_device(dev_reg, (DOMAIN, f"{config_entry.entry_id}_35000013"), config_entry.entry_id)
+        assert device is not None and device_entry_ids(device) == {config_entry.entry_id}
         for entity_id in entity_ids:
             reg = ent_reg.async_get(entity_id)
             assert reg is not None, entity_id
             assert reg.unique_id.startswith(f"{config_entry.entry_id}_35000013_")
             assert reg.device_id == device.id
             assert hass.states.get(entity_id).state != "unavailable"
-    # The old shared device is gone once both entries left it.
-    assert dev_reg.async_get(old_device.id) is None or not dev_reg.async_get(old_device.id).config_entries
+    # The old shared device is gone once both entries left it, or (depending on which entry
+    # migrates first) it was taken over as the own device of the entry holding all its entities.
+    old = dev_reg.async_get(old_device.id)
+    assert (
+        old is None
+        or not device_entry_ids(old)
+        or any(old.identifiers == {(DOMAIN, f"{e.entry_id}_35000013")} for e in (first, second))
+    )
     assert not [e for e in ent_reg.entities.values() if e.platform == DOMAIN and e.entity_id.endswith("_2")]
 
 
@@ -1002,7 +1056,7 @@ async def test_card_resource_removed_with_last_entry(hass, aioclient_mock, entry
     )
     other.add_to_hass(hass)
     await _setup(hass, aioclient_mock, entry)
-    resources = hass.data["lovelace"].resources
+    resources = _storage_resources(hass)
 
     def card_urls():
         return [i["url"] for i in resources.async_items() if "carburants-france-card.js" in i["url"]]
@@ -1047,3 +1101,50 @@ async def test_options_flow_error_keeps_input(hass, aioclient_mock, entry):
     defaults = {str(key): key.default() for key in result["data_schema"].schema}
     assert defaults["fuels"] == []
     assert defaults["stations"] == ["35000025"]
+
+
+async def test_rename_during_brand_lookup_kept(hass, aioclient_mock, entry):
+    """A station renamed while the background brand lookup runs keeps its new name."""
+    import asyncio
+
+    from custom_components.carburants_france import brands
+
+    options = dict(entry.options)
+    options["stations"] = [{**s, "brand": None, "logo": None, "brand_checked": False} for s in options["stations"]]
+    hass.config_entries.async_update_entry(entry, options=options)
+    started, release = asyncio.Event(), asyncio.Event()
+    real_enrich = brands.async_enrich
+
+    async def slow_enrich(session, stations, with_logos=True):
+        started.set()
+        await release.wait()
+        return await real_enrich(session, stations, with_logos)
+
+    aioclient_mock.post(OVERPASS_URL, json=OVERPASS)
+    aioclient_mock.get(WIKIDATA_URL, json=WIKIDATA)
+    with patch("custom_components.carburants_france.async_enrich", side_effect=slow_enrich):
+        await _setup(hass, aioclient_mock, entry)
+        await started.wait()
+        renamed = [{**s, "name": "Ma station"} if s["id"] == 35000013 else s for s in entry.options["stations"]]
+        hass.config_entries.async_update_entry(entry, options={**entry.options, "stations": renamed})
+        await hass.async_block_till_done()
+        release.set()
+        await hass.async_block_till_done()
+    stations = {s["id"]: s for s in entry.options["stations"]}
+    assert stations[35000013].get("name") == "Ma station"
+    assert stations[35000013]["brand"] == "TotalEnergies"
+    assert all(s["brand_checked"] for s in stations.values())
+
+
+async def test_entry_rename_renames_device(hass, aioclient_mock, entry):
+    """Renaming the entry renames its device and the entities named after it, without a reload."""
+    from homeassistant.helpers import device_registry as dr
+
+    await _setup(hass, aioclient_mock, entry)
+    calls = len(aioclient_mock.mock_calls)
+    hass.config_entries.async_update_entry(entry, title="Maison")
+    await hass.async_block_till_done()
+    device = get_device(dr.async_get(hass), (DOMAIN, entry.entry_id), entry.entry_id)
+    assert device.name == "Maison"
+    assert hass.states.get("sensor.carburants_stations").attributes["friendly_name"] == "Maison Stations"
+    assert len(aioclient_mock.mock_calls) == calls

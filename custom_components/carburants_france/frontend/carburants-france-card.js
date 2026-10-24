@@ -1182,7 +1182,12 @@ class CarburantsFranceMapCard extends HTMLElement {
     clearTimeout(this._searchTimer);
     document.removeEventListener('click', this._onOutside, true);
     this._unlistenFullscreen();
-    this._pseudoFs = false;
+    if (this._pseudoFs) {
+      // Escape no longer reaches the card once detached: leave the pseudo full screen now,
+      // otherwise the card comes back covering the window with nothing to close it.
+      this._pseudoFs = false;
+      this._fullscreenChanged();
+    }
     // Frees Leaflet and the WebGL context of the vector map unless the card comes straight back.
     clearTimeout(this._destroyTimer);
     this._destroyTimer = setTimeout(() => {
@@ -2188,11 +2193,11 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
     this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: value }, bubbles: true, composed: true }));
   }
 }
+// jscpd:ignore-end
 
 if (!customElements.get('carburants-france-map-card-editor')) {
   customElements.define('carburants-france-map-card-editor', CarburantsFranceMapCardEditor);
 }
-// jscpd:ignore-end
 
 if (!customElements.get('carburants-france-map-card')) {
   customElements.define('carburants-france-map-card', CarburantsFranceMapCard);

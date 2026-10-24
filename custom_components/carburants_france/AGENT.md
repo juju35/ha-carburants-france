@@ -16,6 +16,7 @@ custom_components/carburants_france/
 ├── entity.py          # Station device / base entity
 ├── sensor.py          # Price per station+fuel, best price per fuel, Stations (card data)
 ├── binary_sensor.py   # In stock per station+fuel
+├── registry_compat.py # Device registry calls for HA before / since 2026.8 (single config entry per device)
 ├── websocket.py       # carburants_france/search: nearby / town search for the map card, nothing stored
 ├── config_flow.py     # user (name, fuels) → search → stations; options: fuels, stations, add, scan_interval
 ├── const.py           # Constants, fuel keys
@@ -36,7 +37,8 @@ custom_components/carburants_france/
 
 ## Registry ids
 - Station device identifier and station entity unique_id prefix: `{entry_id}_{station_id}` (`station_device_id`), so two entries can follow the same station. Entries before config entry version 1.2 used `{station_id}`: `async_migrate_entry` rewrites unique_ids and device identifiers in place (entity ids and history kept).
-- Station entities come from the followed stations and known fuels (`coordinator.entity_pairs()`), and new pairs are added by a coordinator listener without reload. At setup, entities and devices of unfollowed stations or fuels are removed. Option changes that only touch names, brands or logos (background lookup, renames) are applied in place (`async_set_stations`), the others reload the entry.
+- Device registry: always go through `registry_compat.py` (`get_device`, `device_entry_ids`, `unlink_device`), never `async_get_device`, `DeviceEntry.config_entries` or `remove_config_entry_id` directly. HA 2026.8 gives a device one config entry (`config_entry_id`, lookups by `async_get_device_by_identifier(identifier, entry_id)`, removal by `async_remove_device`) and reports the old calls (reading `config_entries` reports since 2026.10); hacs.json still allows 2024.12, so the helpers pick the API by `hasattr` on the class, never by reading the deprecated attribute. Since 2026.8 HA has already split devices shared by two entries when the registry loads, so the 1.2 migration only renames identifiers and unlinking an entry removes its own device.
+- Station entities come from the followed stations and known fuels (`coordinator.entity_pairs()`), and new pairs are added by a coordinator listener without reload. At setup, entities and devices of unfollowed stations or fuels are removed. Option changes that only touch names, brands or logos (background lookup, renames) are applied in place (`async_set_stations`), the others reload the entry. A title change also goes through the update listener: the entry device is renamed in place. The background lookup merges its fields (`ENRICHED_KEYS`) into the current options by station id when it ends, so a rename made meanwhile is kept.
 
 ## Brands and logos
 - Overpass: `nwr["amenity"="fuel"](around:300,lat,lon)` per station (feed coordinates are rounded to ~100 m), matched on `ref:FR:prix-carburants`, else nearest branded station. Gives `brand`, `brand:wikidata`, `name` (stored as `osm_name`).
@@ -45,7 +47,7 @@ custom_components/carburants_france/
 - Done in the config flow (brand at search, logo once stations are chosen) and stored in the entry options per station (`brand`, `wikidata`, `logo`, `brand_checked`). Stations with `brand_checked: false`, or a `logo_version` below `LOGO_VERSION` (bump it when the logo choice changes), are looked up again at startup.
 
 ## Card
-- Served from `/carburants_france_static`, added to the Lovelace resources at startup (like ha-parcel), URL versioned with the file's md5. Falls back to `add_extra_js_url` in YAML mode.
+- Served from `/carburants_france_static`, added to the Lovelace resources at startup (like ha-parcel), URL versioned with the file's md5. Falls back to `add_extra_js_url` in YAML mode. `_lovelace_resources()` reads `hass.data["lovelace"]` as a dict (before 2025.2) or a dataclass (`mode`, then `resource_mode` from 2025.4).
 - Brand logos: `frontend/brands/*.png` (42, the aaos-carburants pack, same keys as its `brand_logos.json`) listed in `CARBURANTS_BRAND_LOGOS`; `carbLogo` tries the brand, then `station_name` (key = NFD, lower case, a-z0-9 only; whole key or prefix when ≥ 4 letters, longest first), before the stored Wikidata `logo`. `tile` (Total Access) = drawn as is (`.own`), `dark` (Roady) = dark tile. Served at `/carburants_france_static/brands/`; screenshots load them from the made-up origin.
 - Reads the Stations sensor (`stations`, `fuels`, `config_entry_id` attributes). Opening status is computed in the browser every minute. Logo `<img>` falls back to an initials badge on error.
 
@@ -63,4 +65,4 @@ custom_components/carburants_france/
 HACS downloads the repository itself (no `zip_release`). Before releasing `vX.Y.Z`, bump the version in manifest.json, const.py (`VERSION`) and `CARBURANTS_CARD_VERSION` in the card. Pushing to main publishes release `vX.Y.Z` (tag, notes from the CHANGELOG.md section, `carburants_france.zip`) when that tag doesn't exist yet; the workflow fails if the three versions differ. Rerun notes on an existing release with the "Update release notes" workflow (input `tag`).
 
 ## Tests
-`pip install -r requirements_test.txt && pytest`; card helpers: `node --test test/*.test.mjs` (Node 22, evaluates the card file with stubs).
+`pip install -r requirements_test.txt && pytest` (job `tests`, Python 3.14 = latest Home Assistant; HA 2026.3+ needs Python 3.14). An autouse fixture (`tests/conftest.py`, `no_deprecated_calls`) fails any test during which Home Assistant reports a deprecated call naming `carburants_france`, and CI turns those reports into annotations; `tests/test_registry_compat.py` covers both registry APIs with fakes. CI also runs the suite on the minimum Home Assistant (job `pytest-min-ha`: pytest-homeassistant-custom-component 0.13.190 = HA 2024.12.0). Card helpers: `node --test test/*.test.mjs` (Node 22, evaluates the card file with stubs).

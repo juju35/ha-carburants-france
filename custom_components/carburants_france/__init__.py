@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from pathlib import Path
+from typing import Any
 
 import voluptuous as vol
 from homeassistant.components.frontend import add_extra_js_url
@@ -36,9 +37,12 @@ from .const import (
     LEGACY_AI_OPTION,
     LOGO_VERSION,
     SERVICE_REFRESH,
+    ST_BRAND,
     ST_BRAND_CHECKED,
     ST_ID,
+    ST_LOGO,
     ST_LOGO_VERSION,
+    ST_OSM_NAME,
 )
 from .coordinator import (
     CarburantsConfigEntry,
@@ -47,6 +51,7 @@ from .coordinator import (
     station_device_id,
 )
 from .names import async_get_names
+from .registry_compat import device_entry_ids, get_device, unlink_device
 from .websocket import async_register_websocket
 
 _LOGGER = logging.getLogger(__name__)
@@ -80,6 +85,24 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
+def _lovelace_resources(lovelace: Any) -> tuple[Any, str]:
+    """Lovelace resources collection and its mode, whatever the Home Assistant version.
+
+    hass.data["lovelace"] is a dict before 2025.2, then a dataclass whose `mode` field became `resource_mode` in 2025.4.
+    """
+    if isinstance(lovelace, dict):
+        return lovelace.get("resources"), lovelace.get("resource_mode", lovelace.get("mode", "storage"))
+    return getattr(lovelace, "resources", None), getattr(
+        lovelace, "resource_mode", getattr(lovelace, "mode", "storage")
+    )
+
+
+def _storage_resources(hass: HomeAssistant):
+    """The dashboard resources collection when it can be edited (storage mode), else None."""
+    resources, mode = _lovelace_resources(hass.data.get("lovelace"))
+    return resources if mode == "storage" else None
+
+
 async def _async_register_card(hass: HomeAssistant) -> None:
     """Add the card to the dashboard resources, as ha-parcel does.
 
@@ -90,9 +113,8 @@ async def _async_register_card(hass: HomeAssistant) -> None:
     url = f"{base_url}?v={digest}"
 
     async def register(_event: Event | None = None) -> None:
-        lovelace = hass.data.get("lovelace")
-        resources = getattr(lovelace, "resources", None)
-        if resources is None or getattr(lovelace, "resource_mode", "storage") != "storage":
+        resources = _storage_resources(hass)
+        if resources is None:
             # Dashboards in YAML mode: resources can't be edited, load the card on every page.
             add_extra_js_url(hass, url)
             return
@@ -126,11 +148,11 @@ async def _async_register_card(hass: HomeAssistant) -> None:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Last entry deleted: take the card out of the dashboard resources."""
-    if hass.config_entries.async_entries(DOMAIN):
+    # Older Home Assistant releases (2024.12 at least) still list the entry being removed here.
+    if any(e.entry_id != entry.entry_id for e in hass.config_entries.async_entries(DOMAIN)):
         return
-    lovelace = hass.data.get("lovelace")
-    resources = getattr(lovelace, "resources", None)
-    if resources is None or getattr(lovelace, "resource_mode", "storage") != "storage":
+    resources = _storage_resources(hass)
+    if resources is None:
         return
     base_url = f"{FRONTEND_URL}/{CARD_FILENAME}"
     try:
@@ -180,18 +202,19 @@ async def _async_migrate_station_ids(hass: HomeAssistant, entry: ConfigEntry) ->
         owners = {e.config_entry_id for e in er.async_entries_for_device(entity_registry, device.id, True)}
         if entry_id not in owners:
             # Station device of another entry following the same station, linked to this one too.
-            device_registry.async_update_device(device.id, remove_config_entry_id=entry_id)
+            unlink_device(device_registry, device, entry_id)
             continue
         new_id = (DOMAIN, station_device_id(entry_id, old))
-        if owners != {entry_id} or device_registry.async_get_device(identifiers={new_id}):
+        if owners != {entry_id} or get_device(device_registry, new_id, entry_id):
             # Shared with another entry's entities: this entry's entities move to their own
             # device at setup, the other entry takes this one over when it migrates.
             continue
         identifiers = {i for i in device.identifiers if i[0] != DOMAIN} | {new_id}
         device_registry.async_update_device(device.id, new_identifiers=identifiers)
         # Other entries linked to it have no entity on it: they get their own device.
-        for other_id in device.config_entries - {entry_id}:
-            device_registry.async_update_device(device.id, remove_config_entry_id=other_id)
+        # (2026.8+: a device has a single entry, HA already split the shared ones at load.)
+        for other_id in device_entry_ids(device) - {entry_id}:
+            unlink_device(device_registry, device, other_id)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: CarburantsConfigEntry) -> bool:
@@ -245,7 +268,7 @@ def _async_remove_orphans(hass: HomeAssistant, entry: CarburantsConfigEntry) -> 
         if not _is_followed_device(entry, device) and not any(
             e.config_entry_id == entry_id for e in er.async_entries_for_device(entity_registry, device.id, True)
         ):
-            device_registry.async_update_device(device.id, remove_config_entry_id=entry_id)
+            unlink_device(device_registry, device, entry_id)
 
 
 def _is_followed_device(entry: ConfigEntry, device: dr.DeviceEntry) -> bool:
@@ -272,6 +295,10 @@ def _options_key(options: dict) -> tuple:
     )
 
 
+# Station fields written by the background brand lookup; everything else belongs to the user.
+ENRICHED_KEYS = (ST_BRAND, ST_OSM_NAME, "wikidata", ST_LOGO, ST_BRAND_CHECKED, ST_LOGO_VERSION)
+
+
 def _needs_brand_lookup(station: dict) -> bool:
     """OpenStreetMap was unreachable at setup, or the stored data predates the current lookup."""
     return not station.get(ST_BRAND_CHECKED) or station.get(ST_LOGO_VERSION) != LOGO_VERSION
@@ -279,13 +306,19 @@ def _needs_brand_lookup(station: dict) -> bool:
 
 async def _async_retry_brands(hass: HomeAssistant, entry: CarburantsConfigEntry) -> None:
     """Look up the brands, names and logos OpenStreetMap could not give before; retried at each start."""
-    stations = [dict(s) for s in entry.options.get(CONF_STATIONS, [])]
-    pending = [s for s in stations if _needs_brand_lookup(s)]
+    pending = [dict(s) for s in entry.options.get(CONF_STATIONS, []) if _needs_brand_lookup(s)]
     if not await async_enrich(async_get_clientsession(hass), pending, with_logos=True):
         return
     for station in pending:
         station[ST_BRAND_CHECKED] = True
         station[ST_LOGO_VERSION] = LOGO_VERSION
+    # The lookup can take a while and a rename does not reload the entry (so does not cancel this
+    # task): merge into the current options and only touch the lookup's own fields.
+    found = {s[ST_ID]: s for s in pending}
+    stations = [
+        {**s, **{k: found[s[ST_ID]][k] for k in ENRICHED_KEYS if k in found[s[ST_ID]]}} if s[ST_ID] in found else s
+        for s in entry.options.get(CONF_STATIONS, [])
+    ]
     hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_STATIONS: stations})
 
 
@@ -294,13 +327,19 @@ async def async_unload_entry(hass: HomeAssistant, entry: CarburantsConfigEntry) 
 
 
 async def _async_reload(hass: HomeAssistant, entry: CarburantsConfigEntry) -> None:
-    """Reload when fuels, stations or the interval change; names, brands and logos apply in place.
+    """Reload when fuels, stations or the interval change; names, brands, logos and the title apply in place.
 
     The background brand lookup only fills names and logos: it must not reload the entry
     (new API call, every entity recreated).
     """
     coordinator = getattr(entry, "runtime_data", None)
     if coordinator is not None and coordinator.options_key == _options_key(entry.options):
+        # Also called when only the entry title changed: the entry device (and the entities
+        # named after it) take the new title.
+        device_registry = dr.async_get(hass)
+        device = get_device(device_registry, (DOMAIN, entry.entry_id), entry.entry_id)
+        if device and device.name != entry.title:
+            device_registry.async_update_device(device.id, name=entry.title)
         coordinator.async_set_stations(entry.options.get(CONF_STATIONS, []))
         return
     await hass.config_entries.async_reload(entry.entry_id)
