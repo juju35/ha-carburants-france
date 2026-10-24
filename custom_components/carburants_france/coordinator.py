@@ -28,6 +28,7 @@ from .const import (
     ST_NAME,
     ST_OSM_NAME,
 )
+from .registry_compat import get_device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -174,9 +175,8 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
             self._apply_stored(station_id, station)
         device_registry = dr.async_get(self.hass)
         for station_id, stored in self.stations.items():
-            device = device_registry.async_get_device(
-                identifiers={(DOMAIN, station_device_id(self.config_entry.entry_id, station_id))}
-            )
+            entry_id = self.config_entry.entry_id
+            device = get_device(device_registry, (DOMAIN, station_device_id(entry_id, station_id)), entry_id)
             if device:
                 live = (self.data or {}).get(station_id, {})
                 device_registry.async_update_device(

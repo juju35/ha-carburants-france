@@ -14,6 +14,7 @@ from custom_components.carburants_france import _storage_resources
 from custom_components.carburants_france.api import parse_station
 from custom_components.carburants_france.const import API_RECORDS, DOMAIN, LOGO_VERSION, OVERPASS_URL, WIKIDATA_URL
 from custom_components.carburants_france.coordinator import station_title, useful_osm_name
+from custom_components.carburants_france.registry_compat import device_entry_ids, get_device
 
 # Two real records from the feed (Rennes, October 2026), horaires shortened.
 HOURS_24 = (
@@ -585,7 +586,7 @@ async def test_community_names_first(hass, aioclient_mock, entry, community_name
     # The device follows; entity ids keep the name they were created with.
     from homeassistant.helpers import device_registry as dr
 
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000013")})
+    device = get_device(dr.async_get(hass), (DOMAIN, f"{entry.entry_id}_35000013"), entry.entry_id)
     assert device.name == "Relais Saint-Malo"
     assert hass.states.get("sensor.relais_saint_malo_gazole") is not None
 
@@ -847,7 +848,7 @@ async def test_migration_keeps_entity_ids(hass, aioclient_mock):
     dev_reg = dr.async_get(hass)
     device = dev_reg.async_get(old_device.id)
     assert device.identifiers == {(DOMAIN, f"{entry.entry_id}_35000013")}
-    assert dev_reg.async_get_device(identifiers={(DOMAIN, "35000013")}) is None
+    assert get_device(dev_reg, (DOMAIN, "35000013"), entry.entry_id) is None
     devices = [
         d for d in dr.async_entries_for_config_entry(dev_reg, entry.entry_id) if "35000013" in str(d.identifiers)
     ]
@@ -875,16 +876,18 @@ async def test_migration_shared_station_device(hass, aioclient_mock):
     old_device, _ = _v1_registry(hass, first, 35000013, "My Total")
     dev_reg = dr.async_get(hass)
     dev_reg.async_get_or_create(config_entry_id=second.entry_id, identifiers={(DOMAIN, "35000013")})
-    assert dev_reg.async_get(old_device.id).config_entries == {first.entry_id, second.entry_id}
+    if not hasattr(dr.DeviceEntry, "config_entry_id"):
+        # Before 2026.8 the registry merged them into one device; since, each entry has its own.
+        assert dev_reg.async_get(old_device.id).config_entries == {first.entry_id, second.entry_id}
 
     await _setup(hass, aioclient_mock, first)
     assert second.state is ConfigEntryState.LOADED
     ent_reg = er.async_get(hass)
     # The first entry keeps its device and entities.
-    assert dev_reg.async_get(old_device.id).config_entries == {first.entry_id}
+    assert device_entry_ids(dev_reg.async_get(old_device.id)) == {first.entry_id}
     assert ent_reg.async_get("sensor.my_total_gazole").device_id == old_device.id
     # The second gets its own device and entities for the same station.
-    own = dev_reg.async_get_device(identifiers={(DOMAIN, f"{second.entry_id}_35000013")})
+    own = get_device(dev_reg, (DOMAIN, f"{second.entry_id}_35000013"), second.entry_id)
     assert own is not None and own.id != old_device.id
     second_entities = [
         e for e in er.async_entries_for_config_entry(ent_reg, second.entry_id) if "35000013" in e.unique_id
@@ -917,8 +920,8 @@ async def test_two_entries_same_station(hass, aioclient_mock, entry):
     assert all(hass.states.get(i).state == "2.399" for i in ids)
     dev_reg = dr.async_get(hass)
     for config_entry in (entry, other):
-        device = dev_reg.async_get_device(identifiers={(DOMAIN, f"{config_entry.entry_id}_35000013")})
-        assert device.config_entries == {config_entry.entry_id}
+        device = get_device(dev_reg, (DOMAIN, f"{config_entry.entry_id}_35000013"), config_entry.entry_id)
+        assert device_entry_ids(device) == {config_entry.entry_id}
 
 
 async def test_unfollowed_station_and_fuel_removed(hass, aioclient_mock, entry):
@@ -942,9 +945,9 @@ async def test_unfollowed_station_and_fuel_removed(hass, aioclient_mock, entry):
     assert ent_reg.async_get("sensor.carburants_best_price_sp98") is None
     assert ent_reg.async_get("sensor.leclerc_rennes_gazole") is not None
     assert ent_reg.async_get("sensor.carburants_best_price_gazole") is not None
-    assert dev_reg.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000013")}) is None
-    assert dev_reg.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000025")}) is not None
-    assert dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)}) is not None
+    assert get_device(dev_reg, (DOMAIN, f"{entry.entry_id}_35000013"), entry.entry_id) is None
+    assert get_device(dev_reg, (DOMAIN, f"{entry.entry_id}_35000025"), entry.entry_id) is not None
+    assert get_device(dev_reg, (DOMAIN, entry.entry_id), entry.entry_id) is not None
 
 
 async def test_entities_for_station_missing_at_startup(hass, aioclient_mock, entry):
@@ -987,7 +990,7 @@ async def test_brand_lookup_does_not_reload(hass, aioclient_mock, entry):
     stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
     assert stations[35000013]["station_name"] == "TotalEnergies Access Rennes Saint-Malo"
     assert stations[35000013]["logo"].endswith("TotalEnergies_logo.svg?width=96")
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000013")})
+    device = get_device(dr.async_get(hass), (DOMAIN, f"{entry.entry_id}_35000013"), entry.entry_id)
     assert device.name == "TotalEnergies Access Rennes Saint-Malo"
     assert device.manufacturer == "TotalEnergies"
 
@@ -1015,8 +1018,8 @@ async def test_migration_shared_device_both_with_entities(hass, aioclient_mock):
     await _setup(hass, aioclient_mock, first)
     assert second.state is ConfigEntryState.LOADED
     for config_entry, entity_ids in ((first, first_ids), (second, second_ids)):
-        device = dev_reg.async_get_device(identifiers={(DOMAIN, f"{config_entry.entry_id}_35000013")})
-        assert device is not None and device.config_entries == {config_entry.entry_id}
+        device = get_device(dev_reg, (DOMAIN, f"{config_entry.entry_id}_35000013"), config_entry.entry_id)
+        assert device is not None and device_entry_ids(device) == {config_entry.entry_id}
         for entity_id in entity_ids:
             reg = ent_reg.async_get(entity_id)
             assert reg is not None, entity_id
@@ -1028,7 +1031,7 @@ async def test_migration_shared_device_both_with_entities(hass, aioclient_mock):
     old = dev_reg.async_get(old_device.id)
     assert (
         old is None
-        or not old.config_entries
+        or not device_entry_ids(old)
         or any(old.identifiers == {(DOMAIN, f"{e.entry_id}_35000013")} for e in (first, second))
     )
     assert not [e for e in ent_reg.entities.values() if e.platform == DOMAIN and e.entity_id.endswith("_2")]
@@ -1141,7 +1144,7 @@ async def test_entry_rename_renames_device(hass, aioclient_mock, entry):
     calls = len(aioclient_mock.mock_calls)
     hass.config_entries.async_update_entry(entry, title="Maison")
     await hass.async_block_till_done()
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    device = get_device(dr.async_get(hass), (DOMAIN, entry.entry_id), entry.entry_id)
     assert device.name == "Maison"
     assert hass.states.get("sensor.carburants_stations").attributes["friendly_name"] == "Maison Stations"
     assert len(aioclient_mock.mock_calls) == calls

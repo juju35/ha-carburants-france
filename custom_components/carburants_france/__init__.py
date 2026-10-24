@@ -51,6 +51,7 @@ from .coordinator import (
     station_device_id,
 )
 from .names import async_get_names
+from .registry_compat import device_entry_ids, get_device, unlink_device
 from .websocket import async_register_websocket
 
 _LOGGER = logging.getLogger(__name__)
@@ -201,18 +202,19 @@ async def _async_migrate_station_ids(hass: HomeAssistant, entry: ConfigEntry) ->
         owners = {e.config_entry_id for e in er.async_entries_for_device(entity_registry, device.id, True)}
         if entry_id not in owners:
             # Station device of another entry following the same station, linked to this one too.
-            device_registry.async_update_device(device.id, remove_config_entry_id=entry_id)
+            unlink_device(device_registry, device, entry_id)
             continue
         new_id = (DOMAIN, station_device_id(entry_id, old))
-        if owners != {entry_id} or device_registry.async_get_device(identifiers={new_id}):
+        if owners != {entry_id} or get_device(device_registry, new_id, entry_id):
             # Shared with another entry's entities: this entry's entities move to their own
             # device at setup, the other entry takes this one over when it migrates.
             continue
         identifiers = {i for i in device.identifiers if i[0] != DOMAIN} | {new_id}
         device_registry.async_update_device(device.id, new_identifiers=identifiers)
         # Other entries linked to it have no entity on it: they get their own device.
-        for other_id in device.config_entries - {entry_id}:
-            device_registry.async_update_device(device.id, remove_config_entry_id=other_id)
+        # (2026.8+: a device has a single entry, HA already split the shared ones at load.)
+        for other_id in device_entry_ids(device) - {entry_id}:
+            unlink_device(device_registry, device, other_id)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: CarburantsConfigEntry) -> bool:
@@ -266,7 +268,7 @@ def _async_remove_orphans(hass: HomeAssistant, entry: CarburantsConfigEntry) -> 
         if not _is_followed_device(entry, device) and not any(
             e.config_entry_id == entry_id for e in er.async_entries_for_device(entity_registry, device.id, True)
         ):
-            device_registry.async_update_device(device.id, remove_config_entry_id=entry_id)
+            unlink_device(device_registry, device, entry_id)
 
 
 def _is_followed_device(entry: ConfigEntry, device: dr.DeviceEntry) -> bool:
@@ -335,7 +337,7 @@ async def _async_reload(hass: HomeAssistant, entry: CarburantsConfigEntry) -> No
         # Also called when only the entry title changed: the entry device (and the entities
         # named after it) take the new title.
         device_registry = dr.async_get(hass)
-        device = device_registry.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+        device = get_device(device_registry, (DOMAIN, entry.entry_id), entry.entry_id)
         if device and device.name != entry.title:
             device_registry.async_update_device(device.id, name=entry.title)
         coordinator.async_set_stations(entry.options.get(CONF_STATIONS, []))
