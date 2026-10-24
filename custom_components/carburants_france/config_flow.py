@@ -264,6 +264,14 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
         options = self.config_entry.options
         current = list(options.get(CONF_STATIONS, []))
         errors: dict[str, str] = {}
+        # What the form shows: the stored options, or what was entered when it comes back with an error.
+        shown = {
+            CONF_FUELS: list(options.get(CONF_FUELS, DEFAULT_FUELS)),
+            CONF_STATIONS: [str(s[ST_ID]) for s in current],
+            CONF_ADD_STATIONS: False,
+            CONF_RENAME_STATIONS: False,
+            CONF_SCAN_INTERVAL: options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        }
         if user_input is not None:
             fuels = [f for f in user_input.get(CONF_FUELS, []) if f in FUELS]
             kept = {int(v) for v in user_input.get(CONF_STATIONS, [])}
@@ -278,20 +286,25 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
                 errors["base"] = "no_station"
             else:
                 return await self._async_finish()
+            shown = {
+                CONF_FUELS: fuels,
+                CONF_STATIONS: [str(i) for i in kept],
+                CONF_ADD_STATIONS: bool(user_input.get(CONF_ADD_STATIONS)),
+                CONF_RENAME_STATIONS: self._rename,
+                CONF_SCAN_INTERVAL: self._scan_interval,
+            }
 
         self._init_picker(list(options.get(CONF_FUELS, DEFAULT_FUELS)), current)
         station_options = [SelectOptionDict(value=str(s[ST_ID]), label=self._label(s)) for s in current]
         schema = vol.Schema(
             {
-                vol.Required(CONF_FUELS, default=self._fuels): _fuels_selector(),
-                vol.Optional(CONF_STATIONS, default=[str(s[ST_ID]) for s in current]): SelectSelector(
+                vol.Required(CONF_FUELS, default=shown[CONF_FUELS]): _fuels_selector(),
+                vol.Optional(CONF_STATIONS, default=shown[CONF_STATIONS]): SelectSelector(
                     SelectSelectorConfig(options=station_options, multiple=True, mode=SelectSelectorMode.LIST)
                 ),
-                vol.Optional(CONF_ADD_STATIONS, default=False): BooleanSelector(),
-                vol.Optional(CONF_RENAME_STATIONS, default=False): BooleanSelector(),
-                vol.Required(
-                    CONF_SCAN_INTERVAL, default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-                ): NumberSelector(
+                vol.Optional(CONF_ADD_STATIONS, default=shown[CONF_ADD_STATIONS]): BooleanSelector(),
+                vol.Optional(CONF_RENAME_STATIONS, default=shown[CONF_RENAME_STATIONS]): BooleanSelector(),
+                vol.Required(CONF_SCAN_INTERVAL, default=shown[CONF_SCAN_INTERVAL]): NumberSelector(
                     NumberSelectorConfig(
                         min=MIN_SCAN_INTERVAL, max=240, step=1, unit_of_measurement="min", mode=NumberSelectorMode.BOX
                     )

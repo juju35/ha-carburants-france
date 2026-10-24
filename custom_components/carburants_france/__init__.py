@@ -54,6 +54,7 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
 CARD_PATH = Path(__file__).parent / "frontend" / CARD_FILENAME
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+CARD_REMOVED = f"{DOMAIN}_card_removed"
 REFRESH_SCHEMA = vol.Schema({vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string})
 
 
@@ -123,6 +124,28 @@ async def _async_register_card(hass: HomeAssistant) -> None:
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, register)
 
 
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Last entry deleted: take the card out of the dashboard resources."""
+    if hass.config_entries.async_entries(DOMAIN):
+        return
+    lovelace = hass.data.get("lovelace")
+    resources = getattr(lovelace, "resources", None)
+    if resources is None or getattr(lovelace, "resource_mode", "storage") != "storage":
+        return
+    base_url = f"{FRONTEND_URL}/{CARD_FILENAME}"
+    try:
+        if not resources.loaded:
+            await resources.async_load()
+            resources.loaded = True
+        for item in [i for i in resources.async_items() if i.get("url", "").split("?")[0] == base_url]:
+            await resources.async_delete_item(item["id"])
+    except Exception as err:  # noqa: BLE001
+        _LOGGER.warning("Could not remove the Carburants France card from dashboard resources: %s", err)
+        return
+    # async_setup does not run again for an entry added before the next restart: add it back then.
+    hass.data[CARD_REMOVED] = True
+
+
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """1.1 -> 1.2: station entities and devices get the entry id in their ids.
 
@@ -172,6 +195,8 @@ async def _async_migrate_station_ids(hass: HomeAssistant, entry: ConfigEntry) ->
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: CarburantsConfigEntry) -> bool:
+    if hass.data.pop(CARD_REMOVED, False):
+        await _async_register_card(hass)
     _async_drop_ai_options(hass, entry)
     names = await async_get_names(hass)
     coordinator = CarburantsCoordinator(hass, entry, CarburantsApi(async_get_clientsession(hass)), names)
