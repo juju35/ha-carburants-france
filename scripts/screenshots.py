@@ -599,9 +599,11 @@ def main():
         )
         # Served from the made-up origin too, so the cards find the brand logos.
         context.route(f"{ORIGIN}/**", serve)
-        page = context.new_page()
-        page.clock.set_fixed_time(NOW)
         for shot in SHOTS:
+            # A new page per shot: the card script is evaluated once per page (no "already declared").
+            page = context.new_page()
+            page.on("pageerror", lambda err: print(f"pageerror: {err}"))
+            page.clock.set_fixed_time(NOW)
             page.goto(f"{ORIGIN}/{shot['theme']}")
             page.add_script_tag(content=HA_ELEMENTS)
             page.add_script_tag(content=CARD_JS)
@@ -630,6 +632,7 @@ def main():
             page.wait_for_timeout(600)
             name = f"{shot['file']}.png"
             page.locator("carburants-france-card").screenshot(path=str(out_dir / name), animations="disabled")
+            page.close()
             print(f"screenshots/{name}")
 
         # The map card: Leaflet and the tiles come from the made-up origin, the position from the browser.
@@ -645,10 +648,12 @@ def main():
         HTTP["client"] = p.request.new_context()
         # No frozen clock here: Leaflet fades the tiles in with the current time, a fixed one
         # leaves them transparent. The map shows no time, the popups stay closed.
-        page = context.new_page()
         try:
             for shot in MAP_SHOTS:
+                page = context.new_page()
+                page.on("pageerror", lambda err: print(f"pageerror: {err}"))
                 map_shot(page, shot, out_dir)
+                page.close()
         except Exception as err:
             raise SystemExit(
                 f"Map screenshots not made, OpenStreetMap tiles unreachable: {ERRORS[0] if ERRORS else err}"
