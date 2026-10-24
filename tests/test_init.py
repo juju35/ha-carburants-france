@@ -540,7 +540,7 @@ async def test_community_names_first(hass, aioclient_mock, entry, community_name
     # The device follows; entity ids keep the name they were created with.
     from homeassistant.helpers import device_registry as dr
 
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "35000013")})
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000013")})
     assert device.name == "Relais Saint-Malo"
     assert hass.states.get("sensor.relais_saint_malo_gazole") is not None
 
@@ -729,3 +729,255 @@ async def test_ws_search_city(hass, aioclient_mock, entry, hass_ws_client):
     await client.send_json({"id": 3, "type": "carburants_france/search", "query": "35000"})
     msg = await client.receive_json()
     assert not msg["success"] and msg["error"]["code"] == "api_error"
+
+
+def _v1_entry(hass, title="Carburants", stations=None):
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=title,
+        data={},
+        version=1,
+        minor_version=1,
+        options={
+            "fuels": ["gazole", "sp98", "e10"],
+            "stations": stations
+            or [_stored(STATION_A, "TotalEnergies", "https://logo"), _stored(STATION_B, "Leclerc")],
+            "scan_interval": 15,
+        },
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
+def _v1_registry(hass, entry, station_id, name, fuels=("gazole",)):
+    """Device and entities as 1.5.2 and earlier registered them: ids without the entry."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={(DOMAIN, str(station_id))}, name=name
+    )
+    entity_ids = []
+    for fuel in fuels:
+        for domain, kind, suffix in (("sensor", "price", ""), ("binary_sensor", "in_stock", "_in_stock")):
+            reg = er.async_get(hass).async_get_or_create(
+                domain,
+                DOMAIN,
+                f"{station_id}_{fuel}_{kind}",
+                config_entry=entry,
+                device_id=device.id,
+                suggested_object_id=f"{name.lower().replace(' ', '_')}_{fuel}{suffix}",
+            )
+            entity_ids.append(reg.entity_id)
+    return device, entity_ids
+
+
+async def test_migration_keeps_entity_ids(hass, aioclient_mock):
+    """1.1 entries: unique_ids and devices get the entry id, entity ids and devices are kept."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    entry = _v1_entry(hass)
+    old_device, entity_ids = _v1_registry(hass, entry, 35000013, "My Total", ("gazole", "sp98"))
+    assert "sensor.my_total_gazole" in entity_ids
+    ent_reg = er.async_get(hass)
+    best = ent_reg.async_get_or_create("sensor", DOMAIN, f"{entry.entry_id}_gazole_best", config_entry=entry)
+
+    await _setup(hass, aioclient_mock, entry)
+    assert entry.state is ConfigEntryState.LOADED
+    assert (entry.version, entry.minor_version) == (1, 2)
+
+    for entity_id in entity_ids:
+        reg = ent_reg.async_get(entity_id)
+        assert reg is not None, entity_id
+        assert reg.unique_id.startswith(f"{entry.entry_id}_35000013_")
+        assert reg.device_id == old_device.id
+        assert hass.states.get(entity_id) is not None, entity_id
+    assert ent_reg.async_get("sensor.my_total_gazole").unique_id == f"{entry.entry_id}_35000013_gazole_price"
+    assert hass.states.get("sensor.my_total_gazole").state == "2.399"
+    # The entry's own sensors already had the entry id: untouched.
+    assert ent_reg.async_get(best.entity_id).unique_id == f"{entry.entry_id}_gazole_best"
+
+    # Same device, new identifier, no duplicate created next to it.
+    dev_reg = dr.async_get(hass)
+    device = dev_reg.async_get(old_device.id)
+    assert device.identifiers == {(DOMAIN, f"{entry.entry_id}_35000013")}
+    assert dev_reg.async_get_device(identifiers={(DOMAIN, "35000013")}) is None
+    devices = [
+        d for d in dr.async_entries_for_config_entry(dev_reg, entry.entry_id) if "35000013" in str(d.identifiers)
+    ]
+    assert [d.id for d in devices] == [old_device.id]
+    # No "_2" entity: every station entity of the entry is unique.
+    station_entities = [
+        e.entity_id for e in er.async_entries_for_config_entry(ent_reg, entry.entry_id) if "35000013" in e.unique_id
+    ]
+    assert sorted(station_entities) == sorted(entity_ids)
+    assert not [e for e in station_entities if e.endswith("_2")]
+
+    # Done once: a reload changes nothing.
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert ent_reg.async_get("sensor.my_total_gazole").unique_id == f"{entry.entry_id}_35000013_gazole_price"
+
+
+async def test_migration_shared_station_device(hass, aioclient_mock):
+    """Two 1.1 entries following one station shared its device; the second had no entity (duplicate ids)."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    first = _v1_entry(hass, "Maison")
+    second = _v1_entry(hass, "Trajet", [_stored(STATION_A, "TotalEnergies", "https://logo")])
+    old_device, _ = _v1_registry(hass, first, 35000013, "My Total")
+    dev_reg = dr.async_get(hass)
+    dev_reg.async_get_or_create(config_entry_id=second.entry_id, identifiers={(DOMAIN, "35000013")})
+    assert dev_reg.async_get(old_device.id).config_entries == {first.entry_id, second.entry_id}
+
+    await _setup(hass, aioclient_mock, first)
+    assert second.state is ConfigEntryState.LOADED
+    ent_reg = er.async_get(hass)
+    # The first entry keeps its device and entities.
+    assert dev_reg.async_get(old_device.id).config_entries == {first.entry_id}
+    assert ent_reg.async_get("sensor.my_total_gazole").device_id == old_device.id
+    # The second gets its own device and entities for the same station.
+    own = dev_reg.async_get_device(identifiers={(DOMAIN, f"{second.entry_id}_35000013")})
+    assert own is not None and own.id != old_device.id
+    second_entities = [
+        e for e in er.async_entries_for_config_entry(ent_reg, second.entry_id) if "35000013" in e.unique_id
+    ]
+    assert second_entities and all(e.device_id == own.id for e in second_entities)
+    assert all(hass.states.get(e.entity_id) is not None for e in second_entities)
+
+
+async def test_two_entries_same_station(hass, aioclient_mock, entry):
+    """Each entry gets its own device and entities for a station both follow."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    other = MockConfigEntry(
+        domain=DOMAIN,
+        title="Trajet",
+        data={},
+        options={"fuels": ["gazole"], "stations": [_stored(STATION_A, "TotalEnergies")], "scan_interval": 15},
+    )
+    other.add_to_hass(hass)
+    await _setup(hass, aioclient_mock, entry)
+    assert other.state is ConfigEntryState.LOADED
+    ent_reg = er.async_get(hass)
+    ids = {
+        e.entity_id
+        for e in ent_reg.entities.values()
+        if e.platform == DOMAIN and e.unique_id.endswith("_35000013_gazole_price")
+    }
+    assert len(ids) == 2
+    assert all(hass.states.get(i).state == "2.399" for i in ids)
+    dev_reg = dr.async_get(hass)
+    for config_entry in (entry, other):
+        device = dev_reg.async_get_device(identifiers={(DOMAIN, f"{config_entry.entry_id}_35000013")})
+        assert device.config_entries == {config_entry.entry_id}
+
+
+async def test_unfollowed_station_and_fuel_removed(hass, aioclient_mock, entry):
+    """Unticking a station or a fuel removes its entities and device, not just leaves them orphaned."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    await _setup(hass, aioclient_mock, entry)
+    ent_reg = er.async_get(hass)
+    dev_reg = dr.async_get(hass)
+    assert ent_reg.async_get("sensor.totalenergies_rennes_sp98") is not None
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"fuels": ["gazole"], "stations": ["35000025"], "add_stations": False, "scan_interval": 15},
+    )
+    await hass.async_block_till_done()
+    assert ent_reg.async_get("sensor.totalenergies_rennes_gazole") is None
+    assert ent_reg.async_get("binary_sensor.totalenergies_rennes_gazole_in_stock") is None
+    assert ent_reg.async_get("sensor.leclerc_rennes_sp98") is None
+    assert ent_reg.async_get("sensor.carburants_best_price_sp98") is None
+    assert ent_reg.async_get("sensor.leclerc_rennes_gazole") is not None
+    assert ent_reg.async_get("sensor.carburants_best_price_gazole") is not None
+    assert dev_reg.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000013")}) is None
+    assert dev_reg.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000025")}) is not None
+    assert dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)}) is not None
+
+
+async def test_entities_for_station_missing_at_startup(hass, aioclient_mock, entry):
+    """A station absent from the first answer keeps its entities; a newly sold fuel gets them without reload."""
+    await _setup(hass, aioclient_mock, entry)
+    assert hass.states.get("sensor.totalenergies_rennes_gazole").state == "2.399"
+
+    # Restart while the feed omits the station.
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(API_RECORDS, json={"total_count": 1, "results": [STATION_B]})
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.totalenergies_rennes_gazole").state == "unavailable"
+
+    # It comes back, now also selling E10 (was in definitive shortage): entities appear at the next poll.
+    total = {**STATION_A, "e10_rupture_type": None, "e10_rupture_debut": None, "e10_prix": 1.799}
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(API_RECORDS, json={"total_count": 2, "results": [total, STATION_B]})
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.totalenergies_rennes_gazole").state == "2.399"
+    assert hass.states.get("sensor.totalenergies_rennes_e10").state == "1.799"
+    assert hass.states.get("binary_sensor.totalenergies_rennes_e10_in_stock").state == "on"
+
+
+async def test_brand_lookup_does_not_reload(hass, aioclient_mock, entry):
+    """The background brand lookup updates names in place, without a second API call or a reload."""
+    from homeassistant.helpers import device_registry as dr
+
+    options = dict(entry.options)
+    options["stations"] = [{**s, "brand": None, "logo": None, "brand_checked": False} for s in options["stations"]]
+    hass.config_entries.async_update_entry(entry, options=options)
+    aioclient_mock.post(OVERPASS_URL, json=OVERPASS)
+    aioclient_mock.get(WIKIDATA_URL, json=WIKIDATA)
+    await _setup(hass, aioclient_mock, entry)
+    await hass.async_block_till_done()
+    assert entry.options["stations"][0]["brand_checked"] is True
+    api_calls = [c for c in aioclient_mock.mock_calls if str(c[1]).startswith(API_RECORDS)]
+    assert len(api_calls) == 1
+    stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert stations[35000013]["station_name"] == "TotalEnergies Access Rennes Saint-Malo"
+    assert stations[35000013]["logo"].endswith("TotalEnergies_logo.svg?width=96")
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_35000013")})
+    assert device.name == "TotalEnergies Access Rennes Saint-Malo"
+    assert device.manufacturer == "TotalEnergies"
+
+
+async def test_migration_shared_device_both_with_entities(hass, aioclient_mock):
+    """Two 1.1 entries following one station for different fuels: both had entities on the shared device."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    first = _v1_entry(hass, "Maison", [_stored(STATION_A, "TotalEnergies")])
+    second = _v1_entry(hass, "Trajet", [_stored(STATION_A, "TotalEnergies")])
+    hass.config_entries.async_update_entry(first, options={**first.options, "fuels": ["gazole"]})
+    hass.config_entries.async_update_entry(second, options={**second.options, "fuels": ["sp98"]})
+    old_device, first_ids = _v1_registry(hass, first, 35000013, "Total Gazole", ("gazole",))
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    dev_reg.async_get_or_create(config_entry_id=second.entry_id, identifiers={(DOMAIN, "35000013")})
+    second_ids = []
+    for domain, kind in (("sensor", "price"), ("binary_sensor", "in_stock")):
+        reg = ent_reg.async_get_or_create(
+            domain, DOMAIN, f"35000013_sp98_{kind}", config_entry=second, device_id=old_device.id
+        )
+        second_ids.append(reg.entity_id)
+
+    await _setup(hass, aioclient_mock, first)
+    assert second.state is ConfigEntryState.LOADED
+    for config_entry, entity_ids in ((first, first_ids), (second, second_ids)):
+        device = dev_reg.async_get_device(identifiers={(DOMAIN, f"{config_entry.entry_id}_35000013")})
+        assert device is not None and device.config_entries == {config_entry.entry_id}
+        for entity_id in entity_ids:
+            reg = ent_reg.async_get(entity_id)
+            assert reg is not None, entity_id
+            assert reg.unique_id.startswith(f"{config_entry.entry_id}_35000013_")
+            assert reg.device_id == device.id
+            assert hass.states.get(entity_id).state != "unavailable"
+    # The old shared device is gone once both entries left it.
+    assert dev_reg.async_get(old_device.id) is None or not dev_reg.async_get(old_device.id).config_entries
+    assert not [e for e in ent_reg.entities.values() if e.platform == DOMAIN and e.entity_id.endswith("_2")]
