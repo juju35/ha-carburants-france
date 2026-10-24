@@ -33,6 +33,10 @@ custom_components/carburants_france/
 - The feed has no brand or station name.
 - A fuel can have neither price nor flat shortage (shortage just lifted, no price yet). The raw `rupture` JSON keeps ended shortages (`@fin`, UTC like the flat fields) -> `rupture_end`. The coordinator keeps `known_fuels` (pairs with a registry entity, plus those seen since) and fills them with `empty_fuel()`, so they keep their entities and card slot: price unknown, in_stock unknown, card shows "Sans prix".
 
+## Registry ids
+- Station device identifier and station entity unique_id prefix: `{entry_id}_{station_id}` (`station_device_id`), so two entries can follow the same station. Entries before config entry version 1.2 used `{station_id}`: `async_migrate_entry` rewrites unique_ids and device identifiers in place (entity ids and history kept).
+- Station entities come from the followed stations and known fuels (`coordinator.entity_pairs()`), and new pairs are added by a coordinator listener without reload. At setup, entities and devices of unfollowed stations or fuels are removed. Option changes that only touch names, brands or logos (background lookup, renames) are applied in place (`async_set_stations`), the others reload the entry.
+
 ## Brands and logos
 - Overpass: `nwr["amenity"="fuel"](around:300,lat,lon)` per station (feed coordinates are rounded to ~100 m), matched on `ref:FR:prix-carburants`, else nearest branded station. Gives `brand`, `brand:wikidata`, `name` (stored as `osm_name`).
 - Station title (`coordinator.station_title(stored, names)`): user `name` (options step `names`, one field per station whose name ends with `[id]`), else the community file name (`names.py`, all-caps names prettified), else `osm_name` unless generic or just the brand (`useful_osm_name`), else brand + town, else address. Computed server side, so both cards get it as `station_name`.

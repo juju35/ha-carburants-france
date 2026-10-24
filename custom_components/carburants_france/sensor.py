@@ -9,10 +9,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .api import sold_fuels
 from .const import FUELS
 from .coordinator import CarburantsConfigEntry, CarburantsCoordinator
-from .entity import StationFuelEntity, entry_device
+from .entity import StationFuelEntity, async_track_station_entities, entry_device
 
 PRICE_UNIT = "€/L"
 
@@ -23,11 +22,8 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
     entities: list[SensorEntity] = [StationsSensor(coordinator)]
     entities += [BestPriceSensor(coordinator, fuel) for fuel in coordinator.fuels]
-    for station_id, station in (coordinator.data or {}).items():
-        for fuel in sold_fuels(station):
-            if fuel in coordinator.fuels:
-                entities.append(FuelPriceSensor(coordinator, station_id, fuel))
     async_add_entities(entities)
+    async_track_station_entities(entry, async_add_entities, FuelPriceSensor)
 
 
 def _station_attributes(station: dict[str, Any]) -> dict[str, Any]:
