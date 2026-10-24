@@ -148,7 +148,7 @@ type: custom:carburants-france-map-card
 | `map_style` | `ha` | Base map, see below |
 | `theme` | `auto` | Base map theme: `auto` (follows the Home Assistant theme), `light` or `dark` (darkened, except aerial photos) |
 | `tile_url` | — | With `map_style: custom`: tile URL with `{z}`, `{x}`, `{y}` (and `{s}` if needed) |
-| `tile_attribution` | — | With `map_style: custom`: attribution shown at the bottom of the map |
+| `tile_attribution` | — | With `map_style: custom`: attribution shown at the bottom of the map. Leaflet renders it as HTML, so links work: only put text you trust there |
 | `show_home` | `true` | Show your home |
 | `show_logo` | `true` | Brand logo on the markers |
 | `show_name` | `true` | Station name on the markers, above the price |
