@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.6.0
+
+### Changes
+- Requires Home Assistant 2024.12 or later.
+- Station entities and devices now belong to their entry, so a station followed by two entries works in both. Existing entities and devices are migrated automatically at the first start: entity ids, history and devices are kept.
+- Stations and fuels removed from the options lose their entities and devices, and a stale station device can be deleted from the UI.
+- Entities come from the followed stations: a station missing from the feed at startup keeps its entities (unavailable), and a fuel a station starts selling gets its entities at the next update, without a reload.
+- Brand, name and logo updates (startup lookup, renames in the options) apply without reloading the integration.
+- The card resource is removed from the dashboards when the last entry is removed.
+
+### Fixes
+- Map card: full screen works again after switching views, and the map is released when the card stays hidden.
+- Map card: the open station popup stays open across updates, with the new prices; `show_fullscreen` applies without reloading the page; a hidden card no longer sends a pending town search.
+- Map card: failed logos fall back to initials without an inline handler, so the card works under a strict CSP. `tile_attribution` is documented as HTML.
+- List card: the out of stock footer is hidden when the entity disappears, a refresh error stays in the button tooltip and shows as a toast, and the card size counts the stations shown.
+- Card editors no longer redraw the form while you type.
+- Options: after an error, the form keeps what you entered.
+
+### Maintenance
+- Card tests (`node --test`) with a CI job, and new pytest tests for the migration and the fixes.
+- CI hardening: actions pinned by commit SHA, read-only token, Dependabot for actions, duplication check with PR annotations.
+
 ## 1.5.2
 
 ### Changes
