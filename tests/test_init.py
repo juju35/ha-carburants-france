@@ -275,6 +275,18 @@ async def test_card_added_to_resources(hass, aioclient_mock, entry, stub_fronten
     stub_frontend.assert_not_called()
 
 
+<<<<<<< Updated upstream
+=======
+async def _start_flow(hass):
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    # Starting the flow sets up the dependencies: let http finish its setup (its start_server task saves its
+    # settings with a delayed write) while Home Assistant runs. Left to the teardown, that write is scheduled after
+    # the final write and its timer lingers (Home Assistant 2024.12).
+    await hass.async_block_till_done()
+    return result
+
+
+>>>>>>> Stashed changes
 @pytest.mark.parametrize("key", ["mode", "resource_mode"])
 async def test_card_resource_with_lovelace_data_variants(hass, aioclient_mock, entry, stub_frontend, key):
     """Before 2025.2 hass.data["lovelace"] is a dict, and 2025.2-2025.3 call the field `mode`."""
@@ -313,7 +325,7 @@ async def test_config_flow(hass, aioclient_mock):
     aioclient_mock.post(OVERPASS_URL, json=OVERPASS)
     aioclient_mock.get(WIKIDATA_URL, json=WIKIDATA)
 
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await _start_flow(hass)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "Maison", "fuels": ["gazole", "sp98"]}
     )
@@ -347,7 +359,7 @@ async def test_config_flow(hass, aioclient_mock):
 async def test_config_flow_search_again_keeps_selection(hass, aioclient_mock):
     aioclient_mock.get(API_RECORDS, json={"total_count": 1, "results": [STATION_A]})
     aioclient_mock.post(OVERPASS_URL, status=504)
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await _start_flow(hass)
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"name": "C", "fuels": ["gazole"]})
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"query": "35000", "radius": 5})
     call = [c for c in aioclient_mock.mock_calls if str(c[1]).startswith(API_RECORDS)][-1]
@@ -375,7 +387,7 @@ async def test_config_flow_search_again_keeps_selection(hass, aioclient_mock):
 
 async def test_config_flow_no_results(hass, aioclient_mock):
     aioclient_mock.get(API_RECORDS, json={"total_count": 0, "results": []})
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await _start_flow(hass)
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"name": "C", "fuels": ["gazole"]})
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"query": "Nulle part", "radius": 5})
     assert result["errors"] == {"base": "no_results"}
@@ -413,7 +425,7 @@ async def test_brands_retried_at_startup(hass, aioclient_mock, entry):
 
 
 async def test_config_flow_unexpected_error(hass, aioclient_mock):
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await _start_flow(hass)
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"name": "C", "fuels": ["gazole"]})
     with patch(
         "custom_components.carburants_france.config_flow.CarburantsApi.search", side_effect=RuntimeError("boom")
