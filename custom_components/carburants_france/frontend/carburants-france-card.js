@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.5.1';
+var CARBURANTS_CARD_VERSION = '1.5.2';
 
 // ── Integration icon (same drawing as brand/icon.png) ────────────────────────
 // bg: tile and screen colour. On a dark card the navy tile melts into the background, so the dark
@@ -311,7 +311,7 @@ function carbFuelBadge(key, name) {
 var CARBURANTS_BADGE_STYLES = [
   '.fbadge { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 2px 0 7px; border-radius: 9px; background: var(--fb-bg); color: var(--fb-fg); font-size: 11px; font-weight: 700; letter-spacing: .02em; line-height: 1; white-space: nowrap; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); vertical-align: middle; }',
   '.fbadge:not(:has(.fcode)) { padding-right: 7px; }',
-  '.fcode { display: inline-flex; align-items: center; justify-content: center; min-width: 14px; height: 14px; padding: 0 2px; box-sizing: border-box; border-radius: 7px; background: #fff; color: var(--fb-bg); font-size: 9px; font-weight: 800; letter-spacing: 0; }',
+  '.fcode { display: inline-flex; align-items: center; justify-content: center; min-width: 14px; height: 14px; padding: 0 2px; box-sizing: border-box; border-radius: 7px; background: #fff; color: var(--fb-bg); font-size: 9px; font-weight: 700; letter-spacing: 0; }',
 ];
 
 function carbMinutes(hhmm) {
