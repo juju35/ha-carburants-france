@@ -10,6 +10,7 @@ from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.carburants_france import _storage_resources
 from custom_components.carburants_france.api import parse_station
 from custom_components.carburants_france.const import API_RECORDS, DOMAIN, LOGO_VERSION, OVERPASS_URL, WIKIDATA_URL
 from custom_components.carburants_france.coordinator import station_title, useful_osm_name
@@ -246,25 +247,28 @@ async def test_card_served(hass, aioclient_mock, entry, hass_client):
     assert "customElements.define('carburants-france-card'" in text
     assert "customElements.define('carburants-france-map-card'" in text
     # Leaflet ships with the integration, no CDN.
-    resp = await client.get("/carburants_france_static/leaflet/leaflet.js")
-    assert resp.status == 200
-    resp = await client.get("/carburants_france_static/leaflet/leaflet.css")
-    assert resp.status == 200
+    # Bodies are read so each connection goes back to the pool (older aiohttp otherwise stalls).
+    for path in ("leaflet/leaflet.js", "leaflet/leaflet.css"):
+        resp = await client.get(f"/carburants_france_static/{path}")
+        assert resp.status == 200, path
+        await resp.read()
     # Brand logos from the card's table.
     for brand in ("leclerc", "total_access", "totalenergies"):
         resp = await client.get(f"/carburants_france_static/brands/{brand}.png")
         assert resp.status == 200, brand
+        await resp.read()
         assert f"file: '{brand}'" in text
     # MapLibre and its Leaflet adapter, for Home Assistant's vector base map; the worker sits next to it.
     for path in ("maplibre-gl.mjs", "maplibre-gl-worker.mjs", "maplibre-gl.css", "leaflet-maplibre-gl.js"):
         resp = await client.get(f"/carburants_france_static/maplibre/{path}")
         assert resp.status == 200, path
+        await resp.read()
 
 
 async def test_card_added_to_resources(hass, aioclient_mock, entry, stub_frontend):
     assert await async_setup_component(hass, "lovelace", {})
     await _setup(hass, aioclient_mock, entry)
-    resources = hass.data["lovelace"].resources
+    resources = _storage_resources(hass)
     urls = [item["url"] for item in resources.async_items()]
     assert len(urls) == 1
     assert urls[0].startswith("/carburants_france_static/carburants-france-card.js?v=")
@@ -978,8 +982,14 @@ async def test_migration_shared_device_both_with_entities(hass, aioclient_mock):
             assert reg.unique_id.startswith(f"{config_entry.entry_id}_35000013_")
             assert reg.device_id == device.id
             assert hass.states.get(entity_id).state != "unavailable"
-    # The old shared device is gone once both entries left it.
-    assert dev_reg.async_get(old_device.id) is None or not dev_reg.async_get(old_device.id).config_entries
+    # The old shared device is gone once both entries left it, or (depending on which entry
+    # migrates first) it was taken over as the own device of the entry holding all its entities.
+    old = dev_reg.async_get(old_device.id)
+    assert (
+        old is None
+        or not old.config_entries
+        or any(old.identifiers == {(DOMAIN, f"{e.entry_id}_35000013")} for e in (first, second))
+    )
     assert not [e for e in ent_reg.entities.values() if e.platform == DOMAIN and e.entity_id.endswith("_2")]
 
 
@@ -1002,7 +1012,7 @@ async def test_card_resource_removed_with_last_entry(hass, aioclient_mock, entry
     )
     other.add_to_hass(hass)
     await _setup(hass, aioclient_mock, entry)
-    resources = hass.data["lovelace"].resources
+    resources = _storage_resources(hass)
 
     def card_urls():
         return [i["url"] for i in resources.async_items() if "carburants-france-card.js" in i["url"]]
@@ -1047,3 +1057,50 @@ async def test_options_flow_error_keeps_input(hass, aioclient_mock, entry):
     defaults = {str(key): key.default() for key in result["data_schema"].schema}
     assert defaults["fuels"] == []
     assert defaults["stations"] == ["35000025"]
+
+
+async def test_rename_during_brand_lookup_kept(hass, aioclient_mock, entry):
+    """A station renamed while the background brand lookup runs keeps its new name."""
+    import asyncio
+
+    from custom_components.carburants_france import brands
+
+    options = dict(entry.options)
+    options["stations"] = [{**s, "brand": None, "logo": None, "brand_checked": False} for s in options["stations"]]
+    hass.config_entries.async_update_entry(entry, options=options)
+    started, release = asyncio.Event(), asyncio.Event()
+    real_enrich = brands.async_enrich
+
+    async def slow_enrich(session, stations, with_logos=True):
+        started.set()
+        await release.wait()
+        return await real_enrich(session, stations, with_logos)
+
+    aioclient_mock.post(OVERPASS_URL, json=OVERPASS)
+    aioclient_mock.get(WIKIDATA_URL, json=WIKIDATA)
+    with patch("custom_components.carburants_france.async_enrich", side_effect=slow_enrich):
+        await _setup(hass, aioclient_mock, entry)
+        await started.wait()
+        renamed = [{**s, "name": "Ma station"} if s["id"] == 35000013 else s for s in entry.options["stations"]]
+        hass.config_entries.async_update_entry(entry, options={**entry.options, "stations": renamed})
+        await hass.async_block_till_done()
+        release.set()
+        await hass.async_block_till_done()
+    stations = {s["id"]: s for s in entry.options["stations"]}
+    assert stations[35000013].get("name") == "Ma station"
+    assert stations[35000013]["brand"] == "TotalEnergies"
+    assert all(s["brand_checked"] for s in stations.values())
+
+
+async def test_entry_rename_renames_device(hass, aioclient_mock, entry):
+    """Renaming the entry renames its device and the entities named after it, without a reload."""
+    from homeassistant.helpers import device_registry as dr
+
+    await _setup(hass, aioclient_mock, entry)
+    calls = len(aioclient_mock.mock_calls)
+    hass.config_entries.async_update_entry(entry, title="Maison")
+    await hass.async_block_till_done()
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    assert device.name == "Maison"
+    assert hass.states.get("sensor.carburants_stations").attributes["friendly_name"] == "Maison Stations"
+    assert len(aioclient_mock.mock_calls) == calls

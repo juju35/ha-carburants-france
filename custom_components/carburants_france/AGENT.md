@@ -36,7 +36,7 @@ custom_components/carburants_france/
 
 ## Registry ids
 - Station device identifier and station entity unique_id prefix: `{entry_id}_{station_id}` (`station_device_id`), so two entries can follow the same station. Entries before config entry version 1.2 used `{station_id}`: `async_migrate_entry` rewrites unique_ids and device identifiers in place (entity ids and history kept).
-- Station entities come from the followed stations and known fuels (`coordinator.entity_pairs()`), and new pairs are added by a coordinator listener without reload. At setup, entities and devices of unfollowed stations or fuels are removed. Option changes that only touch names, brands or logos (background lookup, renames) are applied in place (`async_set_stations`), the others reload the entry.
+- Station entities come from the followed stations and known fuels (`coordinator.entity_pairs()`), and new pairs are added by a coordinator listener without reload. At setup, entities and devices of unfollowed stations or fuels are removed. Option changes that only touch names, brands or logos (background lookup, renames) are applied in place (`async_set_stations`), the others reload the entry. A title change also goes through the update listener: the entry device is renamed in place. The background lookup merges its fields (`ENRICHED_KEYS`) into the current options by station id when it ends, so a rename made meanwhile is kept.
 
 ## Brands and logos
 - Overpass: `nwr["amenity"="fuel"](around:300,lat,lon)` per station (feed coordinates are rounded to ~100 m), matched on `ref:FR:prix-carburants`, else nearest branded station. Gives `brand`, `brand:wikidata`, `name` (stored as `osm_name`).
@@ -63,4 +63,4 @@ custom_components/carburants_france/
 HACS downloads the repository itself (no `zip_release`). Before releasing `vX.Y.Z`, bump the version in manifest.json, const.py (`VERSION`) and `CARBURANTS_CARD_VERSION` in the card. Pushing to main publishes release `vX.Y.Z` (tag, notes from the CHANGELOG.md section, `carburants_france.zip`) when that tag doesn't exist yet; the workflow fails if the three versions differ. Rerun notes on an existing release with the "Update release notes" workflow (input `tag`).
 
 ## Tests
-`pip install -r requirements_test.txt && pytest`; card helpers: `node --test test/*.test.mjs` (Node 22, evaluates the card file with stubs).
+`pip install -r requirements_test.txt && pytest`; CI also runs the suite on the minimum Home Assistant (job `pytest-min-ha`: pytest-homeassistant-custom-component 0.13.190 = HA 2024.12.0). Card helpers: `node --test test/*.test.mjs` (Node 22, evaluates the card file with stubs).
