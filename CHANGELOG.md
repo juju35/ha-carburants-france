@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.1
+
+### Fixes
+- Compatible with Home Assistant 2026.8 and later (2026.10 included): devices are looked up with the new device registry API, which gives a device a single config entry, so the "update before 2027.8" repair no longer shows. Home Assistant 2024.12 is still supported.
+- A station renamed while the background brand lookup was running keeps its new name.
+- Renaming the entry renames its device and the sensors named after it, without a reload.
+- On Home Assistant 2024.12 to 2025.3, the card is added to the dashboard resources again, and removed with the last entry.
+- Map card: leaving the view while in pseudo full screen (iOS) no longer leaves the card stuck covering the window.
+
+### Maintenance
+- Tests on Home Assistant 2026.10 and on the minimum version (2024.12), failing on any deprecated call.
+
 ## 1.6.0
 
 ### Changes
