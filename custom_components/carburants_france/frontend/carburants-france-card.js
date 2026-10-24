@@ -185,9 +185,37 @@ function carbAllOut(station, fuels) {
   });
 }
 
+// Lowest price in stock per fuel key, over the given stations.
+function carbBestPrices(stations, fuels) {
+  var best = {};
+  fuels.forEach((f) => {
+    stations.forEach((s) => {
+      var fuel = s.fuels?.[f.key];
+      if (fuel?.available && (best[f.key] == null || fuel.price < best[f.key])) best[f.key] = fuel.price;
+    });
+  });
+  return best;
+}
+
+// Stations shown: the out of stock ones are left out unless asked (hide_out_of_stock_stations).
+// hidden: how many were left out (the "show all" button).
+function carbVisibleStations(stations, fuels, config, showAll) {
+  var hidden = config.hide_out_of_stock_stations ? stations.filter((s) => carbAllOut(s, fuels)).length : 0;
+  var shown = hidden && !showAll ? stations.filter((s) => !carbAllOut(s, fuels)) : stations.slice();
+  return { shown: shown, hidden: hidden };
+}
+
 function carbToggleLabel(t, showAll, hidden) {
   if (showAll) return t.hide_out;
   return hidden === 1 ? t.show_all_one : t.show_all.replace('{n}', hidden);
+}
+
+// Gives ha-form a schema only when it differs from the current one (the fuels follow the entity).
+function carbSetSchema(form, schema) {
+  var key = JSON.stringify(schema);
+  if (form._carbSchemaKey === key) return;
+  form._carbSchemaKey = key;
+  form.schema = schema;
 }
 
 // Calls onOutside for a click anywhere outside the element (shadow DOM aware). A click, not a
@@ -429,8 +457,11 @@ class CarburantsFranceCard extends HTMLElement {
 
   getCardSize() {
     var st = this._lastState;
-    var n = st?.attributes && Array.isArray(st.attributes.stations) ? st.attributes.stations.length : 0;
-    return 1 + n * 2;
+    if (!this._config || !st?.attributes || !Array.isArray(st.attributes.stations)) return 1;
+    var visible = carbVisibleStations(st.attributes.stations, this._fuels(), this._config, this._showAll);
+    var n = visible.shown.length;
+    if (this._config.max_stations > 0) n = Math.min(n, this._config.max_stations);
+    return 1 + n * 2 + (visible.hidden ? 1 : 0);
   }
 
   getGridOptions() {
@@ -482,21 +513,22 @@ class CarburantsFranceCard extends HTMLElement {
       ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
         '<img class="icon" src="' + carbIcon(this._hass) + '" alt="data.economie.gouv.fr"></a>'
       : '';
+    // The last refresh error stays in the button's tooltip until the next refresh.
+    var refreshTitle = this._refreshError ? `${t.refresh_failed} ${this._refreshError}` : t.refresh;
 
     if (!st) {
       header.innerHTML = `<div class="title">${icon}<div class="titles"><div class="hname">${carbEsc(title)}</div></div></div>`;
       list.innerHTML = `<div class="empty">${carbEsc(t.no_entity)}</div>`;
+      this._root.querySelector('.footer').hidden = true;
       return;
     }
 
     var fuels = this._fuels();
-    var stations = (st.attributes.stations || []).slice();
-    var best = this._bestPrices(stations, fuels);
-    var hidden = this._config.hide_out_of_stock_stations
-      ? stations.filter((s) => carbAllOut(s, fuels)).length
-      : 0;
-    if (hidden && !this._showAll) stations = stations.filter((s) => !carbAllOut(s, fuels));
-    stations = this._sorted(stations, fuels);
+    var all = st.attributes.stations || [];
+    var best = carbBestPrices(all, fuels);
+    var visible = carbVisibleStations(all, fuels, this._config, this._showAll);
+    var hidden = visible.hidden;
+    var stations = this._sorted(visible.shown, fuels);
     if (this._config.max_stations > 0) stations = stations.slice(0, this._config.max_stations);
     var footer = this._root.querySelector('.footer');
     footer.hidden = !hidden;
@@ -510,7 +542,7 @@ class CarburantsFranceCard extends HTMLElement {
       '<div class="hsub">' + carbEsc(st.state) + ' ' + carbEsc(t.stations) + '</div></div></div>' +
       (this._config.show_refresh
         ? '<ha-icon-button class="refresh-btn' + (this._refreshing ? ' spinning' : '') + '" label="' + carbEsc(t.refresh) +
-          '" title="' + carbEsc(t.refresh) + '"><ha-icon icon="mdi:refresh"></ha-icon></ha-icon-button>'
+          '" title="' + carbEsc(refreshTitle) + '"><ha-icon icon="mdi:refresh"></ha-icon></ha-icon-button>'
         : '');
     var refreshBtn = header.querySelector('.refresh-btn');
     if (refreshBtn) refreshBtn.addEventListener('click', this._refresh.bind(this));
@@ -530,17 +562,6 @@ class CarburantsFranceCard extends HTMLElement {
         img.replaceWith(badge);
       });
     });
-  }
-
-  _bestPrices(stations, fuels) {
-    var best = {};
-    fuels.forEach((f) => {
-      stations.forEach((s) => {
-        var fuel = s.fuels?.[f.key];
-        if (fuel?.available && (best[f.key] == null || fuel.price < best[f.key])) best[f.key] = fuel.price;
-      });
-    });
-    return best;
   }
 
   _sorted(stations, fuels) {
@@ -674,11 +695,17 @@ class CarburantsFranceCard extends HTMLElement {
     var st = this._lastState;
     if (st?.attributes.config_entry_id) data.config_entry_id = st.attributes.config_entry_id;
     this._refreshing = true;
+    this._refreshError = null;
     this._render();
     var t = this._t();
     this._hass.callService('carburants_france', 'refresh', data).catch((err) => {
+      this._refreshError = String((err?.message) || err);
       var btn = this._root.querySelector('.refresh-btn');
-      if (btn) btn.title = `${t.refresh_failed} ${(err?.message) || err}`;
+      if (btn) btn.title = `${t.refresh_failed} ${this._refreshError}`;
+      // Home Assistant's toast, as the button tooltip alone goes unnoticed.
+      this.dispatchEvent(new CustomEvent('hass-notification', {
+        detail: { message: `${t.refresh_failed} ${this._refreshError}` }, bubbles: true, composed: true,
+      }));
     }).finally(() => {
       this._refreshing = false;
       var btn = this._root.querySelector('.refresh-btn');
@@ -766,10 +793,15 @@ class CarburantsFranceCardEditor extends HTMLElement {
     this._hass = hass;
     if (this._form) {
       this._form.hass = hass;
-      this._form.schema = this._schema();
+      this._setSchema();
     } else {
       this._render();
     }
+  }
+
+  // A new schema array re-renders ha-form: only when it changes, not on every hass update.
+  _setSchema() {
+    carbSetSchema(this._form, this._schema());
   }
 
   _fuelOptions() {
@@ -826,7 +858,7 @@ class CarburantsFranceCardEditor extends HTMLElement {
       this.appendChild(this._form);
     }
     this._form.hass = this._hass;
-    this._form.schema = this._schema();
+    this._setSchema();
     // Show the defaults as set, so the toggles match what the card does.
     this._form.data = Object.assign({}, CARBURANTS_DEFAULTS, this._config);
   }
@@ -841,7 +873,7 @@ class CarburantsFranceCardEditor extends HTMLElement {
     if (Array.isArray(value.fuels) && !value.fuels.length) delete value.fuels;
     var entityChanged = value.entity !== this._config.entity;
     this._config = value;
-    if (entityChanged) this._form.schema = this._schema();
+    if (entityChanged) this._setSchema();
     this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: value }, bubbles: true, composed: true }));
   }
 }
@@ -1089,6 +1121,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (previous && this._tilesKey(previous) !== this._tilesKey(this._config)) this._vectorFailed = false;
     // A new default radius in the editor replaces the one picked in the header.
     if (previous && previous.radius !== this._config.radius) this._radius = null;
+    if (previous && !!previous.show_fullscreen !== !!this._config.show_fullscreen) this._applyFullscreenOption();
     this._reloadTilesIfNeeded();
     // Read the current state now: a config change must redraw at once, not at the next hass update.
     this._lastState = this._hass && this._entityId() ? this._hass.states[this._entityId()] || null : null;
@@ -1146,13 +1179,9 @@ class CarburantsFranceMapCard extends HTMLElement {
   disconnectedCallback() {
     if (this._resizeObserver) this._resizeObserver.disconnect();
     clearInterval(this._tokenTimer);
+    clearTimeout(this._searchTimer);
     document.removeEventListener('click', this._onOutside, true);
-    if (this._onFsChange) {
-      document.removeEventListener('fullscreenchange', this._onFsChange);
-      document.removeEventListener('webkitfullscreenchange', this._onFsChange);
-      document.removeEventListener('keydown', this._onFsKey);
-      this._onFsChange = null;
-    }
+    this._unlistenFullscreen();
     this._pseudoFs = false;
     // Frees Leaflet and the WebGL context of the vector map unless the card comes straight back.
     clearTimeout(this._destroyTimer);
@@ -1220,6 +1249,15 @@ class CarburantsFranceMapCard extends HTMLElement {
     header.addEventListener('click', (ev) => {
       if (ev.target.closest('.locate')) this._toggleNearby();
     });
+    // A marker logo that fails to load becomes its initials. error does not bubble: capture phase.
+    this._root.querySelector('.map').addEventListener('error', (ev) => {
+      var img = ev.target;
+      if (img.tagName !== 'IMG' || !img.closest('.pin')) return;
+      var badge = document.createElement('span');
+      badge.className = 'ini';
+      badge.textContent = img.dataset.initials || '';
+      img.replaceWith(badge);
+    }, true);
     header.addEventListener('change', (ev) => {
       if (!ev.target.classList.contains('radius')) return;
       this._radius = Number(ev.target.value);
@@ -1645,6 +1683,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     this._tiles = null;
     this._tilesLoadedKey = null;
     this._toggle = null;
+    this._fsControl = null;
     this._fsLink = null;
     this._resizeObserver = null;
     this._signature = null;
@@ -1670,8 +1709,36 @@ class CarburantsFranceMapCard extends HTMLElement {
         return bar;
       },
     });
-    new Fullscreen({ position: 'topleft' }).addTo(this._map);
+    this._fsControl = new Fullscreen({ position: 'topleft' }).addTo(this._map);
     this._listenFullscreen();
+  }
+
+  // show_fullscreen changed in the editor: add or remove the button on the map already built.
+  _applyFullscreenOption() {
+    if (!this._map) return;
+    if (this._config.show_fullscreen) {
+      if (!this._fsControl) this._addFullscreenControl(window.L);
+      return;
+    }
+    if (this._isNativeFullscreen()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    if (this._isFullscreen()) {
+      // The listeners go away below: leave full screen now rather than on fullscreenchange.
+      this._pseudoFs = false;
+      this._root.querySelector('ha-card').classList.remove('fullscreen', 'pseudo');
+      setTimeout(this._invalidate.bind(this), 50);
+    }
+    if (this._fsControl) this._fsControl.remove();
+    this._fsControl = null;
+    this._fsLink = null;
+    this._unlistenFullscreen();
+  }
+
+  _unlistenFullscreen() {
+    if (!this._onFsChange) return;
+    document.removeEventListener('fullscreenchange', this._onFsChange);
+    document.removeEventListener('webkitfullscreenchange', this._onFsChange);
+    document.removeEventListener('keydown', this._onFsKey);
+    this._onFsChange = null;
   }
 
   _listenFullscreen() {
@@ -1803,13 +1870,10 @@ class CarburantsFranceMapCard extends HTMLElement {
     var fuels = data.fuels || [];
     var key = this._fuelKey(fuels);
     var stations = (data.stations || []).filter((s) => s.latitude != null && s.longitude != null);
-    // jscpd:ignore-start
-    var best = CarburantsFranceCard.prototype._bestPrices.call(null, stations, fuels);
-    var hidden = this._config.hide_out_of_stock_stations
-      ? stations.filter((s) => carbAllOut(s, fuels)).length
-      : 0;
-    if (hidden && !this._showAll) stations = stations.filter((s) => !carbAllOut(s, fuels));
-    // jscpd:ignore-end
+    var best = carbBestPrices(stations, fuels);
+    var visible = carbVisibleStations(stations, fuels, this._config, this._showAll);
+    var hidden = visible.hidden;
+    stations = visible.shown;
     var toggle = this._toggle.getContainer();
     toggle.hidden = !hidden;
     toggle.textContent = carbToggleLabel(t, this._showAll, hidden);
@@ -1821,6 +1885,12 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (signature !== this._signature) this._fitted = false;
     this._signature = signature;
 
+    // The open popup survives the redraw (sensor update every 15 min by default).
+    var openId = null;
+    this._layer.eachLayer((layer) => {
+      if (layer.isPopupOpen?.() && layer.options.stationId != null) openId = layer.options.stationId;
+    });
+    var reopen = null;
     this._layer.clearLayers();
     stations.forEach((s) => {
       var shown = this._markerFuel(s, fuels, key);
@@ -1838,8 +1908,8 @@ class CarburantsFranceMapCard extends HTMLElement {
         var name = s.brand || s.station_name || '';
         var known = carbLogo(s);
         logo = known
-          ? '<img class="' + carbLogoClass(known).trim() + '" src="' + carbEsc(known.src) + '" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{className:\'ini\',textContent:' +
-            carbEsc(JSON.stringify(carbInitials(name))) + '}))">'
+          ? '<img class="' + carbLogoClass(known).trim() + '" src="' + carbEsc(known.src) + '" alt="" referrerpolicy="no-referrer" data-initials="' +
+            carbEsc(carbInitials(name)) + '">'
           : `<span class="ini" style="background:${carbBrandColor(name || 'station')}">${carbEsc(carbInitials(name) || '⛽')}</span>`;
       }
       var icon = L.divIcon({
@@ -1852,9 +1922,12 @@ class CarburantsFranceMapCard extends HTMLElement {
         iconSize: null,
         iconAnchor: [0, 0],
       });
-      var marker = L.marker([s.latitude, s.longitude], { icon: icon, riseOnHover: true, zIndexOffset: state === 'best' ? 1000 : 0 });
+      var marker = L.marker([s.latitude, s.longitude], {
+        icon: icon, riseOnHover: true, zIndexOffset: state === 'best' ? 1000 : 0, stationId: String(s.station_id),
+      });
       marker.bindPopup(this._popup(s, fuels, best, t, now), { maxWidth: 280, minWidth: 220 });
       marker.addTo(this._layer);
+      if (openId === String(s.station_id)) reopen = marker;
       points.push([s.latitude, s.longitude]);
     });
 
@@ -1888,6 +1961,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     this._bounds = points.length ? L.latLngBounds(points) : null;
     if (bounds) this._bounds = this._bounds ? this._bounds.extend(bounds) : bounds;
     if (!this._fitted) this._fit();
+    if (reopen) reopen.openPopup();
   }
 
   _price(value) {
@@ -2021,12 +2095,16 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
     this._hass = hass;
     if (this._form) {
       this._form.hass = hass;
-      this._form.schema = this._schema();
+      this._setSchema();
     } else {
       this._render();
     }
   }
   // jscpd:ignore-end
+
+  _setSchema() {
+    carbSetSchema(this._form, this._schema());
+  }
 
   _schema() {
     var mt = CarburantsMapI18n[carbLang(this._hass)];
@@ -2086,7 +2164,7 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
       this.appendChild(this._form);
     }
     this._form.hass = this._hass;
-    this._form.schema = this._schema();
+    this._setSchema();
     this._form.data = Object.assign({}, CARBURANTS_MAP_DEFAULTS, this._config);
   }
   // jscpd:ignore-end
@@ -2106,7 +2184,7 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
       value.show_locate !== this._config.show_locate;
     // jscpd:ignore-start
     this._config = value;
-    if (rebuild) this._form.schema = this._schema();
+    if (rebuild) this._setSchema();
     this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: value }, bubbles: true, composed: true }));
   }
 }

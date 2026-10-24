@@ -2,18 +2,21 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .coordinator import CarburantsConfigEntry, CarburantsCoordinator
 from .entity import StationFuelEntity, async_track_station_entities
 
+if TYPE_CHECKING:
+    # Home Assistant 2025.2+; annotation only, so 2024.12 still loads the platform.
+    from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: CarburantsConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: CarburantsConfigEntry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
     async_track_station_entities(entry, async_add_entities, FuelAvailableSensor)
 

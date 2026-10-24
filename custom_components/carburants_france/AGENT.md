@@ -22,7 +22,8 @@ custom_components/carburants_france/
 ├── icons.json / services.yaml / translations/{en,fr}.json
 ├── frontend/carburants-france-card.js   # Both cards (list + map), vanilla JS
 ├── frontend/brands/                     # Brand logos (PNG) shipped with the cards
-└── frontend/leaflet/                    # Leaflet 1.9.4 (BSD-2), loaded by the map card
+├── frontend/leaflet/                    # Leaflet 1.9.4 (BSD-2), loaded by the map card
+└── frontend/maplibre/                   # MapLibre GL 6.14.0 + maplibre-gl-leaflet 0.1.4, for map_style: ha
 ```
 
 ## Fuel prices API
@@ -62,4 +63,4 @@ custom_components/carburants_france/
 HACS downloads the repository itself (no `zip_release`). Before releasing `vX.Y.Z`, bump the version in manifest.json, const.py (`VERSION`) and `CARBURANTS_CARD_VERSION` in the card. Pushing to main publishes release `vX.Y.Z` (tag, notes from the CHANGELOG.md section, `carburants_france.zip`) when that tag doesn't exist yet; the workflow fails if the three versions differ. Rerun notes on an existing release with the "Update release notes" workflow (input `tag`).
 
 ## Tests
-`pip install -r requirements_test.txt && pytest`
+`pip install -r requirements_test.txt && pytest`; card helpers: `node --test test/*.test.mjs` (Node 22, evaluates the card file with stubs).
