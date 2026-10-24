@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.2
+
+### Changes
+- Card: fuel codes of the small white badges in bold (700) instead of extra bold (800), the weights used by the other ha-* cards.
+
 ## 1.5.1
 
 ### Changes
