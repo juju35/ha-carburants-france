@@ -8,21 +8,14 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .api import sold_fuels
 from .coordinator import CarburantsConfigEntry, CarburantsCoordinator
-from .entity import StationFuelEntity
+from .entity import StationFuelEntity, async_track_station_entities
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: CarburantsConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    coordinator = entry.runtime_data
-    async_add_entities(
-        FuelAvailableSensor(coordinator, station_id, fuel)
-        for station_id, station in (coordinator.data or {}).items()
-        for fuel in sold_fuels(station)
-        if fuel in coordinator.fuels
-    )
+    async_track_station_entities(entry, async_add_entities, FuelAvailableSensor)
 
 
 class FuelAvailableSensor(StationFuelEntity, BinarySensorEntity):
