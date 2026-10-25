@@ -1158,6 +1158,10 @@ class CarburantsFranceMapCard extends HTMLElement {
     document.addEventListener('click', this._onOutside, true);
     // Re-attached before the delayed teardown ran (view switch, editor preview): keep the map.
     clearTimeout(this._destroyTimer);
+    // Detached in native full screen: the browser left it, but fullscreenchange came after
+    // disconnectedCallback removed the listener.
+    var card = this._root?.querySelector('ha-card');
+    if (card && card.classList.contains('fullscreen') !== this._isFullscreen()) this._fullscreenChanged();
     if (!this._map) {
       // Torn down while detached, or never built: build it now.
       if (this._config && this._hass) this._update();
