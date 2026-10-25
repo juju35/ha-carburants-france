@@ -285,12 +285,17 @@ async def _start_flow(hass):
     return result
 
 
+@pytest.mark.parametrize("as_dict", [True, False])
 @pytest.mark.parametrize("key", ["mode", "resource_mode"])
-async def test_card_resource_with_lovelace_data_variants(hass, aioclient_mock, entry, stub_frontend, key):
-    """Before 2025.2 hass.data["lovelace"] is a dict, and 2025.2-2025.3 call the field `mode`."""
+async def test_card_resource_with_lovelace_data_variants(hass, aioclient_mock, entry, stub_frontend, key, as_dict):
+    """Before 2025.2 hass.data["lovelace"] is a dict, then a dataclass whose `mode` field is `resource_mode` from
+    2026.2."""
+    from types import SimpleNamespace
+
     assert await async_setup_component(hass, "lovelace", {})
     resources = _storage_resources(hass)
-    hass.data["lovelace"] = {key: "storage", "resources": resources, "dashboards": {}}
+    data = {key: "storage", "resources": resources, "dashboards": {}}
+    hass.data["lovelace"] = data if as_dict else SimpleNamespace(**data)
     await _setup(hass, aioclient_mock, entry)
     await hass.async_block_till_done()
     urls = [item["url"] for item in resources.async_items()]

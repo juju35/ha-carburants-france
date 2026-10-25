@@ -130,3 +130,37 @@ test('the map is torn down after a long detach only, and rebuilt when the card c
   c.card.connectedCallback();
   assert.equal(c.updates(), 1);
 });
+
+test('a map card detached in native full screen comes back out of full screen', () => {
+  for (const keepMap of [true, false]) {
+    const classes = new Set(['fullscreen']);
+    const haCard = {
+      classList: {
+        contains: (name) => classes.has(name),
+        toggle: (name, on) => (on ? classes.add(name) : classes.delete(name)),
+      },
+    };
+    const fsLink = { setAttribute() {} };
+    const native = { value: true };
+    const card = Object.assign(Object.create(CarburantsFranceMapCard.prototype), {
+      _root: { querySelector: (sel) => (sel === 'ha-card' ? haCard : null) },
+      _pseudoFs: false,
+      _fsLink: fsLink,
+      _map: {},
+      _config: { show_fullscreen: true },
+      _hass: { language: 'en', callWS: () => Promise.resolve({}) },
+      _invalidate() {},
+      _update() {},
+      matches: () => native.value,
+    });
+    card._listenFullscreen();
+    card.disconnectedCallback();
+    // Removing the element makes the browser leave full screen; fullscreenchange comes too late.
+    native.value = false;
+    if (!keepMap) card._map = null;
+    card.connectedCallback();
+    runTimers();
+    assert.deepEqual([...classes], [], `map ${keepMap ? 'kept' : 'rebuilt'}`);
+    assert.equal(fsLink.title, 'Full screen');
+  }
+});

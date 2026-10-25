@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.2
+
+### Fixes
+- Map card: leaving the view while the map is in browser full screen no longer brings the card back stretched to the window size with an "Exit full screen" button.
+
+### Maintenance
+- New tests for the full screen fix and the dashboard resource; the duplication check runs on Node 22.
+
 ## 1.6.1
 
 ### Fixes

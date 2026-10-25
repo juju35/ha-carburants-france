@@ -47,7 +47,7 @@ custom_components/carburants_france/
 - Done in the config flow (brand at search, logo once stations are chosen) and stored in the entry options per station (`brand`, `wikidata`, `logo`, `brand_checked`). Stations with `brand_checked: false`, or a `logo_version` below `LOGO_VERSION` (bump it when the logo choice changes), are looked up again at startup.
 
 ## Card
-- Served from `/carburants_france_static`, added to the Lovelace resources at startup (like ha-parcel), URL versioned with the file's md5. Falls back to `add_extra_js_url` in YAML mode. `_lovelace_resources()` reads `hass.data["lovelace"]` as a dict (before 2025.2) or a dataclass (`mode`, then `resource_mode` from 2025.4).
+- Served from `/carburants_france_static`, added to the Lovelace resources at startup (like ha-parcel), URL versioned with the file's md5. Falls back to `add_extra_js_url` in YAML mode. `_lovelace_resources()` reads `hass.data["lovelace"]` as a dict (before 2025.2) or a dataclass (`mode` from 2025.2, then `resource_mode` from 2026.2).
 - Brand logos: `frontend/brands/*.png` (42, the aaos-carburants pack, same keys as its `brand_logos.json`) listed in `CARBURANTS_BRAND_LOGOS`; `carbLogo` tries the brand, then `station_name` (key = NFD, lower case, a-z0-9 only; whole key or prefix when ≥ 4 letters, longest first), before the stored Wikidata `logo`. `tile` (Total Access) = drawn as is (`.own`), `dark` (Roady) = dark tile. Served at `/carburants_france_static/brands/`; screenshots load them from the made-up origin.
 - Reads the Stations sensor (`stations`, `fuels`, `config_entry_id` attributes). Opening status is computed in the browser every minute. Logo `<img>` falls back to an initials badge on error.
 
