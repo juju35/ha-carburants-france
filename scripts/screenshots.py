@@ -2,6 +2,7 @@
 
 Usage: python scripts/screenshots.py  (needs `pip install playwright pillow` and `playwright install chromium`;
 CHROMIUM=/path/to/chrome to use another browser)
+Every shot is in English, with 16 px of theme background around the card (list card 460 px wide, map card 520 px).
 The clock is frozen on a Tuesday at 08:30 in Paris, so opening hours and price ages stay the same.
 The map uses the OpenStreetMap tiles kept in scripts/tiles (committed, no network needed); a tile
 missing there, after a change of stations or zoom, is downloaded once and should be committed too.
@@ -25,12 +26,12 @@ MAP_WIDTH = 520
 USER_AGENT = "ha-carburants-france screenshots (+https://github.com/juju35/ha-carburants-france)"
 VERSION = json.loads((ROOT / "custom_components/carburants_france/manifest.json").read_text())["version"]
 NOW = "2026-10-20T08:30:00+02:00"
-WIDTH = 410
+WIDTH = 460
 
 THEMES = {
     "light": {
         "--primary-background-color": "#e8eaed",
-        "--secondary-background-color": "#f2f2f2",
+        "--secondary-background-color": "#ececec",
         "--card-background-color": "#ffffff",
         "--primary-text-color": "#212121",
         "--secondary-text-color": "#727272",
@@ -56,6 +57,7 @@ COMMON = {
 
 # Material Design Icons used by the card (@mdi/js).
 ICONS = {
+    "clock-outline": "M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z",
     "chevron-down": "M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z",
     "chevron-up": "M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z",
     "directions": "M14,14.5V12H10V15H8V11A1,1 0 0,1 9,10H14V7.5L17.5,11M21.71,11.29L12.71,2.29H12.7C12.31,1.9 11.68,1.9 11.29,2.29L2.29,11.29C1.9,11.68 1.9,12.32 2.29,12.71L11.29,21.71C11.68,22.09 12.31,22.1 12.71,21.71L21.71,12.71C22.1,12.32 22.1,11.68 21.71,11.29Z",
@@ -66,6 +68,7 @@ ICONS = {
     "crosshairs-off": "M1,4.27L2.28,3L21,21.72L19.73,23L16.95,20.22C15.79,20.61 14.43,20.89 13,20.95V23H11V20.95C6.83,20.5 3.5,17.17 3.05,13H1V11H3.05C3.13,10.18 3.33,9.39 3.63,8.65L1,4.27M5.15,9.92C5.05,10.27 5,10.63 5,11V12A7,7 0 0,0 12,19C12.58,19 13.15,18.93 13.69,18.8L5.15,9.92M20.95,13C20.89,13.62 20.74,14.22 20.5,14.79L19,13.28V12A7,7 0 0,0 12,5H10.72L9.21,3.5C9.78,3.26 10.38,3.11 11,3.05V1H13V3.05C17.17,3.5 20.5,6.83 20.95,11H23V13H20.95Z",
     "home": "M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z",
     "refresh": "M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z",
+    "storefront-outline": "M5.06 3C4.63 3 4.22 3.14 3.84 3.42S3.24 4.06 3.14 4.5L2.11 8.91C1.86 10 2.06 10.95 2.72 11.77L3 12.05V19C3 19.5 3.2 20 3.61 20.39S4.5 21 5 21H19C19.5 21 20 20.8 20.39 20.39S21 19.5 21 19V12.05L21.28 11.77C21.94 10.95 22.14 10 21.89 8.91L20.86 4.5C20.73 4.06 20.5 3.7 20.13 3.42C19.77 3.14 19.38 3 18.94 3H5.06M18.89 4.97L19.97 9.38C20.06 9.81 19.97 10.2 19.69 10.55C19.44 10.86 19.13 11 18.75 11C18.44 11 18.17 10.9 17.95 10.66C17.73 10.43 17.61 10.16 17.58 9.84L16.97 5L18.89 4.97M5.06 5H7.03L6.42 9.84C6.3 10.63 5.91 11 5.25 11C4.84 11 4.53 10.86 4.31 10.55C4.03 10.2 3.94 9.81 4.03 9.38L5.06 5M9.05 5H11V9.7C11 10.05 10.89 10.35 10.64 10.62C10.39 10.88 10.08 11 9.7 11C9.36 11 9.07 10.88 8.84 10.59S8.5 10 8.5 9.66V9.5L9.05 5M13 5H14.95L15.5 9.5C15.58 9.92 15.5 10.27 15.21 10.57C14.95 10.87 14.61 11 14.2 11C13.89 11 13.61 10.88 13.36 10.62C13.11 10.35 13 10.05 13 9.7V5M7.45 12.05C8.08 12.67 8.86 13 9.8 13C10.64 13 11.38 12.67 12 12.05C12.69 12.67 13.45 13 14.3 13C15.17 13 15.92 12.67 16.55 12.05C17.11 12.67 17.86 13 18.8 13H19.03V19H5V13H5.25C6.16 13 6.89 12.67 7.45 12.05Z",
     "star": "M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z",
 }
 
@@ -126,7 +129,7 @@ STATIONS = [
         "station_id": 35000021,
         "station_name": "Relais Rennes Alma",
         "brand": "Total Access",
-        "address": "Centre commercial Alma",
+        "address": "Alma shopping centre",
         "postcode": "35200",
         "city": "Rennes",
         "distance": 2.3,
@@ -136,7 +139,7 @@ STATIONS = [
         "highway": False,
         "automate_24_24": True,
         "hours": hours("07:00", "21:00"),
-        "services": ["Relais colis", "Piste poids lourds", "Automate CB 24/24"],
+        "services": ["Parcel pickup", "Truck lane", "24/7 card payment"],
         "fuels": {
             "gazole": fuel(2.249, "2026-10-19T16:30:00Z"),
             "e10": fuel(2.259, "2026-10-19T16:30:00Z"),
@@ -157,7 +160,7 @@ STATIONS = [
         "highway": False,
         "automate_24_24": True,
         "hours": hours("08:00", "20:00"),
-        "services": ["Boutique alimentaire", "Lavage automatique"],
+        "services": ["Food shop", "Automatic car wash"],
         "fuels": {
             "gazole": fuel(2.265, "2026-10-19T09:00:00Z"),
             "e10": fuel(2.239, "2026-10-19T09:00:00Z"),
@@ -178,7 +181,7 @@ STATIONS = [
         "highway": False,
         "automate_24_24": True,
         "hours": [{"day": d, "closed": False, "ranges": []} for d in range(1, 8)],
-        "services": ["Relais colis"],
+        "services": ["Parcel pickup"],
         "fuels": {"gazole": fuel(2.299, "2026-10-20T01:30:00Z"), "sp98": fuel(2.349, "2026-10-20T01:30:00Z")},
     },
     {
@@ -195,7 +198,7 @@ STATIONS = [
         "highway": False,
         "automate_24_24": False,
         "hours": hours("10:00", "19:30"),
-        "services": ["Relais colis", "Lavage manuel"],
+        "services": ["Parcel pickup", "Hand car wash"],
         "fuels": {
             "gazole": fuel(2.319, "2026-10-20T03:30:00Z"),
             "e10": fuel(2.299, "2026-10-20T03:30:00Z"),
@@ -237,7 +240,7 @@ STATES = {
                 {"key": "sp98", "name": "SP98"},
             ],
             "stations": STATIONS,
-            "friendly_name": "Carburants Stations",
+            "friendly_name": "Fuel Stations",
         },
     },
 }
@@ -313,27 +316,24 @@ ALL_FUEL_STATES = {
 }
 
 SHOTS = [
-    {"file": "card", "theme": "light", "lang": "en", "config": {}, "expand": None},
+    {"file": "card", "theme": "light", "config": {}, "expand": None},
     {
         "file": "card-dark",
         "theme": "dark",
-        "lang": "fr",
-        "config": {"title": "Autour de la maison", "sort": "distance"},
+        "config": {"title": "Around home", "sort": "distance"},
         "expand": "35000021",
     },
     {
         "file": "card-all-fuels",
         "theme": "light",
-        "lang": "fr",
-        "config": {"title": "Tous les carburants"},
+        "config": {"title": "All fuels"},
         "expand": None,
         "states": ALL_FUEL_STATES,
     },
     {
         "file": "card-all-fuels-dark",
         "theme": "dark",
-        "lang": "fr",
-        "config": {"title": "Tous les carburants"},
+        "config": {"title": "All fuels"},
         "expand": None,
         "states": ALL_FUEL_STATES,
     },
@@ -461,10 +461,10 @@ MAP_CONFIG = {
     "tile_attribution": "&copy; OpenStreetMap contributors",
 }
 MAP_SHOTS = [
-    {"file": "map", "theme": "light", "lang": "fr", "config": {}, "action": None},
-    {"file": "map-dark", "theme": "dark", "lang": "fr", "config": {}, "action": None},
-    {"file": "map-nearby", "theme": "light", "lang": "fr", "config": {"radius": 2}, "action": "near"},
-    {"file": "map-search", "theme": "dark", "lang": "fr", "config": {}, "action": "city"},
+    {"file": "map", "theme": "light", "config": {}, "action": None},
+    {"file": "map-dark", "theme": "dark", "config": {}, "action": None},
+    {"file": "map-nearby", "theme": "light", "config": {"radius": 2}, "action": "near"},
+    {"file": "map-search", "theme": "dark", "config": {}, "action": "city"},
 ]
 
 
@@ -536,10 +536,10 @@ def map_shot(page, shot, out_dir):
     page.add_script_tag(content=HA_ELEMENTS)
     page.add_script_tag(content=CARD_JS)
     page.evaluate(
-        """({config, states, dark, lang, results}) => {
+        """({config, states, dark, results}) => {
           const el = document.createElement("carburants-france-map-card");
           el.setConfig({type: "custom:carburants-france-map-card", ...config});
-          el.hass = {states, language: lang, locale: {language: lang}, themes: {darkMode: dark}, user: {id: "u"},
+          el.hass = {states, language: "en", locale: {language: "en"}, themes: {darkMode: dark}, user: {id: "u"},
                      callService: () => Promise.resolve(),
                      callWS: (msg) => Promise.resolve(msg.type === "carburants_france/search"
                        ? structuredClone(msg.query ? results.city : results.near) : {})};
@@ -549,7 +549,6 @@ def map_shot(page, shot, out_dir):
             "config": {**MAP_CONFIG, **shot["config"]},
             "states": MAP_STATES,
             "dark": shot["theme"] == "dark",
-            "lang": shot["lang"],
             "results": SEARCH_RESULTS,
         },
     )
@@ -577,7 +576,7 @@ def map_shot(page, shot, out_dir):
     if ERRORS:
         raise TileError(ERRORS[0])
     name = f"{shot['file']}.png"
-    card.screenshot(path=str(out_dir / name), animations="disabled")
+    framed_shot(page, out_dir / name, MAP_WIDTH)
     print(f"screenshots/{name}")
 
 
@@ -585,9 +584,19 @@ def page_html(theme, width=WIDTH):
     variables = "".join(f"{k}:{v};" for k, v in {**THEMES[theme], **COMMON}.items())
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
   :root {{ {variables} }}
-  body {{ margin: 0; background: var(--primary-background-color); color: var(--primary-text-color);
+  body {{ margin: 0; padding: 16px; background: var(--primary-background-color); color: var(--primary-text-color);
          font-family: Roboto, Inter, "Segoe UI", Helvetica, Arial, sans-serif; width: {width}px; }}
 </style></head><body><div id="root"></div></body></html>"""
+
+
+def framed_shot(page, path, width):
+    """The card with 16 px of theme background around it."""
+    box = page.locator("#root").bounding_box()
+    page.screenshot(
+        path=str(path),
+        clip={"x": 0, "y": 0, "width": width + 32, "height": int(box["height"] + 0.999) + 32},
+        animations="disabled",
+    )
 
 
 def main():
@@ -595,7 +604,7 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=os.environ.get("CHROMIUM") or None)
         context = browser.new_context(
-            device_scale_factor=2, viewport={"width": 1000, "height": 2400}, locale="fr-FR", timezone_id="Europe/Paris"
+            device_scale_factor=2, viewport={"width": 1000, "height": 2400}, locale="en-US", timezone_id="Europe/Paris"
         )
         # Served from the made-up origin too, so the cards find the brand logos.
         context.route(f"{ORIGIN}/**", serve)
@@ -608,10 +617,10 @@ def main():
             page.add_script_tag(content=HA_ELEMENTS)
             page.add_script_tag(content=CARD_JS)
             page.evaluate(
-                """({config, states, dark, lang}) => {
+                """({config, states, dark}) => {
                   const el = document.createElement("carburants-france-card");
                   el.setConfig({type: "custom:carburants-france-card", ...config});
-                  el.hass = {states, language: lang, locale: {language: lang}, themes: {darkMode: dark},
+                  el.hass = {states, language: "en", locale: {language: "en"}, themes: {darkMode: dark},
                              callService: () => Promise.resolve(), callWS: () => Promise.resolve({})};
                   document.getElementById("root").appendChild(el);
                 }""",
@@ -619,7 +628,6 @@ def main():
                     "config": shot["config"],
                     "states": shot.get("states", STATES),
                     "dark": shot["theme"] == "dark",
-                    "lang": shot["lang"],
                 },
             )
             if shot["expand"]:
@@ -631,7 +639,7 @@ def main():
             )
             page.wait_for_timeout(600)
             name = f"{shot['file']}.png"
-            page.locator("carburants-france-card").screenshot(path=str(out_dir / name), animations="disabled")
+            framed_shot(page, out_dir / name, WIDTH)
             page.close()
             print(f"screenshots/{name}")
 
@@ -639,7 +647,7 @@ def main():
         context = browser.new_context(
             device_scale_factor=2,
             viewport={"width": 1000, "height": 1400},
-            locale="fr-FR",
+            locale="en-US",
             timezone_id="Europe/Paris",
             geolocation=HERE,
             permissions=["geolocation"],

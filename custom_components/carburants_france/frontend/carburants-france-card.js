@@ -1,29 +1,5 @@
 var CARBURANTS_CARD_VERSION = '1.6.2';
 
-// ── Integration icon (same drawing as brand/icon.png) ────────────────────────
-// bg: tile and screen colour. On a dark card the navy tile melts into the background, so the dark
-// version uses a lighter navy with a thin light outline.
-function carbIconSvg(bg, outline) {
-  return `data:image/svg+xml;utf8,${encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">' +
-    `<rect width="256" height="256" rx="56" fill="${bg}"/>` +
-    (outline ? '<rect x="4" y="4" width="248" height="248" rx="52" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="8"/>' : '') +
-    '<rect x="64" y="56" width="96" height="148" rx="14" fill="#F5A623"/>' +
-    `<rect x="78" y="72" width="68" height="52" rx="6" fill="${bg}"/>` +
-    '<polyline points="86,86 100,98 113,91 126,108 138,112" fill="none" stroke="#12A37F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>' +
-    `<rect x="88" y="142" width="48" height="8" rx="4" fill="${bg}" opacity="0.35"/>` +
-    '<rect x="52" y="196" width="120" height="14" rx="7" fill="#F5A623"/>' +
-    '<path d="M160 156 H176 Q192 156 192 140 V100 L176 82" fill="none" stroke="#F5A623" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-  )}`;
-}
-var CARBURANTS_ICON = carbIconSvg('#1B2A41', false);
-var CARBURANTS_ICON_DARK = carbIconSvg('#2D4468', true);
-
-// Header icon for the current Home Assistant theme.
-function carbIcon(hass) {
-  return hass?.themes?.darkMode ? CARBURANTS_ICON_DARK : CARBURANTS_ICON;
-}
-
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
 
@@ -511,7 +487,7 @@ class CarburantsFranceCard extends HTMLElement {
     var title = this._config.title || t.default_title;
     var icon = this._config.show_icon
       ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
-        '<img class="icon" src="' + carbIcon(this._hass) + '" alt="data.economie.gouv.fr"></a>'
+        '<span class="icon hbadge"><ha-icon icon="mdi:gas-station"></ha-icon></span></a>'
       : '';
     // The last refresh error stays in the button's tooltip until the next refresh.
     var refreshTitle = this._refreshError ? `${t.refresh_failed} ${this._refreshError}` : t.refresh;
@@ -667,9 +643,9 @@ class CarburantsFranceCard extends HTMLElement {
       return `<tr${d.day === today ? ' class="today"' : ''}><td>${carbEsc(t.days[d.day - 1])}</td><td>${carbEsc(value)}</td></tr>`;
     }).join('');
     var html = '<div class="details">';
-    if (rows) html += `<div class="dtitle">${carbEsc(t.hours)}${s.automate_24_24 ? ` · ${carbEsc(t.automate)}` : ''}</div><table>${rows}</table>`;
+    if (rows) html += `<div class="dtitle"><ha-icon icon="mdi:clock-outline"></ha-icon>${carbEsc(t.hours)}${s.automate_24_24 ? ` · ${carbEsc(t.automate)}` : ''}</div><table>${rows}</table>`;
     if (s.services?.length) {
-      html += '<div class="dtitle">' + carbEsc(t.services) + '</div><div class="services">' +
+      html += '<div class="dtitle"><ha-icon icon="mdi:storefront-outline"></ha-icon>' + carbEsc(t.services) + '</div><div class="services">' +
         s.services.map((x) => `<span>${carbEsc(x)}</span>`).join('') + '</div>';
     }
     if (s.latitude != null) {
@@ -717,13 +693,17 @@ class CarburantsFranceCard extends HTMLElement {
     return [
       ':host { display: block; }',
       'ha-card { padding: 0 0 8px; overflow: hidden; }',
-      '.header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 8px 6px 12px; min-height: 36px; }',
+      // Icon 12 px from the top and left edges; the first station's own 8 px padding sets the body 8 px below.
+      '.header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 12px 0; }',
       '.title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }',
       '.titles { min-width: 0; }',
       '.hname { font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.hsub { font-size: 12px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.icon-link { display: flex; flex: none; }',
-      '.icon { width: 36px; height: 36px; display: block; }',
+      // Generic fuel pump in a round badge tinted with the theme's primary colour.
+      '.hbadge { --c: var(--primary-color, #03a9f4); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); --mdc-icon-size: 24px; }',
+      // The 48 px button would make the row taller than the 40 px icon: it overlaps the padding instead.
+      '.refresh-btn { flex: none; margin: -4px -4px -4px 0; }',
       '.refresh-btn.spinning ha-icon { animation: carb-spin 1s linear infinite; }',
       '@keyframes carb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }',
       '.empty { padding: 12px 16px; color: var(--secondary-text-color); }',
@@ -765,14 +745,16 @@ class CarburantsFranceCard extends HTMLElement {
       '.fuel.nodata { border-style: dashed; border-color: var(--divider-color, rgba(0,0,0,.2)); }',
       '.fuel.nodata .fprice { font-size: 13px; font-weight: 500; color: var(--secondary-text-color); }',
       '.details { margin: 8px 0 2px 46px; font-size: 12px; color: var(--primary-text-color); }',
-      '.dtitle { font-weight: 500; margin: 8px 0 4px; color: var(--secondary-text-color); }',
+      // Section title of the details (hours, services), as in the other ha-* cards.
+      '.dtitle { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--secondary-text-color); margin: 8px 0 6px; }',
+      '.dtitle ha-icon { --mdc-icon-size: 16px; }',
       '.details table { border-collapse: collapse; }',
       '.details td { padding: 1px 12px 1px 0; }',
       '.details tr.today td { font-weight: 500; }',
       '.services { display: flex; flex-wrap: wrap; gap: 4px; }',
       '.services span { border-radius: 12px; padding: 2px 10px; font-size: 12px; font-weight: 500; background: var(--secondary-background-color, rgba(127,127,127,.12)); color: var(--secondary-text-color); }',
-      '.directions { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 14px; border-radius: 10px; background: var(--primary-color); color: var(--text-primary-color, #fff); text-decoration: none; font-weight: 500; font-size: 15px; box-shadow: 0 1px 3px rgba(0,0,0,.25); }',
-      '.directions:hover { filter: brightness(1.1); }',
+      '.directions { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 14px; border-radius: 10px; background: color-mix(in srgb, var(--primary-color, #03a9f4) 16%, transparent); color: var(--primary-color, #03a9f4); text-decoration: none; font-weight: 500; font-size: 15px; }',
+      '.directions:hover { background: color-mix(in srgb, var(--primary-color, #03a9f4) 24%, transparent); }',
       '.directions ha-icon { --mdc-icon-size: 20px; }',
       '.footer { padding: 2px 12px 0; border-top: 1px solid var(--divider-color, rgba(0,0,0,.12)); }',
       '.footer[hidden] { display: none; }',
@@ -1140,8 +1122,6 @@ class CarburantsFranceMapCard extends HTMLElement {
       // Theme switched in Home Assistant: dark filter and light / dark vector style follow.
       this._root.querySelector('.map').classList.toggle('dark', this._darkTiles());
       this._reloadTilesIfNeeded();
-      var img = this._root.querySelector('.icon');
-      if (img && img.getAttribute('src') !== carbIcon(hass)) img.setAttribute('src', carbIcon(hass));
     }
   }
 
@@ -1300,7 +1280,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     // Same icon as the list card, opening the government data page.
     var icon = this._config.show_icon
       ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
-        '<img class="icon" src="' + carbIcon(this._hass) + '" alt="data.economie.gouv.fr"></a>'
+        '<span class="icon hbadge"><ha-icon icon="mdi:gas-station"></ha-icon></span></a>'
       : '';
     var tools = '';
     if (this._config.show_locate) {
@@ -2010,7 +1990,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.header { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 12px 12px 8px; }',
       '.hname { min-width: 0; font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.icon-link { display: flex; flex: none; }',
-      '.icon { width: 36px; height: 36px; display: block; }',
+      // Generic fuel pump in a round badge tinted with the theme's primary colour.
+      '.hbadge { --c: var(--primary-color, #03a9f4); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); --mdc-icon-size: 24px; }',
       '.header[hidden], .message[hidden] { display: none; }',
       '.message { padding: 12px 16px; color: var(--secondary-text-color); }',
       '.map { width: 100%; background: var(--secondary-background-color, #e5e5e5); z-index: 0; }',
@@ -2065,7 +2046,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.radius { font: inherit; font-size: 13px; height: 32px; padding: 0 6px; border-radius: 10px; border: 1px solid var(--divider-color, rgba(127,127,127,.3)); background: var(--secondary-background-color, rgba(127,127,127,.08)); color: var(--primary-text-color); cursor: pointer; }',
       '.locate { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--secondary-text-color); cursor: pointer; --mdc-icon-size: 22px; }',
       '.locate:hover { background: var(--divider-color, rgba(127,127,127,.25)); color: var(--primary-text-color); }',
-      '.locate.active { background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); }',
+      '.locate.active { background: color-mix(in srgb, var(--primary-color, #03a9f4) 16%, transparent); color: var(--primary-color, #03a9f4); }',
+      '.locate.active:hover { background: color-mix(in srgb, var(--primary-color, #03a9f4) 24%, transparent); color: var(--primary-color, #03a9f4); }',
       '.locate.busy ha-icon { animation: carb-pulse 1s ease-in-out infinite; }',
       '@keyframes carb-pulse { 50% { opacity: .3; } }',
       // Search field, as in ha-system-monitor-card.
@@ -2086,8 +2068,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.me { position: absolute; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: var(--primary-color, #03a9f4); border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(3,169,244,.25), 0 1px 4px rgba(0,0,0,.35); }',
       '.pfollowed { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 12px; color: var(--primary-color, #03a9f4); --mdc-icon-size: 14px; }',
       // Leaflet colours every link in the map: the selector must outrank '.leaflet-container a'.
-      '.leaflet-container a.pdir { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 8px 14px; border-radius: 10px; background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); text-decoration: none; font-weight: 500; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.25); }',
-      '.leaflet-container a.pdir:hover { filter: brightness(1.1); }',
+      '.leaflet-container a.pdir { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 8px 14px; border-radius: 10px; background: color-mix(in srgb, var(--primary-color, #03a9f4) 16%, transparent); color: var(--primary-color, #03a9f4); text-decoration: none; font-weight: 500; font-size: 14px; }',
+      '.leaflet-container a.pdir:hover { background: color-mix(in srgb, var(--primary-color, #03a9f4) 24%, transparent); }',
       '.pdir ha-icon { --mdc-icon-size: 18px; }',
     ].join('\n');
   }

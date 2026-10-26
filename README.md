@@ -231,7 +231,7 @@ actions:
 |---|---|
 | ![stations around me](screenshots/map-nearby.png) | ![stations of a town](screenshots/map-search.png) |
 
-Screenshots are in French, like the station data.
+Screenshots are in English; station names, addresses and fuel names at the pump stay French, like the feed.
 
 ## How it works
 
