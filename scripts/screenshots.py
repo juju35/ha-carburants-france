@@ -627,12 +627,13 @@ def mount(context, shot):
     return page
 
 
-def animate(context, shot, *, fps=20, seconds=2):
-    """Record the refresh spinner as a looping screenshots/<file>.gif (needs ffmpeg). Every animation is paused and
-    stepped frame by frame, so the GIF is identical whatever the machine's speed."""
+def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;"):
+    """Record a card animation as a looping screenshots/<file>.gif (needs ffmpeg). `prime` is the JS that puts the
+    card in its animated state. Every animation is paused and stepped frame by frame, so the GIF is identical
+    whatever the machine's speed."""
     page = mount(context, shot)
     page.evaluate(
-        """() => { const el = document.getElementById("root").firstElementChild; el._refreshing = true; el._render(); }"""
+        f"""() => {{ const el = document.getElementById("root").firstElementChild; {prime} el._render(); }}"""
     )
     page.wait_for_timeout(200)
     width = shot.get("width", WIDTH)
@@ -685,6 +686,8 @@ def main():
 
         # The refresh button spinning while prices reload, as a looping GIF (same mount as the plain card shot).
         animate(context, {"file": "refreshing", "theme": "light", "config": SHOTS[0]["config"]})
+        # The "locate me" button pulsing while it looks up the nearby stations.
+        animate(context, {"file": "locate", "theme": "light", "config": SHOTS[0]["config"]}, prime="el._busy = 'near';")
 
         # The map card: Leaflet and the tiles come from the made-up origin, the position from the browser.
         context = browser.new_context(

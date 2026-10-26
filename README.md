@@ -219,6 +219,10 @@ While prices refresh, the card animates: the refresh button spins until the upda
 
 ![refresh animation](screenshots/refreshing.gif)
 
+While it looks up the stations around you, the "locate me" button pulses until the nearby list is ready. It settles to a still card once done (and honours `prefers-reduced-motion`).
+
+![locate animation](screenshots/locate.gif)
+
 | Light | Dark (station expanded, sorted by distance) |
 |---|---|
 | ![card](screenshots/card.png) | ![card dark](screenshots/card-dark.png) |
@@ -272,7 +276,7 @@ The map card uses [Leaflet](https://leafletjs.com) and, for the `ha` base map, [
 ```bash
 pip install -r requirements_test.txt && pytest
 pip install playwright && playwright install chromium
-python scripts/screenshots.py   # renders the list card into screenshots/ and makes refreshing.gif (needs ffmpeg)
+python scripts/screenshots.py   # renders the list card, the map card, and the refreshing/locate GIFs (needs ffmpeg)
 ```
 
 ### Releasing
