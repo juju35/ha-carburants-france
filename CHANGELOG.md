@@ -1,7 +1,6 @@
 # Changelog
 
-## Unreleased
-
+## 1.7.0
 ### Changes
 - List and map cards: the header icon is now the fuel pump in a round badge tinted with the theme's primary colour, like the other cards.
 - List card: the Opening hours and Services titles of an opened station are small uppercase section titles with a leading icon, like the other cards.
