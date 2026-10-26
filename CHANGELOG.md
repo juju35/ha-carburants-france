@@ -4,6 +4,9 @@
 
 ### Changes
 - List and map cards: the header icon is now the fuel pump in a round badge tinted with the theme's primary colour, like the other cards.
+- List card: the Opening hours and Services titles of an opened station are small uppercase section titles with a leading icon, like the other cards.
+- List card: the Directions button, and the one in the map card's station popup, are tinted with the theme's primary colour instead of filled; the active "Locate me" button of the map card is tinted too.
+- List card: the header sits 12 px from the card's top edge (was 16 px) and the first station starts 8 px below it (was 18 px).
 
 ## 1.6.2
 
