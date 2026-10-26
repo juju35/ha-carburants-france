@@ -12,6 +12,8 @@ import io
 import json
 import os
 import re
+import subprocess
+import tempfile
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -599,6 +601,65 @@ def framed_shot(page, path, width):
     )
 
 
+def mount(context, shot):
+    """Mount the list card for one shot on a fresh page and return it (shared by the stills and the GIF)."""
+    # A new page per shot: the card script is evaluated once per page (no "already declared").
+    page = context.new_page()
+    page.on("pageerror", lambda err: print(f"pageerror: {err}"))
+    page.clock.set_fixed_time(NOW)
+    page.goto(f"{ORIGIN}/{shot['theme']}")
+    page.add_script_tag(content=HA_ELEMENTS)
+    page.add_script_tag(content=CARD_JS)
+    page.evaluate(
+        """({config, states, dark}) => {
+          const el = document.createElement("carburants-france-card");
+          el.setConfig({type: "custom:carburants-france-card", ...config});
+          el.hass = {states, language: "en", locale: {language: "en"}, themes: {darkMode: dark},
+                     callService: () => Promise.resolve(), callWS: () => Promise.resolve({})};
+          document.getElementById("root").appendChild(el);
+        }""",
+        {
+            "config": shot["config"],
+            "states": shot.get("states", STATES),
+            "dark": shot["theme"] == "dark",
+        },
+    )
+    return page
+
+
+def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;"):
+    """Record a card animation as a looping screenshots/<file>.gif (needs ffmpeg). `prime` is the JS that puts the
+    card in its animated state. Every animation is paused and stepped frame by frame, so the GIF is identical
+    whatever the machine's speed."""
+    page = mount(context, shot)
+    page.evaluate(
+        f"""() => {{ const el = document.getElementById("root").firstElementChild; {prime} el._render(); }}"""
+    )
+    page.wait_for_timeout(200)
+    width = shot.get("width", WIDTH)
+    box = page.locator("#root").bounding_box()
+    clip = {"x": 0, "y": 0, "width": width + 32, "height": int(box["height"] + 0.999) + 32}
+    frames = round(fps * seconds)
+    with tempfile.TemporaryDirectory() as frame_dir:
+        for i in range(frames):
+            page.evaluate(
+                "(t) => { for (const a of document.getAnimations()) { a.pause(); a.currentTime = t; } }",
+                (i * 1000) / fps,
+            )
+            page.screenshot(path=f"{frame_dir}/f{i:03d}.png", clip=clip)
+        page.close()
+        out = str(ROOT / "screenshots" / f"{shot['file']}.gif")
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps), "-i", f"{frame_dir}/f%03d.png",
+                "-vf", f"scale={clip['width']}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer:bayer_scale=4",
+                "-loop", "0", out,
+            ],
+            check=True,
+        )
+    print(f"screenshots/{shot['file']}.gif")
+
+
 def main():
     out_dir = ROOT / "screenshots"
     with sync_playwright() as p:
@@ -609,27 +670,7 @@ def main():
         # Served from the made-up origin too, so the cards find the brand logos.
         context.route(f"{ORIGIN}/**", serve)
         for shot in SHOTS:
-            # A new page per shot: the card script is evaluated once per page (no "already declared").
-            page = context.new_page()
-            page.on("pageerror", lambda err: print(f"pageerror: {err}"))
-            page.clock.set_fixed_time(NOW)
-            page.goto(f"{ORIGIN}/{shot['theme']}")
-            page.add_script_tag(content=HA_ELEMENTS)
-            page.add_script_tag(content=CARD_JS)
-            page.evaluate(
-                """({config, states, dark}) => {
-                  const el = document.createElement("carburants-france-card");
-                  el.setConfig({type: "custom:carburants-france-card", ...config});
-                  el.hass = {states, language: "en", locale: {language: "en"}, themes: {darkMode: dark},
-                             callService: () => Promise.resolve(), callWS: () => Promise.resolve({})};
-                  document.getElementById("root").appendChild(el);
-                }""",
-                {
-                    "config": shot["config"],
-                    "states": shot.get("states", STATES),
-                    "dark": shot["theme"] == "dark",
-                },
-            )
+            page = mount(context, shot)
             if shot["expand"]:
                 page.locator(f'.station[data-id="{shot["expand"]}"] .row').click()
             # Every logo loaded (lazy images: scrolled into view by the tall viewport).
@@ -642,6 +683,11 @@ def main():
             framed_shot(page, out_dir / name, WIDTH)
             page.close()
             print(f"screenshots/{name}")
+
+        # The refresh button spinning while prices reload, as a looping GIF (same mount as the plain card shot).
+        animate(context, {"file": "refreshing", "theme": "light", "config": SHOTS[0]["config"]})
+        # The "locate me" button pulsing while it looks up the nearby stations.
+        animate(context, {"file": "locate", "theme": "light", "config": SHOTS[0]["config"]}, prime="el._busy = 'near';")
 
         # The map card: Leaflet and the tiles come from the made-up origin, the position from the browser.
         context = browser.new_context(
