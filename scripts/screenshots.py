@@ -2,6 +2,7 @@
 
 Usage: python scripts/screenshots.py  (needs `pip install playwright pillow` and `playwright install chromium`;
 CHROMIUM=/path/to/chrome to use another browser)
+Every shot is in English, with 16 px of theme background around the card (list card 460 px wide, map card 520 px).
 The clock is frozen on a Tuesday at 08:30 in Paris, so opening hours and price ages stay the same.
 The map uses the OpenStreetMap tiles kept in scripts/tiles (committed, no network needed); a tile
 missing there, after a change of stations or zoom, is downloaded once and should be committed too.
@@ -25,12 +26,12 @@ MAP_WIDTH = 520
 USER_AGENT = "ha-carburants-france screenshots (+https://github.com/juju35/ha-carburants-france)"
 VERSION = json.loads((ROOT / "custom_components/carburants_france/manifest.json").read_text())["version"]
 NOW = "2026-10-20T08:30:00+02:00"
-WIDTH = 410
+WIDTH = 460
 
 THEMES = {
     "light": {
         "--primary-background-color": "#e8eaed",
-        "--secondary-background-color": "#f2f2f2",
+        "--secondary-background-color": "#ececec",
         "--card-background-color": "#ffffff",
         "--primary-text-color": "#212121",
         "--secondary-text-color": "#727272",
@@ -126,7 +127,7 @@ STATIONS = [
         "station_id": 35000021,
         "station_name": "Relais Rennes Alma",
         "brand": "Total Access",
-        "address": "Centre commercial Alma",
+        "address": "Alma shopping centre",
         "postcode": "35200",
         "city": "Rennes",
         "distance": 2.3,
@@ -136,7 +137,7 @@ STATIONS = [
         "highway": False,
         "automate_24_24": True,
         "hours": hours("07:00", "21:00"),
-        "services": ["Relais colis", "Piste poids lourds", "Automate CB 24/24"],
+        "services": ["Parcel pickup", "Truck lane", "24/7 card payment"],
         "fuels": {
             "gazole": fuel(2.249, "2026-10-19T16:30:00Z"),
             "e10": fuel(2.259, "2026-10-19T16:30:00Z"),
@@ -157,7 +158,7 @@ STATIONS = [
         "highway": False,
         "automate_24_24": True,
         "hours": hours("08:00", "20:00"),
-        "services": ["Boutique alimentaire", "Lavage automatique"],
+        "services": ["Food shop", "Automatic car wash"],
         "fuels": {
             "gazole": fuel(2.265, "2026-10-19T09:00:00Z"),
             "e10": fuel(2.239, "2026-10-19T09:00:00Z"),
@@ -178,7 +179,7 @@ STATIONS = [
         "highway": False,
         "automate_24_24": True,
         "hours": [{"day": d, "closed": False, "ranges": []} for d in range(1, 8)],
-        "services": ["Relais colis"],
+        "services": ["Parcel pickup"],
         "fuels": {"gazole": fuel(2.299, "2026-10-20T01:30:00Z"), "sp98": fuel(2.349, "2026-10-20T01:30:00Z")},
     },
     {
@@ -195,7 +196,7 @@ STATIONS = [
         "highway": False,
         "automate_24_24": False,
         "hours": hours("10:00", "19:30"),
-        "services": ["Relais colis", "Lavage manuel"],
+        "services": ["Parcel pickup", "Hand car wash"],
         "fuels": {
             "gazole": fuel(2.319, "2026-10-20T03:30:00Z"),
             "e10": fuel(2.299, "2026-10-20T03:30:00Z"),
@@ -237,7 +238,7 @@ STATES = {
                 {"key": "sp98", "name": "SP98"},
             ],
             "stations": STATIONS,
-            "friendly_name": "Carburants Stations",
+            "friendly_name": "Fuel Stations",
         },
     },
 }
@@ -313,27 +314,24 @@ ALL_FUEL_STATES = {
 }
 
 SHOTS = [
-    {"file": "card", "theme": "light", "lang": "en", "config": {}, "expand": None},
+    {"file": "card", "theme": "light", "config": {}, "expand": None},
     {
         "file": "card-dark",
         "theme": "dark",
-        "lang": "fr",
-        "config": {"title": "Autour de la maison", "sort": "distance"},
+        "config": {"title": "Around home", "sort": "distance"},
         "expand": "35000021",
     },
     {
         "file": "card-all-fuels",
         "theme": "light",
-        "lang": "fr",
-        "config": {"title": "Tous les carburants"},
+        "config": {"title": "All fuels"},
         "expand": None,
         "states": ALL_FUEL_STATES,
     },
     {
         "file": "card-all-fuels-dark",
         "theme": "dark",
-        "lang": "fr",
-        "config": {"title": "Tous les carburants"},
+        "config": {"title": "All fuels"},
         "expand": None,
         "states": ALL_FUEL_STATES,
     },
@@ -461,10 +459,10 @@ MAP_CONFIG = {
     "tile_attribution": "&copy; OpenStreetMap contributors",
 }
 MAP_SHOTS = [
-    {"file": "map", "theme": "light", "lang": "fr", "config": {}, "action": None},
-    {"file": "map-dark", "theme": "dark", "lang": "fr", "config": {}, "action": None},
-    {"file": "map-nearby", "theme": "light", "lang": "fr", "config": {"radius": 2}, "action": "near"},
-    {"file": "map-search", "theme": "dark", "lang": "fr", "config": {}, "action": "city"},
+    {"file": "map", "theme": "light", "config": {}, "action": None},
+    {"file": "map-dark", "theme": "dark", "config": {}, "action": None},
+    {"file": "map-nearby", "theme": "light", "config": {"radius": 2}, "action": "near"},
+    {"file": "map-search", "theme": "dark", "config": {}, "action": "city"},
 ]
 
 
@@ -536,10 +534,10 @@ def map_shot(page, shot, out_dir):
     page.add_script_tag(content=HA_ELEMENTS)
     page.add_script_tag(content=CARD_JS)
     page.evaluate(
-        """({config, states, dark, lang, results}) => {
+        """({config, states, dark, results}) => {
           const el = document.createElement("carburants-france-map-card");
           el.setConfig({type: "custom:carburants-france-map-card", ...config});
-          el.hass = {states, language: lang, locale: {language: lang}, themes: {darkMode: dark}, user: {id: "u"},
+          el.hass = {states, language: "en", locale: {language: "en"}, themes: {darkMode: dark}, user: {id: "u"},
                      callService: () => Promise.resolve(),
                      callWS: (msg) => Promise.resolve(msg.type === "carburants_france/search"
                        ? structuredClone(msg.query ? results.city : results.near) : {})};
@@ -549,7 +547,6 @@ def map_shot(page, shot, out_dir):
             "config": {**MAP_CONFIG, **shot["config"]},
             "states": MAP_STATES,
             "dark": shot["theme"] == "dark",
-            "lang": shot["lang"],
             "results": SEARCH_RESULTS,
         },
     )
@@ -577,7 +574,7 @@ def map_shot(page, shot, out_dir):
     if ERRORS:
         raise TileError(ERRORS[0])
     name = f"{shot['file']}.png"
-    card.screenshot(path=str(out_dir / name), animations="disabled")
+    framed_shot(page, out_dir / name, MAP_WIDTH)
     print(f"screenshots/{name}")
 
 
@@ -585,9 +582,19 @@ def page_html(theme, width=WIDTH):
     variables = "".join(f"{k}:{v};" for k, v in {**THEMES[theme], **COMMON}.items())
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
   :root {{ {variables} }}
-  body {{ margin: 0; background: var(--primary-background-color); color: var(--primary-text-color);
+  body {{ margin: 0; padding: 16px; background: var(--primary-background-color); color: var(--primary-text-color);
          font-family: Roboto, Inter, "Segoe UI", Helvetica, Arial, sans-serif; width: {width}px; }}
 </style></head><body><div id="root"></div></body></html>"""
+
+
+def framed_shot(page, path, width):
+    """The card with 16 px of theme background around it."""
+    box = page.locator("#root").bounding_box()
+    page.screenshot(
+        path=str(path),
+        clip={"x": 0, "y": 0, "width": width + 32, "height": int(box["height"] + 0.999) + 32},
+        animations="disabled",
+    )
 
 
 def main():
@@ -595,7 +602,7 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=os.environ.get("CHROMIUM") or None)
         context = browser.new_context(
-            device_scale_factor=2, viewport={"width": 1000, "height": 2400}, locale="fr-FR", timezone_id="Europe/Paris"
+            device_scale_factor=2, viewport={"width": 1000, "height": 2400}, locale="en-US", timezone_id="Europe/Paris"
         )
         # Served from the made-up origin too, so the cards find the brand logos.
         context.route(f"{ORIGIN}/**", serve)
@@ -608,10 +615,10 @@ def main():
             page.add_script_tag(content=HA_ELEMENTS)
             page.add_script_tag(content=CARD_JS)
             page.evaluate(
-                """({config, states, dark, lang}) => {
+                """({config, states, dark}) => {
                   const el = document.createElement("carburants-france-card");
                   el.setConfig({type: "custom:carburants-france-card", ...config});
-                  el.hass = {states, language: lang, locale: {language: lang}, themes: {darkMode: dark},
+                  el.hass = {states, language: "en", locale: {language: "en"}, themes: {darkMode: dark},
                              callService: () => Promise.resolve(), callWS: () => Promise.resolve({})};
                   document.getElementById("root").appendChild(el);
                 }""",
@@ -619,7 +626,6 @@ def main():
                     "config": shot["config"],
                     "states": shot.get("states", STATES),
                     "dark": shot["theme"] == "dark",
-                    "lang": shot["lang"],
                 },
             )
             if shot["expand"]:
@@ -631,7 +637,7 @@ def main():
             )
             page.wait_for_timeout(600)
             name = f"{shot['file']}.png"
-            page.locator("carburants-france-card").screenshot(path=str(out_dir / name), animations="disabled")
+            framed_shot(page, out_dir / name, WIDTH)
             page.close()
             print(f"screenshots/{name}")
 
@@ -639,7 +645,7 @@ def main():
         context = browser.new_context(
             device_scale_factor=2,
             viewport={"width": 1000, "height": 1400},
-            locale="fr-FR",
+            locale="en-US",
             timezone_id="Europe/Paris",
             geolocation=HERE,
             permissions=["geolocation"],
