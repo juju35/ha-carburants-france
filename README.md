@@ -215,6 +215,10 @@ actions:
 
 ## Screenshots
 
+While prices refresh, the card animates: the refresh button spins until the update finishes. It settles to a still card once done (and honours `prefers-reduced-motion`).
+
+![refresh animation](screenshots/refreshing.gif)
+
 | Light | Dark (station expanded, sorted by distance) |
 |---|---|
 | ![card](screenshots/card.png) | ![card dark](screenshots/card-dark.png) |
@@ -268,7 +272,7 @@ The map card uses [Leaflet](https://leafletjs.com) and, for the `ha` base map, [
 ```bash
 pip install -r requirements_test.txt && pytest
 pip install playwright && playwright install chromium
-python scripts/screenshots.py   # renders the list card with mock stations into screenshots/
+python scripts/screenshots.py   # renders the list card into screenshots/ and makes refreshing.gif (needs ffmpeg)
 ```
 
 ### Releasing
