@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changes
+- List and map cards: the header icon is now the fuel pump in a round badge tinted with the theme's primary colour, like the other cards.
+
 ## 1.6.2
 
 ### Fixes

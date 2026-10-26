@@ -1,29 +1,5 @@
 var CARBURANTS_CARD_VERSION = '1.6.2';
 
-// ── Integration icon (same drawing as brand/icon.png) ────────────────────────
-// bg: tile and screen colour. On a dark card the navy tile melts into the background, so the dark
-// version uses a lighter navy with a thin light outline.
-function carbIconSvg(bg, outline) {
-  return `data:image/svg+xml;utf8,${encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">' +
-    `<rect width="256" height="256" rx="56" fill="${bg}"/>` +
-    (outline ? '<rect x="4" y="4" width="248" height="248" rx="52" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="8"/>' : '') +
-    '<rect x="64" y="56" width="96" height="148" rx="14" fill="#F5A623"/>' +
-    `<rect x="78" y="72" width="68" height="52" rx="6" fill="${bg}"/>` +
-    '<polyline points="86,86 100,98 113,91 126,108 138,112" fill="none" stroke="#12A37F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>' +
-    `<rect x="88" y="142" width="48" height="8" rx="4" fill="${bg}" opacity="0.35"/>` +
-    '<rect x="52" y="196" width="120" height="14" rx="7" fill="#F5A623"/>' +
-    '<path d="M160 156 H176 Q192 156 192 140 V100 L176 82" fill="none" stroke="#F5A623" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-  )}`;
-}
-var CARBURANTS_ICON = carbIconSvg('#1B2A41', false);
-var CARBURANTS_ICON_DARK = carbIconSvg('#2D4468', true);
-
-// Header icon for the current Home Assistant theme.
-function carbIcon(hass) {
-  return hass?.themes?.darkMode ? CARBURANTS_ICON_DARK : CARBURANTS_ICON;
-}
-
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
 
@@ -511,7 +487,7 @@ class CarburantsFranceCard extends HTMLElement {
     var title = this._config.title || t.default_title;
     var icon = this._config.show_icon
       ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
-        '<img class="icon" src="' + carbIcon(this._hass) + '" alt="data.economie.gouv.fr"></a>'
+        '<span class="icon hbadge"><ha-icon icon="mdi:gas-station"></ha-icon></span></a>'
       : '';
     // The last refresh error stays in the button's tooltip until the next refresh.
     var refreshTitle = this._refreshError ? `${t.refresh_failed} ${this._refreshError}` : t.refresh;
@@ -723,7 +699,8 @@ class CarburantsFranceCard extends HTMLElement {
       '.hname { font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.hsub { font-size: 12px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.icon-link { display: flex; flex: none; }',
-      '.icon { width: 36px; height: 36px; display: block; }',
+      // Generic fuel pump in a round badge tinted with the theme's primary colour.
+      '.hbadge { --c: var(--primary-color, #03a9f4); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); --mdc-icon-size: 24px; }',
       '.refresh-btn.spinning ha-icon { animation: carb-spin 1s linear infinite; }',
       '@keyframes carb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }',
       '.empty { padding: 12px 16px; color: var(--secondary-text-color); }',
@@ -1140,8 +1117,6 @@ class CarburantsFranceMapCard extends HTMLElement {
       // Theme switched in Home Assistant: dark filter and light / dark vector style follow.
       this._root.querySelector('.map').classList.toggle('dark', this._darkTiles());
       this._reloadTilesIfNeeded();
-      var img = this._root.querySelector('.icon');
-      if (img && img.getAttribute('src') !== carbIcon(hass)) img.setAttribute('src', carbIcon(hass));
     }
   }
 
@@ -1300,7 +1275,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     // Same icon as the list card, opening the government data page.
     var icon = this._config.show_icon
       ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
-        '<img class="icon" src="' + carbIcon(this._hass) + '" alt="data.economie.gouv.fr"></a>'
+        '<span class="icon hbadge"><ha-icon icon="mdi:gas-station"></ha-icon></span></a>'
       : '';
     var tools = '';
     if (this._config.show_locate) {
@@ -2010,7 +1985,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.header { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 12px 12px 8px; }',
       '.hname { min-width: 0; font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.icon-link { display: flex; flex: none; }',
-      '.icon { width: 36px; height: 36px; display: block; }',
+      // Generic fuel pump in a round badge tinted with the theme's primary colour.
+      '.hbadge { --c: var(--primary-color, #03a9f4); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); --mdc-icon-size: 24px; }',
       '.header[hidden], .message[hidden] { display: none; }',
       '.message { padding: 12px 16px; color: var(--secondary-text-color); }',
       '.map { width: 100%; background: var(--secondary-background-color, #e5e5e5); z-index: 0; }',
