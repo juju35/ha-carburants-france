@@ -90,7 +90,8 @@ class CarburantsApi:
             where = f"id={int(query)}"
         elif re.fullmatch(r"\d{5}", query):
             where = f'cp="{query}"'
-        elif re.fullmatch(r"\d{2}|2[AB]", query, re.IGNORECASE):
+        elif re.fullmatch(r"\d{2}|2[AB]|97[1-6]", query, re.IGNORECASE):
+            # Two digits, Corsica, or a three-digit overseas department (971-976).
             where = f'code_departement="{query.upper()}"'
         elif towns_only:
             where = f'search(ville, "{query}")'
