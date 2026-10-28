@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Kraftstoffpreise und Verfügbarkeit, veröffentlicht von der französischen Regierung (data.economie.gouv.fr), kein API-Schlüssel nötig.",
+        "data": { "name": "Name", "fuels": "Zu beobachtende Kraftstoffe" }
+      },
+      "search": {
+        "title": "Tankstellen suchen",
+        "description": "Postleitzahl, Ort, Départementnummer oder Tankstellen-ID. Leer lassen, um im Umkreis um dein Zuhause zu suchen.",
+        "data": { "query": "Suche", "radius": "Umkreis um das Zuhause" }
+      },
+      "stations": {
+        "title": "Tankstellen auswählen",
+        "description": "{count} Tankstellen gefunden, nach Entfernung von deinem Zuhause sortiert. Aktiviere „Neue Suche“, um Tankstellen an einem anderen Ort hinzuzufügen: Die Auswahl bleibt erhalten.",
+        "data": { "stations": "Tankstellen", "search_again": "Neue Suche" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Die Kraftstoffpreis-API ist nicht erreichbar. Versuche es später erneut.",
+      "no_results": "Keine Tankstelle gefunden. Versuche es mit einer Postleitzahl, einem anderen Ort oder einem größeren Umkreis.",
+      "no_station": "Wähle mindestens eine Tankstelle aus.",
+      "no_fuel": "Wähle mindestens einen Kraftstoff aus.",
+      "unknown": "Unerwarteter Fehler, siehe das Home Assistant-Protokoll."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Carburants France-Optionen",
+        "data": {
+          "fuels": "Zu beobachtende Kraftstoffe",
+          "stations": "Beobachtete Tankstellen",
+          "add_stations": "Tankstellen hinzufügen",
+          "rename_stations": "Tankstellen umbenennen",
+          "scan_interval": "Aktualisierungsintervall"
+        },
+        "data_description": {
+          "stations": "Deaktiviere eine Tankstelle, um sie nicht mehr zu beobachten.",
+          "rename_stations": "Gib den Tankstellen im nächsten Schritt eigene Namen.",
+          "scan_interval": "Der Datenfeed der Regierung wird alle 10 Minuten aktualisiert."
+        }
+      },
+      "names": {
+        "title": "Tankstellen umbenennen",
+        "description": "Angezeigter Name jeder Tankstelle. Leer lassen, um den automatischen Namen (OpenStreetMap oder Marke und Ort) zu behalten, der vor dem Bindestrich steht."
+      },
+      "search": {
+        "title": "Tankstellen suchen",
+        "description": "Postleitzahl, Ort, Départementnummer oder Tankstellen-ID. Leer lassen, um im Umkreis um dein Zuhause zu suchen.",
+        "data": { "query": "Suche", "radius": "Umkreis um das Zuhause" }
+      },
+      "stations": {
+        "title": "Tankstellen auswählen",
+        "description": "{count} Tankstellen gefunden, nach Entfernung von deinem Zuhause sortiert. Aktiviere „Neue Suche“, um Tankstellen an einem anderen Ort hinzuzufügen: Die Auswahl bleibt erhalten.",
+        "data": { "stations": "Tankstellen", "search_again": "Neue Suche" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Die Kraftstoffpreis-API ist nicht erreichbar. Versuche es später erneut.",
+      "no_results": "Keine Tankstelle gefunden. Versuche es mit einer Postleitzahl, einem anderen Ort oder einem größeren Umkreis.",
+      "no_station": "Wähle mindestens eine Tankstelle aus.",
+      "no_fuel": "Wähle mindestens einen Kraftstoff aus.",
+      "unknown": "Unerwarteter Fehler, siehe das Home Assistant-Protokoll."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Bester Preis {fuel}" },
+      "stations": { "name": "Tankstellen" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} verfügbar" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Aktualisieren",
+      "description": "Ruft die Preise sofort ab.",
+      "fields": {
+        "config_entry_id": { "name": "Eintrag", "description": "Nur dieser Eintrag. Standardmäßig alle." }
+      }
+    }
+  }
+}
