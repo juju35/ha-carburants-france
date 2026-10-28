@@ -334,7 +334,11 @@ function carbOpening(station, t, now) {
   if (today && !today.closed) {
     for (var i = 0; i < today.ranges.length; i++) {
       var r = today.ranges[i];
-      if (minutes >= carbMinutes(r[0]) && minutes < carbMinutes(r[1])) {
+      var start = carbMinutes(r[0]);
+      var end = carbMinutes(r[1]);
+      // A range crossing midnight (e.g. 22:00 → 02:00) has end <= start.
+      var open = end <= start ? minutes >= start || minutes < end : minutes >= start && minutes < end;
+      if (open) {
         return { key: 'open', text: `${t.open} · ${t.closes_at} ${r[1]}` };
       }
     }
