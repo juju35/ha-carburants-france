@@ -24,7 +24,7 @@ Home Assistant integration for [fuel prices in France](https://data.economie.gou
 - `custom:carburants-france-card` card, **shipped with the integration** and loaded automatically: logos, prices, shortages, best price in green, live opening status, opening hours, services and directions on click
 - `custom:carburants-france-map-card` map card: your stations on a map, with the logo and the price of a fuel on each marker, your home, and the station details on click; **Locate me** button to see the stations around you (radius picked in the title) and **search by town**, without adding them to the integration
 - Add or remove stations and fuels at any time from the options
-- English and French
+- English, French, German and Spanish
 
 ## Prerequisites
 
@@ -293,6 +293,8 @@ The integration and the cards follow the language of Home Assistant. Currently s
 |---|---|
 | English | `en` |
 | Français | `fr` |
+| Deutsch | `de` |
+| Español | `es` |
 
 Contributions for additional languages are welcome!
 
