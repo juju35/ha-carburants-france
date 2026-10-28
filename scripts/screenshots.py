@@ -652,9 +652,7 @@ def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;")
     else:
         page = mount(context, shot)
         render = "el._render();"
-    page.evaluate(
-        f"""() => {{ const el = document.getElementById("root").firstElementChild; {prime} {render} }}"""
-    )
+    page.evaluate(f"""() => {{ const el = document.getElementById("root").firstElementChild; {prime} {render} }}""")
     page.wait_for_timeout(200)
     width = shot.get("width", WIDTH)
     box = page.locator("#root").bounding_box()
@@ -671,9 +669,19 @@ def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;")
         out = str(ROOT / "screenshots" / f"{shot['file']}.gif")
         subprocess.run(
             [
-                "ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps), "-i", f"{frame_dir}/f%03d.png",
-                "-vf", f"scale={clip['width']}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer:bayer_scale=4",
-                "-loop", "0", out,
+                "ffmpeg",
+                "-y",
+                "-loglevel",
+                "error",
+                "-framerate",
+                str(fps),
+                "-i",
+                f"{frame_dir}/f%03d.png",
+                "-vf",
+                f"scale={clip['width']}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer:bayer_scale=4",
+                "-loop",
+                "0",
+                out,
             ],
             check=True,
         )
