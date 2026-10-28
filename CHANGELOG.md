@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.7.1
+
+### Fixes
+- List card: a station whose opening hours cross midnight (e.g. 22:00 to 02:00, or closing at 00:00) is now shown as open during those hours.
+- Search: three-digit overseas departments (971 to 976) search the department instead of a town.
+- Best price: a station at an unknown distance no longer wins a price tie over a nearby one; the list card's best-price star follows the map card (more than one visible station).
+- Brand names: a failed download with nothing cached is retried after 1 hour instead of staying empty for 7 days.
+- Cards: a logo that fails to load is drawn as initials right away (list and map markers) instead of being requested again at every refresh; the 60 s refresh no longer redraws an unchanged list, so selected text is kept.
+
+### Maintenance
+- New refresh animation GIF in the README; the locate GIF is recorded on the map card.
+- Screenshots workflow hardened (retried apt steps, no commits from forks or manual runs); lint fixes.
+
 ## 1.7.0
 ### Changes
 - List and map cards: the header icon is now the fuel pump in a round badge tinted with the theme's primary colour, like the other cards.
