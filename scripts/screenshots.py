@@ -533,7 +533,10 @@ def serve(route):
         route.fulfill(status=404, body="")
 
 
-def map_shot(page, shot, out_dir):
+def mount_map(context, shot):
+    """Mount the map card for one shot on a fresh page and return it (shared by the stills and the locate GIF)."""
+    page = context.new_page()
+    page.on("pageerror", lambda err: print(f"pageerror: {err}"))
     page.goto(f"{ORIGIN}/{shot['theme']}?width={MAP_WIDTH}")
     page.add_script_tag(content=HA_ELEMENTS)
     page.add_script_tag(content=CARD_JS)
@@ -556,14 +559,11 @@ def map_shot(page, shot, out_dir):
     )
     card = page.locator("carburants-france-map-card")
     card.locator(".leaflet-marker-icon").first.wait_for(state="attached")
-    if shot["action"] == "near":
-        card.locator(".locate").click()
-        card.locator(".locate.active").wait_for()
-    elif shot["action"] == "city":
-        card.locator(".searchbar input").fill("Cesson")
-        card.locator(".searchbar input").press("Enter")
-        card.locator(".searchbar .clear:not(.empty)").wait_for()
-    # Every tile loaded and the fit animation over.
+    return page
+
+
+def wait_tiles(page):
+    """Every tile loaded and the fit animation over."""
     if ERRORS:
         raise TileError(ERRORS[0])
     page.wait_for_function(
@@ -577,9 +577,23 @@ def map_shot(page, shot, out_dir):
     page.wait_for_timeout(800)
     if ERRORS:
         raise TileError(ERRORS[0])
+
+
+def map_shot(context, shot, out_dir):
+    page = mount_map(context, shot)
+    card = page.locator("carburants-france-map-card")
+    if shot["action"] == "near":
+        card.locator(".locate").click()
+        card.locator(".locate.active").wait_for()
+    elif shot["action"] == "city":
+        card.locator(".searchbar input").fill("Cesson")
+        card.locator(".searchbar input").press("Enter")
+        card.locator(".searchbar .clear:not(.empty)").wait_for()
+    wait_tiles(page)
     name = f"{shot['file']}.png"
     framed_shot(page, out_dir / name, MAP_WIDTH)
     print(f"screenshots/{name}")
+    page.close()
 
 
 def page_html(theme, width=WIDTH):
@@ -631,9 +645,15 @@ def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;")
     """Record a card animation as a looping screenshots/<file>.gif (needs ffmpeg). `prime` is the JS that puts the
     card in its animated state. Every animation is paused and stepped frame by frame, so the GIF is identical
     whatever the machine's speed."""
-    page = mount(context, shot)
+    if shot.get("card") == "map":
+        page = mount_map(context, shot)
+        wait_tiles(page)
+        render = "el._renderHeader();"
+    else:
+        page = mount(context, shot)
+        render = "el._render();"
     page.evaluate(
-        f"""() => {{ const el = document.getElementById("root").firstElementChild; {prime} el._render(); }}"""
+        f"""() => {{ const el = document.getElementById("root").firstElementChild; {prime} {render} }}"""
     )
     page.wait_for_timeout(200)
     width = shot.get("width", WIDTH)
@@ -686,8 +706,6 @@ def main():
 
         # The refresh button spinning while prices reload, as a looping GIF (same mount as the plain card shot).
         animate(context, {"file": "refreshing", "theme": "light", "config": SHOTS[0]["config"]})
-        # The "locate me" button pulsing while it looks up the nearby stations.
-        animate(context, {"file": "locate", "theme": "light", "config": SHOTS[0]["config"]}, prime="el._busy = 'near';")
 
         # The map card: Leaflet and the tiles come from the made-up origin, the position from the browser.
         context = browser.new_context(
@@ -704,10 +722,13 @@ def main():
         # leaves them transparent. The map shows no time, the popups stay closed.
         try:
             for shot in MAP_SHOTS:
-                page = context.new_page()
-                page.on("pageerror", lambda err: print(f"pageerror: {err}"))
-                map_shot(page, shot, out_dir)
-                page.close()
+                map_shot(context, shot, out_dir)
+            # The "locate me" button pulsing while the map looks up the nearby stations (map card only).
+            animate(
+                context,
+                {"file": "locate", "theme": "light", "config": {}, "card": "map", "width": MAP_WIDTH},
+                prime="el._busy = 'near';",
+            )
         except Exception as err:
             raise SystemExit(
                 f"Map screenshots not made, OpenStreetMap tiles unreachable: {ERRORS[0] if ERRORS else err}"
