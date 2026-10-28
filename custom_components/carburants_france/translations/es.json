@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Precios y disponibilidad de los carburantes publicados por el Gobierno francés (data.economie.gouv.fr), sin clave de API.",
+        "data": { "name": "Nombre", "fuels": "Carburantes a seguir" }
+      },
+      "search": {
+        "title": "Buscar estaciones",
+        "description": "Código postal, municipio, número de departamento o ID de estación. Déjalo vacío para buscar alrededor de tu casa dentro del radio.",
+        "data": { "query": "Búsqueda", "radius": "Radio alrededor de casa" }
+      },
+      "stations": {
+        "title": "Elegir estaciones",
+        "description": "{count} estaciones encontradas, ordenadas por distancia a tu casa. Marca «Nueva búsqueda» para añadir estaciones en otro lugar: la selección se conserva.",
+        "data": { "stations": "Estaciones", "search_again": "Nueva búsqueda" }
+      }
+    },
+    "error": {
+      "cannot_connect": "No se puede conectar con la API de precios de carburantes. Inténtalo de nuevo más tarde.",
+      "no_results": "No se ha encontrado ninguna estación. Prueba con un código postal, otro municipio o un radio mayor.",
+      "no_station": "Elige al menos una estación.",
+      "no_fuel": "Elige al menos un carburante.",
+      "unknown": "Error inesperado, consulta el registro de Home Assistant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opciones de Carburants France",
+        "data": {
+          "fuels": "Carburantes a seguir",
+          "stations": "Estaciones seguidas",
+          "add_stations": "Añadir estaciones",
+          "rename_stations": "Renombrar estaciones",
+          "scan_interval": "Intervalo de actualización"
+        },
+        "data_description": {
+          "stations": "Desmarca una estación para dejar de seguirla.",
+          "rename_stations": "Pon tus propios nombres a las estaciones en el siguiente paso.",
+          "scan_interval": "Los datos del Gobierno se actualizan cada 10 minutos."
+        }
+      },
+      "names": {
+        "title": "Renombrar estaciones",
+        "description": "Nombre mostrado para cada estación. Déjalo vacío para mantener el nombre automático (OpenStreetMap, o marca y municipio), que aparece antes del guion."
+      },
+      "search": {
+        "title": "Buscar estaciones",
+        "description": "Código postal, municipio, número de departamento o ID de estación. Déjalo vacío para buscar alrededor de tu casa dentro del radio.",
+        "data": { "query": "Búsqueda", "radius": "Radio alrededor de casa" }
+      },
+      "stations": {
+        "title": "Elegir estaciones",
+        "description": "{count} estaciones encontradas, ordenadas por distancia a tu casa. Marca «Nueva búsqueda» para añadir estaciones en otro lugar: la selección se conserva.",
+        "data": { "stations": "Estaciones", "search_again": "Nueva búsqueda" }
+      }
+    },
+    "error": {
+      "cannot_connect": "No se puede conectar con la API de precios de carburantes. Inténtalo de nuevo más tarde.",
+      "no_results": "No se ha encontrado ninguna estación. Prueba con un código postal, otro municipio o un radio mayor.",
+      "no_station": "Elige al menos una estación.",
+      "no_fuel": "Elige al menos un carburante.",
+      "unknown": "Error inesperado, consulta el registro de Home Assistant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Mejor precio {fuel}" },
+      "stations": { "name": "Estaciones" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} disponible" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Actualizar",
+      "description": "Obtiene los precios ahora.",
+      "fields": {
+        "config_entry_id": { "name": "Entrada", "description": "Solo esta entrada. Por defecto, todas." }
+      }
+    }
+  }
+}

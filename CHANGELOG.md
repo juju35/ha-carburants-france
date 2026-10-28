@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.0
+
+### Changes
+- German and Spanish translations: configuration and options forms, entity names, the refresh action, and both cards (list and map, with their visual editors).
+
 ## 1.7.1
 
 ### Fixes

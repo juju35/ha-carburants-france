@@ -164,3 +164,21 @@ test('a map card detached in native full screen comes back out of full screen', 
     assert.equal(fsLink.title, 'Full screen');
   }
 });
+
+test('every card language has exactly the keys of English', () => {
+  const shape = (value) => {
+    if (Array.isArray(value)) return `array:${value.length}`;
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(Object.keys(value).sort().map((key) => [key, shape(value[key])]));
+    }
+    return typeof value;
+  };
+  const placeholders = (value) => JSON.stringify(value).match(/\{\w+\}/g)?.sort() ?? [];
+  for (const i18n of [context.CarburantsI18n, context.CarburantsMapI18n]) {
+    assert.deepEqual(Object.keys(i18n).sort(), ['de', 'en', 'es', 'fr']);
+    for (const lang of Object.keys(i18n)) {
+      assert.deepEqual(shape(i18n[lang]), shape(i18n.en), lang);
+      assert.deepEqual(placeholders(i18n[lang]), placeholders(i18n.en), lang);
+    }
+  }
+});
