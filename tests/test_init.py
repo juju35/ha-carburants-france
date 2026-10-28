@@ -650,6 +650,41 @@ async def test_names_downloaded_weekly_and_cached(hass, aioclient_mock, hass_sto
     assert aioclient_mock.call_count == 1
 
 
+@pytest.mark.real_names_download
+async def test_names_failed_download_retried_sooner(hass, aioclient_mock):
+    """GitHub down with no cached copy at all: the empty result is kept an hour, not a week."""
+    from datetime import timedelta
+
+    from freezegun import freeze_time
+
+    from custom_components.carburants_france.names import STATIONS_NAME_URL, async_get_names
+
+    aioclient_mock.get(STATIONS_NAME_URL, status=503)
+    assert await async_get_names(hass) == {}
+    # Cached, no second attempt right away.
+    assert await async_get_names(hass) == {}
+    assert aioclient_mock.call_count == 1
+
+    # GitHub is back an hour later: the names are there without a restart.
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(STATIONS_NAME_URL, json={"35132004": {"name": "RELAIS LES TROIS MARCHES", "brand": "Total"}})
+    with freeze_time(dt_util.utcnow() + timedelta(hours=2)):
+        assert await async_get_names(hass) == {"35132004": {"name": "Relais les Trois Marches", "brand": "Total"}}
+
+
+def test_best_price_tie_prefers_known_distance():
+    """On a price tie, a station at an unknown distance goes last, not first."""
+    from types import SimpleNamespace
+
+    from custom_components.carburants_france.coordinator import CarburantsCoordinator
+
+    def station(sid, distance):
+        return {"station_id": sid, "distance": distance, "fuels": {"gazole": {"price": 1.75, "available": True}}}
+
+    data = {"1": station(1, None), "2": station(2, 3.2)}
+    assert CarburantsCoordinator.best(SimpleNamespace(data=data), "gazole")["station_id"] == 2
+
+
 async def test_community_brand_first(hass, aioclient_mock, entry, community_names):
     """The community file wins over OpenStreetMap for the brand too; the logo stays OSM's."""
     community_names["35000013"] = {"name": "", "brand": "Total Access"}
@@ -780,6 +815,16 @@ async def test_ws_search_city(hass, aioclient_mock, entry, hass_ws_client):
     await client.send_json({"id": 3, "type": "carburants_france/search", "query": "35000"})
     msg = await client.receive_json()
     assert not msg["success"] and msg["error"]["code"] == "api_error"
+
+    # A three-digit overseas department (971-976) is a department search, not a town one.
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(API_RECORDS, json={"total_count": 1, "results": [STATION_A]})
+    await client.send_json({"id": 4, "type": "carburants_france/search", "query": "971"})
+    msg = await client.receive_json()
+    assert msg["success"], msg
+    assert msg["result"]["place"] is None
+    _, url, _, _ = aioclient_mock.mock_calls[0]
+    assert url.query["where"] == 'code_departement="971"'
 
 
 def _v1_entry(hass, title="Carburants", stations=None):

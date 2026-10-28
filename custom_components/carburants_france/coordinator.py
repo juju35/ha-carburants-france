@@ -219,4 +219,10 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
         ]
         if not offers:
             return None
-        return min(offers, key=lambda o: (o[0], o[1].get("distance") or 0))[1]
+
+        def by_price_then_distance(offer: tuple[float, dict[str, Any]]) -> tuple[float, float]:
+            # On a price tie, a station at an unknown distance goes last, not first.
+            distance = offer[1].get("distance")
+            return offer[0], float("inf") if distance is None else distance
+
+        return min(offers, key=by_price_then_distance)[1]

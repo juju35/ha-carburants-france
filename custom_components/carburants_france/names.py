@@ -28,6 +28,8 @@ STATIONS_NAME_URL = (
     "custom_components/prix_carburant/stations_name.json"
 )
 REFRESH = timedelta(days=7)
+# A failed download with nothing cached is retried after this delay, not kept a whole week.
+EMPTY_RETRY = timedelta(hours=1)
 TIMEOUT = aiohttp.ClientTimeout(total=30)
 STORAGE_KEY = f"{DOMAIN}.stations_name"
 DATA_NAMES = f"{DOMAIN}_names"
@@ -82,7 +84,7 @@ async def _async_download(hass: HomeAssistant) -> dict[str, dict[str, str]]:
 async def async_get_names(hass: HomeAssistant) -> dict[str, dict[str, str]]:
     """{station id: {name, brand}}, from memory, .storage or GitHub. Never raises."""
     loaded = hass.data.get(DATA_NAMES)
-    if loaded and dt_util.utcnow() - loaded[0] < REFRESH:
+    if loaded and dt_util.utcnow() - loaded[0] < (REFRESH if loaded[1] else EMPTY_RETRY):
         return loaded[1]
     store: Store[dict[str, Any]] = Store(hass, 1, STORAGE_KEY)
     cached = await store.async_load() or {}
@@ -100,6 +102,7 @@ async def async_get_names(hass: HomeAssistant) -> dict[str, dict[str, str]]:
         else:
             await store.async_save({"fetched": dt_util.utcnow().isoformat(), "names": names})
             _LOGGER.debug("Downloaded %d station names", len(names))
-    # Also cached on failure, so a long outage does not mean a download attempt per call.
+    # Also cached on failure, so a long outage does not mean a download attempt per call
+    # (retried after EMPTY_RETRY when the failure left no names at all).
     hass.data[DATA_NAMES] = (dt_util.utcnow(), names)
     return names
