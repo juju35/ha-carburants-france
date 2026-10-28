@@ -277,6 +277,10 @@ function carbLogo(s) {
   return s.logo ? { src: s.logo, own: false } : null;
 }
 
+// Logo URLs that failed to load once: drawn as an initials badge right away on the next
+// renders, so the browser does not replay the failing request on every redraw.
+var CARBURANTS_FAILED_LOGOS = new Set();
+
 // Extra classes of a logo <img>: own for a tile drawn as is, dark for a white logo.
 function carbLogoClass(known) {
   return (known.tile ? ' own' : '') + (known.dark ? ' dark' : '');
@@ -497,6 +501,8 @@ class CarburantsFranceCard extends HTMLElement {
     var refreshTitle = this._refreshError ? `${t.refresh_failed} ${this._refreshError}` : t.refresh;
 
     if (!st) {
+      this._headerHtml = null;
+      this._listHtml = null;
       header.innerHTML = `<div class="title">${icon}<div class="titles"><div class="hname">${carbEsc(title)}</div></div></div>`;
       list.innerHTML = `<div class="empty">${carbEsc(t.no_entity)}</div>`;
       this._root.querySelector('.footer').hidden = true;
@@ -517,24 +523,32 @@ class CarburantsFranceCard extends HTMLElement {
         carbEsc(carbToggleLabel(t, this._showAll, hidden)) + '</button>'
       : '';
 
-    header.innerHTML =
+    var headerHtml =
       '<div class="title">' + icon + '<div class="titles"><div class="hname">' + carbEsc(title) + '</div>' +
       '<div class="hsub">' + carbEsc(st.state) + ' ' + carbEsc(t.stations) + '</div></div></div>' +
       (this._config.show_refresh
         ? '<ha-icon-button class="refresh-btn' + (this._refreshing ? ' spinning' : '') + '" label="' + carbEsc(t.refresh) +
           '" title="' + carbEsc(refreshTitle) + '"><ha-icon icon="mdi:refresh"></ha-icon></ha-icon-button>'
         : '');
-    var refreshBtn = header.querySelector('.refresh-btn');
-    if (refreshBtn) refreshBtn.addEventListener('click', this._refresh.bind(this));
-
-    if (!stations.length) {
-      list.innerHTML = `<div class="empty">${carbEsc(hidden ? t.all_out : t.empty)}</div>`;
-      return;
+    if (headerHtml !== this._headerHtml) {
+      this._headerHtml = headerHtml;
+      header.innerHTML = headerHtml;
+      var refreshBtn = header.querySelector('.refresh-btn');
+      if (refreshBtn) refreshBtn.addEventListener('click', this._refresh.bind(this));
     }
+
     var now = new Date();
-    list.innerHTML = stations.map((s) => this._renderStation(s, fuels, best, t, now)).join('');
+    var listHtml = stations.length
+      ? stations.map((s) => this._renderStation(s, fuels, best, t, now, stations.length > 1)).join('')
+      : `<div class="empty">${carbEsc(hidden ? t.all_out : t.empty)}</div>`;
+    // The minute timer only refreshes the relative ages and the opening status: when nothing
+    // changed, leave the DOM alone (keeps a text selection, no listeners to re-attach).
+    if (listHtml === this._listHtml) return;
+    this._listHtml = listHtml;
+    list.innerHTML = listHtml;
     list.querySelectorAll('img.logo').forEach((img) => {
       img.addEventListener('error', () => {
+        CARBURANTS_FAILED_LOGOS.add(img.getAttribute('src'));
         var badge = document.createElement('div');
         badge.className = 'logo badge';
         badge.style.background = img.dataset.color;
@@ -567,11 +581,12 @@ class CarburantsFranceCard extends HTMLElement {
     var color = carbBrandColor(label || 'station');
     var initials = carbInitials(label);
     var known = carbLogo(s);
-    if (known) {
+    var failed = known && CARBURANTS_FAILED_LOGOS.has(known.src);
+    if (known && !failed) {
       return '<img class="logo' + carbLogoClass(known) + '" src="' + carbEsc(known.src) + '" alt="' + carbEsc(label) + '" loading="lazy" referrerpolicy="no-referrer"' +
         ' data-color="' + color + '" data-initials="' + carbEsc(initials) + '">';
     }
-    if (initials && s.brand) return `<div class="logo badge" style="background:${color}">${carbEsc(initials)}</div>`;
+    if (initials && (s.brand || failed)) return `<div class="logo badge" style="background:${color}">${carbEsc(initials)}</div>`;
     return '<div class="logo badge neutral"><ha-icon icon="mdi:gas-station"></ha-icon></div>';
   }
 
@@ -579,7 +594,7 @@ class CarburantsFranceCard extends HTMLElement {
     return `${new Intl.NumberFormat(this._locale(), { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(value)} €`;
   }
 
-  _renderStation(s, fuels, best, t, now) {
+  _renderStation(s, fuels, best, t, now, many) {
     var cfg = this._config;
     var id = String(s.station_id);
     var expanded = this._expandedId === id;
@@ -593,10 +608,10 @@ class CarburantsFranceCard extends HTMLElement {
     }
     if (s.highway) meta.push(carbEsc(t.highway));
 
-    var chips = fuels.map((f) => {
+    // Empty slot, so each fuel stays in the same column from one station to the next.
+    var slot = '<div class="fuel empty"></div>';
+    var chipList = fuels.map((f) => {
       var fuel = s.fuels?.[f.key];
-      // Empty slot, so each fuel stays in the same column from one station to the next.
-      var slot = '<div class="fuel empty"></div>';
       if (!fuel) return slot;
       if (!fuel.available && !fuel.rupture) {
         // Shortage just lifted, or no price published yet: the fuel is still sold here.
@@ -612,13 +627,16 @@ class CarburantsFranceCard extends HTMLElement {
           '<span class="fname">' + carbFuelBadge(f.key, f.name) + '</span><span class="fprice">' + carbEsc(t.out_of_stock) + '</span>' +
           (cfg.show_updated && since ? `<span class="fage">${carbEsc(since)}</span>` : '') + '</div>';
       }
-      var isBest = cfg.highlight_best && best[f.key] === fuel.price && Object.keys(this._lastState.attributes.stations).length > 1;
+      // Same criterion as the map card: more than one station actually shown.
+      var isBest = cfg.highlight_best && best[f.key] === fuel.price && many;
       return '<div class="fuel' + (isBest ? ' best' : '') + '"' + (isBest ? ` title="${carbEsc(t.best)}"` : '') + '>' +
         '<span class="fname">' + carbFuelBadge(f.key, f.name) + (isBest ? ' <ha-icon icon="mdi:star"></ha-icon>' : '') + '</span>' +
         '<span class="fprice">' + this._price(fuel.price) + '</span>' +
         (cfg.show_updated ? `<span class="fage">${carbEsc(carbRelative(fuel.updated, this._locale()))}</span>` : '') +
         '</div>';
-    }).join('');
+    });
+    var chips = chipList.join('');
+    var hasChips = chipList.some((c) => c !== slot);
 
     var html =
       '<div class="station" data-id="' + carbEsc(id) + '">' +
@@ -630,7 +648,7 @@ class CarburantsFranceCard extends HTMLElement {
       '</div>' +
       '<ha-icon class="chevron' + (expanded ? '' : ' closed') + '" icon="mdi:chevron-down"></ha-icon>' +
       '</div>' +
-      (chips.indexOf('fprice') !== -1
+      (hasChips
         ? `<div class="fuels"${carbFuelColumns(fuels.length)}>${chips}</div>`
         : '');
 
@@ -1246,6 +1264,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     this._root.querySelector('.map').addEventListener('error', (ev) => {
       var img = ev.target;
       if (img.tagName !== 'IMG' || !img.closest('.pin')) return;
+      CARBURANTS_FAILED_LOGOS.add(img.getAttribute('src'));
       var badge = document.createElement('span');
       badge.className = 'ini';
       badge.textContent = img.dataset.initials || '';
@@ -1900,6 +1919,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       if (this._config.show_logo) {
         var name = s.brand || s.station_name || '';
         var known = carbLogo(s);
+        if (known && CARBURANTS_FAILED_LOGOS.has(known.src)) known = null;
         logo = known
           ? '<img class="' + carbLogoClass(known).trim() + '" src="' + carbEsc(known.src) + '" alt="" referrerpolicy="no-referrer" data-initials="' +
             carbEsc(carbInitials(name)) + '">'
