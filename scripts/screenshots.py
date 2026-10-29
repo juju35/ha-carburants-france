@@ -1,6 +1,6 @@
 """Render the list and map cards with mock stations and save the README screenshots.
 
-Usage: python scripts/screenshots.py  (needs `pip install playwright pillow` and `playwright install chromium`;
+Usage: python scripts/screenshots.py  (needs `pip install playwright==1.64.1 pillow` and `playwright install chromium`;
 CHROMIUM=/path/to/chrome to use another browser)
 Every shot is in English, with 16 px of theme background around the card (list card 460 px wide, map card 520 px).
 The clock is frozen on a Tuesday at 08:30 in Paris, so opening hours and price ages stay the same.
