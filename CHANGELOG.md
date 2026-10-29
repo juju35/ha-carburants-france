@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.1
+
+### Fixes
+- Map card: the search bar and the full screen button now switch language at once when the `language` option changes in the visual editor, or when Home Assistant's language changes with `language: auto`, instead of after reloading the dashboard. The text being typed in the search bar is kept.
+
 ## 1.9.0
 
 ### Changes

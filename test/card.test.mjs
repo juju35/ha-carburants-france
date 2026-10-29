@@ -204,6 +204,69 @@ test('a map card detached in native full screen comes back out of full screen', 
   }
 });
 
+// Element stub enough for the search bar and the full screen button labels.
+const labelled = () => {
+  const attrs = {};
+  return { attrs, setAttribute: (name, value) => { attrs[name] = value; } };
+};
+
+test('changing the language option relabels the search bar and the full screen button in place', () => {
+  const input = Object.assign(labelled(), { value: 'Renn', placeholder: 'Search a town or postcode' });
+  const clear = Object.assign(labelled(), { title: 'Clear the search' });
+  const bar = { hidden: false, firstChild: input, querySelector: (sel) => ({ input, '.clear': clear })[sel] ?? null };
+  const fsLink = labelled();
+  const card = Object.assign(Object.create(CarburantsFranceMapCard.prototype), {
+    _root: { querySelector: (sel) => (sel === '.searchbar' ? bar : null) },
+    _fsLink: fsLink,
+    _hass: undefined,
+    matches: () => false,
+  });
+  card.setConfig({ entity: 'sensor.x', language: 'en' });
+  card.setConfig({ entity: 'sensor.x', language: 'fr' });
+  // Same input, not rebuilt: the text typed (and the focus) stay.
+  assert.equal(bar.querySelector('input'), input);
+  assert.equal(input.value, 'Renn');
+  assert.equal(input.placeholder, 'Rechercher une ville ou un code postal');
+  assert.equal(input.attrs['aria-label'], 'Rechercher une ville ou un code postal');
+  assert.equal(clear.title, 'Effacer la recherche');
+  assert.equal(clear.attrs['aria-label'], 'Effacer la recherche');
+  assert.equal(fsLink.title, 'Plein écran');
+  assert.equal(fsLink.attrs['aria-label'], 'Plein écran');
+});
+
+test('changing the language before the map card is drawn, or without search bar, does not fail', () => {
+  const card = Object.assign(Object.create(CarburantsFranceMapCard.prototype), { matches: () => false });
+  card.setConfig({ entity: 'sensor.x', language: 'en' });
+  card.setConfig({ entity: 'sensor.x', language: 'de' });
+  const empty = { hidden: true, firstChild: null, querySelector: () => null };
+  card._root = { querySelector: (sel) => (sel === '.searchbar' ? empty : null) };
+  card.setConfig({ entity: 'sensor.x', language: 'es', show_search: false });
+  assert.equal(card._config.language, 'es');
+});
+
+test('with language: auto, the map card labels follow a Home Assistant language switch', () => {
+  const input = Object.assign(labelled(), { value: '', placeholder: '' });
+  const clear = labelled();
+  const bar = { hidden: false, firstChild: input, querySelector: (sel) => ({ input, '.clear': clear })[sel] ?? null };
+  const fsLink = labelled();
+  const map = { classList: { toggle() {} } };
+  const card = Object.assign(Object.create(CarburantsFranceMapCard.prototype), {
+    _root: { querySelector: (sel) => ({ '.searchbar': bar, '.map': map })[sel] ?? null },
+    _fsLink: fsLink,
+    _map: {},
+    _lastState: null,
+    _reloadTilesIfNeeded() {},
+    matches: () => false,
+  });
+  card.setConfig({ entity: 'sensor.x', language: 'auto' });
+  card._update = () => {};
+  card.hass = { locale: { language: 'fr' }, states: {} };
+  assert.equal(input.placeholder, 'Rechercher une ville ou un code postal');
+  card.hass = { locale: { language: 'de' }, states: {} };
+  assert.equal(input.placeholder, 'Ort oder Postleitzahl suchen');
+  assert.equal(fsLink.title, 'Vollbild');
+});
+
 test('every card language has exactly the keys of English', () => {
   const shape = (value) => {
     if (Array.isArray(value)) return `array:${value.length}`;

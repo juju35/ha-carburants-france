@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.9.0';
+var CARBURANTS_CARD_VERSION = '1.9.1';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -1369,6 +1369,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     // A new default radius in the editor replaces the one picked in the header.
     if (previous && previous.radius !== this._config.radius) this._radius = null;
     if (previous && !!previous.show_fullscreen !== !!this._config.show_fullscreen) this._applyFullscreenOption();
+    this._syncLanguage();
     this._reloadTilesIfNeeded();
     // Read the current state now: a config change must redraw at once, not at the next hass update.
     this._lastState = this._hass && this._entityId() ? this._hass.states[this._entityId()] || null : null;
@@ -1378,6 +1379,8 @@ class CarburantsFranceMapCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    // language: auto follows the Home Assistant language, which can change without a reload.
+    this._syncLanguage();
     var entityId = this._entityId();
     var st = entityId ? hass.states[entityId] : null;
     if (st !== this._lastState || !this._map) {
@@ -1569,6 +1572,28 @@ class CarburantsFranceMapCard extends HTMLElement {
       this._headerHtml = html;
       header.innerHTML = html;
     }
+  }
+
+  // Language changed (editor option, or Home Assistant's with language: auto): relabel what is
+  // built only once, in place, keeping the focus and the text typed in the search bar.
+  // The header and the rest are redrawn by _update.
+  _syncLanguage() {
+    var lang = carbLang(this._hass, this._config?.language);
+    if (lang === this._labelsLang) return;
+    this._labelsLang = lang;
+    var mt = CarburantsMapI18n[lang];
+    var bar = this._root?.querySelector('.searchbar');
+    var input = bar?.querySelector('input');
+    if (input) {
+      input.placeholder = mt.search_city;
+      input.setAttribute('aria-label', mt.search_city);
+    }
+    var clear = bar?.querySelector('.clear');
+    if (clear) {
+      clear.title = mt.clear_search;
+      clear.setAttribute('aria-label', mt.clear_search);
+    }
+    this._updateFullscreenButton(mt);
   }
 
   // Built once: re-rendering would lose the focus and the caret while typing.
