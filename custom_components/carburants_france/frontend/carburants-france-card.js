@@ -22,10 +22,8 @@ var CarburantsI18n = {
     no_price: 'Sans prix',
     no_price_hint: 'Ni prix ni rupture publiés pour l\'instant',
     rupture_ended: 'rupture levée',
-    not_sold: 'Non vendu',
     since: 'depuis',
     best: 'Meilleur prix',
-    updated: 'Mis à jour',
     hours: 'Horaires',
     services: 'Services',
     directions: 'Itinéraire',
@@ -53,6 +51,8 @@ var CarburantsI18n = {
       highlight_best: 'Meilleur prix en vert',
       show_refresh: 'Bouton Actualiser',
       hide_out_of_stock_stations: 'Masquer les stations en rupture',
+      language: 'Langue',
+      language_auto: 'Selon Home Assistant',
     },
     sort_options: { price: 'Prix', distance: 'Distance', name: 'Nom', config: 'Ordre de configuration' },
   },
@@ -73,10 +73,8 @@ var CarburantsI18n = {
     no_price: 'No price',
     no_price_hint: 'No price nor shortage published yet',
     rupture_ended: 'shortage lifted',
-    not_sold: 'Not sold',
     since: 'since',
     best: 'Best price',
-    updated: 'Updated',
     hours: 'Opening hours',
     services: 'Services',
     directions: 'Directions',
@@ -104,6 +102,8 @@ var CarburantsI18n = {
       highlight_best: 'Best price in green',
       show_refresh: 'Refresh button',
       hide_out_of_stock_stations: 'Hide out of stock stations',
+      language: 'Language',
+      language_auto: 'Home Assistant language',
     },
     sort_options: { price: 'Price', distance: 'Distance', name: 'Name', config: 'Configuration order' },
   },
@@ -124,10 +124,8 @@ var CarburantsI18n = {
     no_price: 'Kein Preis',
     no_price_hint: 'Noch weder Preis noch Engpass veröffentlicht',
     rupture_ended: 'Engpass behoben',
-    not_sold: 'Nicht im Angebot',
     since: 'seit',
     best: 'Bester Preis',
-    updated: 'Aktualisiert',
     hours: 'Öffnungszeiten',
     services: 'Leistungen',
     directions: 'Route',
@@ -155,6 +153,8 @@ var CarburantsI18n = {
       highlight_best: 'Bester Preis in Grün',
       show_refresh: 'Schaltfläche Aktualisieren',
       hide_out_of_stock_stations: 'Nicht verfügbare Tankstellen ausblenden',
+      language: 'Sprache',
+      language_auto: 'Wie Home Assistant',
     },
     sort_options: { price: 'Preis', distance: 'Entfernung', name: 'Name', config: 'Reihenfolge der Konfiguration' },
   },
@@ -175,10 +175,8 @@ var CarburantsI18n = {
     no_price: 'Sin precio',
     no_price_hint: 'Aún no se ha publicado ni precio ni desabastecimiento',
     rupture_ended: 'desabastecimiento terminado',
-    not_sold: 'No disponible',
     since: 'desde',
     best: 'Mejor precio',
-    updated: 'Actualizado',
     hours: 'Horario',
     services: 'Servicios',
     directions: 'Cómo llegar',
@@ -206,12 +204,15 @@ var CarburantsI18n = {
       highlight_best: 'Mejor precio en verde',
       show_refresh: 'Botón Actualizar',
       hide_out_of_stock_stations: 'Ocultar las estaciones agotadas',
+      language: 'Idioma',
+      language_auto: 'Según Home Assistant',
     },
     sort_options: { price: 'Precio', distance: 'Distancia', name: 'Nombre', config: 'Orden de configuración' },
   },
 };
 
 var CARBURANTS_DEFAULTS = {
+  language: 'auto',
   sort: 'price',
   max_stations: 0,
   show_icon: true,
@@ -231,9 +232,24 @@ function carbEsc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 }
 
-function carbLang(hass) {
+// Card language: the `language` option when set (en/fr/de/es), else Home Assistant's language.
+function carbLang(hass, language) {
+  if (language && CarburantsI18n[language]) return language;
   var lang = ((hass && (hass.locale?.language || hass.language)) || navigator.language || 'en').slice(0, 2);
   return CarburantsI18n[lang] ? lang : 'en';
+}
+
+// Number and date locale: the configured language wins over Home Assistant's.
+function carbLocale(hass, language) {
+  if (language && CarburantsI18n[language]) return language;
+  return (hass?.locale?.language) || navigator.language || 'fr';
+}
+
+// Choices of the editors' `language` option, each language in its own name.
+function carbLanguageOptions(autoLabel) {
+  return [{ value: 'auto', label: autoLabel }].concat(
+    [['en', 'English'], ['fr', 'Français'], ['de', 'Deutsch'], ['es', 'Español']].map((l) => ({ value: l[0], label: l[1] })),
+  );
 }
 
 function carbTitleCase(s) {
@@ -429,25 +445,41 @@ function carbMinutes(hhmm) {
   return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10);
 }
 
+// Short weekday name in the card's locale ("lun.", "Mon", "Mo", "lun").
+function carbWeekday(date, locale) {
+  try {
+    return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date);
+  } catch (_e) {
+    return new Intl.DateTimeFormat('en', { weekday: 'short' }).format(date);
+  }
+}
+
 // Opening status from the feed's weekly hours: { key: open|closed|always|automate, text }.
-function carbOpening(station, t, now) {
+function carbOpening(station, t, now, locale) {
   var hours = station.hours || [];
   var day = now.getDay() === 0 ? 7 : now.getDay();
   var minutes = now.getHours() * 60 + now.getMinutes();
   var always = hours.length === 7 && hours.every((d) => !d.closed && d.ranges.some((r) => r[0] === '00:00' && carbMinutes(r[1]) >= 23 * 60 + 59));
   if (always) return { key: 'always', text: t.always_open };
   var today = hours.filter((d) => d.day === day)[0];
+  // A range crossing midnight (e.g. Friday 22:00 → 02:00, end <= start) is open from its start on its own
+  // day, and until its end on the next day: the small hours belong to the previous day's ranges.
+  var yesterday = hours.filter((d) => d.day === ((day + 5) % 7) + 1)[0];
+  var current = [];
+  if (yesterday && !yesterday.closed) {
+    yesterday.ranges.forEach((r) => {
+      if (carbMinutes(r[1]) <= carbMinutes(r[0]) && minutes < carbMinutes(r[1])) current.push(r);
+    });
+  }
   if (today && !today.closed) {
-    for (var i = 0; i < today.ranges.length; i++) {
-      var r = today.ranges[i];
+    today.ranges.forEach((r) => {
       var start = carbMinutes(r[0]);
       var end = carbMinutes(r[1]);
-      // A range crossing midnight (e.g. 22:00 → 02:00) has end <= start.
-      var open = end <= start ? minutes >= start || minutes < end : minutes >= start && minutes < end;
-      if (open) {
-        return { key: 'open', text: `${t.open} · ${t.closes_at} ${r[1]}` };
-      }
-    }
+      if (end <= start ? minutes >= start : minutes >= start && minutes < end) current.push(r);
+    });
+  }
+  if (current.length) {
+    return { key: 'open', text: `${t.open} · ${t.closes_at} ${current[0][1]}` };
   }
   if (station.automate_24_24) return { key: 'automate', text: t.automate };
   if (!hours.length) return null;
@@ -459,7 +491,7 @@ function carbOpening(station, t, now) {
   for (var k = 1; k <= 7; k++) {
     var d = hours.filter((x) => x.day === ((day - 1 + k) % 7) + 1)[0];
     if (d && !d.closed && d.ranges.length) {
-      var label = k === 1 ? '' : `${t.days[d.day - 1].slice(0, 3).toLowerCase()}. `;
+      var label = k === 1 ? '' : `${carbWeekday(new Date(now.getFullYear(), now.getMonth(), now.getDate() + k), locale)} `;
       return { key: 'closed', text: `${t.closed} · ${t.opens_at} ${label}${d.ranges[0][0]}` };
     }
   }
@@ -559,11 +591,11 @@ class CarburantsFranceCard extends HTMLElement {
   }
 
   _t() {
-    return CarburantsI18n[carbLang(this._hass)];
+    return CarburantsI18n[carbLang(this._hass, this._config?.language)];
   }
 
   _locale() {
-    return (this._hass?.locale?.language) || navigator.language || 'fr';
+    return carbLocale(this._hass, this._config?.language);
   }
 
   _ensureShell() {
@@ -700,7 +732,7 @@ class CarburantsFranceCard extends HTMLElement {
     var cfg = this._config;
     var id = String(s.station_id);
     var expanded = this._expandedId === id;
-    var opening = cfg.show_hours ? carbOpening(s, t, now) : null;
+    var opening = cfg.show_hours ? carbOpening(s, t, now, this._locale()) : null;
 
     var meta = [];
     if (cfg.show_brand && s.brand) meta.push(`<span class="brand">${carbEsc(s.brand)}</span>`);
@@ -918,12 +950,13 @@ class CarburantsFranceCardEditor extends HTMLElement {
   }
 
   _schema() {
-    var t = CarburantsI18n[carbLang(this._hass)];
+    var t = CarburantsI18n[carbLang(this._hass, this._config?.language)];
     var fuels = this._fuelOptions();
     var sorts = ['price', 'distance', 'name', 'config'].map((k) => ({ value: k, label: t.sort_options[k] }));
     return [
       { name: 'entity', selector: { entity: { domain: 'sensor', integration: 'carburants_france' } } },
       { name: 'title', selector: { text: {} } },
+      { name: 'language', selector: { select: { mode: 'dropdown', options: carbLanguageOptions(t.editor.language_auto) } } },
       { name: 'fuels', selector: { select: { multiple: true, mode: 'list', options: fuels } } },
       {
         type: 'grid',
@@ -957,9 +990,9 @@ class CarburantsFranceCardEditor extends HTMLElement {
   _render() {
     if (!this._hass || !this._config) return;
     if (!this._form) {
-      var t = CarburantsI18n[carbLang(this._hass)].editor;
       this._form = document.createElement('ha-form');
-      this._form.computeLabel = (field) => t[field.name] || field.name;
+      // Read at each render: the labels follow the `language` option picked in this editor.
+      this._form.computeLabel = (field) => CarburantsI18n[carbLang(this._hass, this._config?.language)].editor[field.name] || field.name;
       this._form.addEventListener('value-changed', this._valueChanged.bind(this));
       this.appendChild(this._form);
     }
@@ -977,9 +1010,9 @@ class CarburantsFranceCardEditor extends HTMLElement {
     });
     ['title', 'entity', 'sort_fuel'].forEach((key) => { if (!value[key]) delete value[key]; });
     if (Array.isArray(value.fuels) && !value.fuels.length) delete value.fuels;
-    var entityChanged = value.entity !== this._config.entity;
+    var rebuild = value.entity !== this._config.entity || value.language !== this._config.language;
     this._config = value;
-    if (entityChanged) this._setSchema();
+    if (rebuild) this._setSchema();
     this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: value }, bubbles: true, composed: true }));
   }
 }
@@ -1004,7 +1037,7 @@ if (!customElements.get('carburants-france-card')) {
 // ── carburants-france-map-card ────────────────────────────────────────────────
 // Leaflet ships with the integration: no CDN, only the map tiles come from the network.
 var CARBURANTS_STATIC = '/carburants_france_static';
-var CARBURANTS_MAP_DEFAULTS = { height: 400, show_icon: true, show_fullscreen: true, show_home: true, show_logo: true, show_name: true, map_style: 'ha', theme: 'auto', hide_out_of_stock_stations: true, show_locate: true, show_search: true, radius: 5 };
+var CARBURANTS_MAP_DEFAULTS = { language: 'auto', height: 400, show_icon: true, show_fullscreen: true, show_home: true, show_logo: true, show_name: true, map_style: 'ha', theme: 'auto', hide_out_of_stock_stations: true, show_locate: true, show_search: true, radius: 5 };
 // Radius choices of the nearby search, in km (the configured default is added when missing).
 var CARBURANTS_RADII = [1, 2, 5, 10, 15, 20, 30, 50];
 // Search icons, same drawings as ha-system-monitor-card.
@@ -1097,6 +1130,8 @@ var CarburantsMapI18n = {
       show_locate: 'Bouton « Me localiser »',
       show_search: 'Recherche par ville',
       radius: 'Rayon par défaut (km)',
+      language: 'Langue',
+      language_auto: 'Selon Home Assistant',
     },
     themes: { auto: 'Selon le thème', light: 'Clair', dark: 'Sombre' },
     styles: {
@@ -1147,6 +1182,8 @@ var CarburantsMapI18n = {
       show_locate: '"Locate me" button',
       show_search: 'Search by town',
       radius: 'Default radius (km)',
+      language: 'Language',
+      language_auto: 'Home Assistant language',
     },
     themes: { auto: 'Follow theme', light: 'Light', dark: 'Dark' },
     styles: {
@@ -1197,6 +1234,8 @@ var CarburantsMapI18n = {
       show_locate: 'Schaltfläche „Meinen Standort finden“',
       show_search: 'Suche nach Ort',
       radius: 'Standardradius (km)',
+      language: 'Sprache',
+      language_auto: 'Wie Home Assistant',
     },
     themes: { auto: 'Design folgen', light: 'Hell', dark: 'Dunkel' },
     styles: {
@@ -1247,6 +1286,8 @@ var CarburantsMapI18n = {
       show_locate: 'Botón «Localizarme»',
       show_search: 'Búsqueda por municipio',
       radius: 'Radio predeterminado (km)',
+      language: 'Idioma',
+      language_auto: 'Según Home Assistant',
     },
     themes: { auto: 'Según el tema', light: 'Claro', dark: 'Oscuro' },
     styles: {
@@ -1417,11 +1458,11 @@ class CarburantsFranceMapCard extends HTMLElement {
   }
 
   _t() {
-    return CarburantsI18n[carbLang(this._hass)];
+    return CarburantsI18n[carbLang(this._hass, this._config?.language)];
   }
 
   _locale() {
-    return (this._hass?.locale?.language) || navigator.language || 'fr';
+    return carbLocale(this._hass, this._config?.language);
   }
   // jscpd:ignore-end
 
@@ -1480,7 +1521,7 @@ class CarburantsFranceMapCard extends HTMLElement {
   }
 
   _mt() {
-    return CarburantsMapI18n[carbLang(this._hass)];
+    return CarburantsMapI18n[carbLang(this._hass, this._config?.language)];
   }
 
   // Radius of the nearby search: picked in the header, else the configured default.
@@ -1906,7 +1947,7 @@ class CarburantsFranceMapCard extends HTMLElement {
   // Real full screen where the browser allows it on an element; elsewhere (iPhone Safari and
   // the iOS app) the card covers the window instead.
   _addFullscreenControl(L) {
-    var mt = CarburantsMapI18n[carbLang(this._hass)];
+    var mt = CarburantsMapI18n[carbLang(this._hass, this._config?.language)];
     var Fullscreen = L.Control.extend({
       onAdd: () => {
         var bar = L.DomUtil.create('div', 'leaflet-bar carb-fs');
@@ -2015,7 +2056,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (!card) return;
     card.classList.toggle('fullscreen', on);
     card.classList.toggle('pseudo', !!this._pseudoFs);
-    this._updateFullscreenButton(CarburantsMapI18n[carbLang(this._hass)]);
+    this._updateFullscreenButton(CarburantsMapI18n[carbLang(this._hass, this._config?.language)]);
     // Leaflet and MapLibre resize to the new box, then the stations are fitted again.
     setTimeout(() => {
       this._fitted = false;
@@ -2184,7 +2225,7 @@ class CarburantsFranceMapCard extends HTMLElement {
   }
 
   _popup(s, fuels, best, t, now) {
-    var opening = carbOpening(s, t, now);
+    var opening = carbOpening(s, t, now, this._locale());
     var rows = fuels.map((f) => {
       var fuel = s.fuels?.[f.key];
       if (!fuel || fuel.rupture === 'definitive') return '';
@@ -2324,11 +2365,12 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
   }
 
   _schema() {
-    var mt = CarburantsMapI18n[carbLang(this._hass)];
+    var mt = CarburantsMapI18n[carbLang(this._hass, this._config?.language)];
     var entity = this._config.entity || CarburantsFranceCard._findEntity(this._hass);
     var st = entity && this._hass.states[entity];
     var fuels = ((st?.attributes.fuels) || []).map((f) => ({ value: f.key, label: f.name }));
     var themes = ['auto', 'light', 'dark'].map((k) => ({ value: k, label: mt.themes[k] }));
+    var languages = carbLanguageOptions(mt.editor.language_auto);
     var styles = Object.keys(CARBURANTS_MAP_STYLES).map((k) => ({ value: k, label: mt.styles[k] }));
     var custom = this._config.map_style === 'custom'
       ? [
@@ -2339,6 +2381,7 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
     return [
       { name: 'entity', selector: { entity: { domain: 'sensor', integration: 'carburants_france' } } },
       { name: 'title', selector: { text: {} } },
+      { name: 'language', selector: { select: { mode: 'dropdown', options: languages } } },
       {
         type: 'grid',
         name: '',
@@ -2374,9 +2417,9 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
   _render() {
     if (!this._hass || !this._config) return;
     if (!this._form) {
-      var t = CarburantsMapI18n[carbLang(this._hass)].editor;
       this._form = document.createElement('ha-form');
-      this._form.computeLabel = (field) => t[field.name] || field.name;
+      // Read at each render: the labels follow the `language` option picked in this editor.
+      this._form.computeLabel = (field) => CarburantsMapI18n[carbLang(this._hass, this._config?.language)].editor[field.name] || field.name;
       this._form.addEventListener('value-changed', this._valueChanged.bind(this));
       this.appendChild(this._form);
     }
@@ -2398,7 +2441,7 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
     }
     // An empty title hides the header: keep it as "" rather than dropping it.
     var rebuild = value.entity !== this._config.entity || value.map_style !== this._config.map_style ||
-      value.show_locate !== this._config.show_locate;
+      value.show_locate !== this._config.show_locate || value.language !== this._config.language;
     // jscpd:ignore-start
     this._config = value;
     if (rebuild) this._setSchema();

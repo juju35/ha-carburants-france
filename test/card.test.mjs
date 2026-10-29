@@ -22,8 +22,8 @@ const runTimers = () => {
   for (const fn of timers.splice(0)) fn?.();
 };
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
-const { carbBestPrices, carbVisibleStations, carbSetSchema, CarburantsFranceCard, CarburantsFranceMapCard } = context.carb;
+vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
+const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, CarburantsFranceCard, CarburantsFranceMapCard } = context.carb;
 
 const fuels = [{ key: 'gazole' }, { key: 'e10' }];
 const station = (id, gazole, e10) => ({
@@ -64,6 +64,45 @@ test('getCardSize counts the stations shown, max_stations and the footer', () =>
   assert.equal(size({ max_stations: 1 }), 1 + 2 + 1);
   assert.equal(size({ hide_out_of_stock_stations: false }), 1 + 4 * 2);
   assert.equal(CarburantsFranceCard.prototype.getCardSize.call({ _config: {}, _lastState: null }), 1);
+});
+
+// Weekly hours, Monday = 1 … Sunday = 7; days not listed are closed.
+const week = (spec) => [1, 2, 3, 4, 5, 6, 7].map((day) => (spec[day] ? { day, closed: false, ranges: spec[day] } : { day, closed: true, ranges: [] }));
+const at = (iso) => new Date(iso); // local time; 2026-10-29 is a Thursday
+const en = () => context.CarburantsI18n.en;
+
+test('carbOpening: a range crossing midnight is open in the small hours of the next day only', () => {
+  // Friday 22:00 → 02:00, Saturday closed: open on Saturday at 01:00.
+  const friNight = { hours: week({ 1: [['08:00', '20:00']], 5: [['22:00', '02:00']] }) };
+  assert.equal(carbOpening(friNight, en(), at('2026-10-31T01:00:00'), 'en').key, 'open');
+  assert.equal(carbOpening(friNight, en(), at('2026-10-31T01:00:00'), 'en').text, 'Open · closes at 02:00');
+  assert.equal(carbOpening(friNight, en(), at('2026-10-31T02:30:00'), 'en').key, 'closed');
+  assert.equal(carbOpening(friNight, en(), at('2026-10-30T23:00:00'), 'en').key, 'open');
+  // Thursday closed: not open on Friday at 01:00 (that part of Friday's range is Friday night's).
+  assert.equal(carbOpening(friNight, en(), at('2026-10-30T01:00:00'), 'en').key, 'closed');
+  // Sunday → Monday wraps around the week.
+  const sunNight = { hours: week({ 7: [['20:00', '00:00']], 1: [['06:00', '12:00']] }) };
+  assert.equal(carbOpening(sunNight, en(), at('2026-11-01T21:00:00'), 'en').key, 'open');
+  assert.equal(carbOpening(sunNight, en(), at('2026-11-02T00:30:00'), 'en').key, 'closed');
+});
+
+test('carbOpening names the next opening day in the card locale', () => {
+  const monday = { hours: week({ 1: [['08:00', '20:00']] }) };
+  const thu = at('2026-10-29T12:00:00');
+  assert.equal(carbOpening(monday, context.CarburantsI18n.en, thu, 'en').text, 'Closed · opens at Mon 08:00');
+  // The exact abbreviation depends on the ICU data ("Mo" or "Mo."): compare with Intl itself.
+  const mon = (locale) => new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(at('2026-11-02T12:00:00'));
+  assert.equal(carbOpening(monday, context.CarburantsI18n.de, thu, 'de').text, `Geschlossen · öffnet um ${mon('de')} 08:00`);
+  assert.equal(carbOpening(monday, context.CarburantsI18n.fr, thu, 'fr').text, `Fermé · ouvre à ${mon('fr')} 08:00`);
+  assert.notEqual(mon('de'), 'mon.');
+});
+
+test('carbLang prefers the language option over the Home Assistant language', () => {
+  const hass = { locale: { language: 'fr' } };
+  assert.equal(carbLang(hass), 'fr');
+  assert.equal(carbLang(hass, 'auto'), 'fr');
+  assert.equal(carbLang(hass, 'de'), 'de');
+  assert.equal(carbLang({ language: 'it' }), 'en');
 });
 
 test('carbSetSchema only hands ha-form a schema that changed', () => {
