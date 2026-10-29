@@ -83,13 +83,13 @@ Several entries are possible, for example one around your home and one along you
 
 ### Entities
 
-Each station is a device, named after its brand and town (can be renamed in Home Assistant). Entity ids are created in French.
+Each station is a device, named after its brand and town (can be renamed in Home Assistant). Entity ids follow the language of Home Assistant when the entities are created; the examples below are for English (the French variant is in parentheses).
 
 | Entity | Example | Description |
 |---|---|---|
 | Price | `sensor.leclerc_rennes_gazole` | Price in €/L. Unknown during a shortage. Attributes: update date, shortage, address, distance |
-| In stock | `binary_sensor.leclerc_rennes_gazole_disponible` | On when the fuel is available. Attributes: shortage type (`temporaire`, `definitive`) and start date |
-| Best price | `sensor.carburants_meilleur_prix_gazole` | Lowest price across the stations where the fuel is available, with the station as attributes |
+| In stock | `binary_sensor.leclerc_rennes_gazole_in_stock` (`binary_sensor.leclerc_rennes_gazole_disponible`) | On when the fuel is available. Attributes: shortage type (`temporaire`, `definitive`) and start date |
+| Best price | `sensor.carburants_best_price_gazole` (`sensor.carburants_meilleur_prix_gazole`) | Lowest price across the stations where the fuel is available, with the station as attributes |
 | Stations | `sensor.carburants_stations` | Number of followed stations, all the data as attributes (used by the cards) |
 
 A fuel in permanent shortage (no longer sold) has no entity, nor has a fuel that is not followed.
@@ -193,13 +193,13 @@ Get notified when diesel drops below 2 € at one of your stations:
 ```yaml
 triggers:
   - trigger: numeric_state
-    entity_id: sensor.carburants_meilleur_prix_gazole
+    entity_id: sensor.carburants_best_price_gazole
     below: 2
 actions:
   - action: notify.mobile_app_phone
     data:
-      title: Diesel at {{ states('sensor.carburants_meilleur_prix_gazole') }} €
-      message: "{{ state_attr('sensor.carburants_meilleur_prix_gazole', 'station_name') }}"
+      title: Diesel at {{ states('sensor.carburants_best_price_gazole') }} €
+      message: "{{ state_attr('sensor.carburants_best_price_gazole', 'station_name') }}"
 ```
 
 Get notified of a shortage:
@@ -207,7 +207,7 @@ Get notified of a shortage:
 ```yaml
 triggers:
   - trigger: state
-    entity_id: binary_sensor.leclerc_rennes_gazole_disponible
+    entity_id: binary_sensor.leclerc_rennes_gazole_in_stock
     to: "off"
 actions:
   - action: notify.mobile_app_phone
