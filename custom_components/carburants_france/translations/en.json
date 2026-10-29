@@ -13,7 +13,7 @@
       },
       "stations": {
         "title": "Pick stations",
-        "description": "{count} stations found, sorted by distance from home. Tick \"New search\" to add stations elsewhere: the selection is kept.",
+        "description": "{count} stations found, sorted by distance from home. Tick \"New search\" to add stations elsewhere: the selection is kept. A search returns at most {max} stations: narrow it (postcode, smaller radius) if yours is missing.",
         "data": { "stations": "Stations", "search_again": "New search" }
       }
     },
@@ -53,7 +53,7 @@
       },
       "stations": {
         "title": "Pick stations",
-        "description": "{count} stations found, sorted by distance from home. Tick \"New search\" to add stations elsewhere: the selection is kept.",
+        "description": "{count} stations found, sorted by distance from home. Tick \"New search\" to add stations elsewhere: the selection is kept. A search returns at most {max} stations: narrow it (postcode, smaller radius) if yours is missing.",
         "data": { "stations": "Stations", "search_again": "New search" }
       }
     },

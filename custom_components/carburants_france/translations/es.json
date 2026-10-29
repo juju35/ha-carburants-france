@@ -13,7 +13,7 @@
       },
       "stations": {
         "title": "Elegir estaciones",
-        "description": "{count} estaciones encontradas, ordenadas por distancia a tu casa. Marca «Nueva búsqueda» para añadir estaciones en otro lugar: la selección se conserva.",
+        "description": "{count} estaciones encontradas, ordenadas por distancia a tu casa. Marca «Nueva búsqueda» para añadir estaciones en otro lugar: la selección se conserva. Una búsqueda devuelve como máximo {max} estaciones: acótala (código postal, radio menor) si falta la tuya.",
         "data": { "stations": "Estaciones", "search_again": "Nueva búsqueda" }
       }
     },
@@ -53,7 +53,7 @@
       },
       "stations": {
         "title": "Elegir estaciones",
-        "description": "{count} estaciones encontradas, ordenadas por distancia a tu casa. Marca «Nueva búsqueda» para añadir estaciones en otro lugar: la selección se conserva.",
+        "description": "{count} estaciones encontradas, ordenadas por distancia a tu casa. Marca «Nueva búsqueda» para añadir estaciones en otro lugar: la selección se conserva. Una búsqueda devuelve como máximo {max} estaciones: acótala (código postal, radio menor) si falta la tuya.",
         "data": { "stations": "Estaciones", "search_again": "Nueva búsqueda" }
       }
     },
@@ -80,7 +80,7 @@
       "name": "Actualizar",
       "description": "Obtiene los precios ahora.",
       "fields": {
-        "config_entry_id": { "name": "Entrada", "description": "Solo esta entrada. Por defecto, todas." }
+        "config_entry_id": { "name": "Entrada de configuración", "description": "Solo esta entrada. Por defecto, todas." }
       }
     }
   }

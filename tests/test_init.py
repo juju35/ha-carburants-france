@@ -806,8 +806,24 @@ async def test_ws_search_nearby(hass, aioclient_mock, entry, hass_ws_client, com
     assert (b["station_id"], b["followed"], b["logo"]) == (35000099, False, None)
     assert b["distance"] is not None
     assert set(b["fuels"]) == {"gazole", "sp98", "e10"}
+    assert result["truncated"] is False
     # Nothing was added to the integration.
     assert [s["id"] for s in entry.options["stations"]] == [35000013, 35000025]
+
+
+async def test_ws_search_truncated(hass, aioclient_mock, entry, hass_ws_client):
+    """A full page of results (the API limit) is flagged: more stations may exist."""
+    from custom_components.carburants_france.const import MAX_RESULTS
+
+    await _setup(hass, aioclient_mock, entry)
+    aioclient_mock.clear_requests()
+    page = [{**STATION_B, "id": 35100000 + i} for i in range(MAX_RESULTS)]
+    aioclient_mock.get(API_RECORDS, json={"total_count": 120, "results": page})
+    client = await hass_ws_client(hass)
+    await client.send_json({"id": 1, "type": "carburants_france/search", "query": "35"})
+    msg = await client.receive_json()
+    assert msg["success"], msg
+    assert msg["result"]["truncated"] is True
 
 
 async def test_ws_search_city(hass, aioclient_mock, entry, hass_ws_client):
