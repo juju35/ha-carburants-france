@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.9.1';
+var CARBURANTS_CARD_VERSION = '1.9.2';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
