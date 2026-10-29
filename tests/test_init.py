@@ -596,6 +596,28 @@ async def test_community_names_first(hass, aioclient_mock, entry, community_name
     assert hass.states.get("sensor.relais_saint_malo_gazole") is not None
 
 
+async def test_community_names_missing_at_setup_picked_up_later(hass, aioclient_mock, entry, community_names):
+    """Names missing at setup (failed download) reach the stations and devices at a later update."""
+    from datetime import timedelta
+
+    from freezegun import freeze_time
+    from homeassistant.helpers import device_registry as dr
+
+    await _setup(hass, aioclient_mock, entry)
+    stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert stations[35000013]["station_name"] != "Relais Saint-Malo"
+
+    community_names["35000013"] = {"name": "RELAIS SAINT-MALO", "brand": "Total Access"}
+    with freeze_time(dt_util.utcnow() + timedelta(hours=2)):
+        await entry.runtime_data.async_refresh()
+        await hass.async_block_till_done()
+    stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert stations[35000013]["station_name"] == "Relais Saint-Malo"
+    device = get_device(dr.async_get(hass), (DOMAIN, f"{entry.entry_id}_35000013"), entry.entry_id)
+    assert device.name == "Relais Saint-Malo"
+    assert device.manufacturer == "Total Access"
+
+
 async def test_community_brand_when_osm_has_none(hass, aioclient_mock, entry, community_names):
     options = dict(entry.options)
     stations = [dict(s) for s in options["stations"]]
