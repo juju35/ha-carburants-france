@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.2
+
+### Fixes
+- Map card: when a single station is shown, its popup no longer shows the price in green as the best price, like its pin. The best price is only highlighted when several stations are shown, as in the list card.
+
 ## 1.9.1
 
 ### Fixes

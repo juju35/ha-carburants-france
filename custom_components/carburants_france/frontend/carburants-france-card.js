@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.9.1';
+var CARBURANTS_CARD_VERSION = '1.9.2';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -2206,7 +2206,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       var marker = L.marker([s.latitude, s.longitude], {
         icon: icon, riseOnHover: true, zIndexOffset: state === 'best' ? 1000 : 0, stationId: String(s.station_id),
       });
-      marker.bindPopup(this._popup(s, fuels, best, t, now), { maxWidth: 280, minWidth: 220 });
+      marker.bindPopup(this._popup(s, fuels, best, t, now, stations.length), { maxWidth: 280, minWidth: 220 });
       marker.addTo(this._layer);
       if (openId === String(s.station_id)) reopen = marker;
       points.push([s.latitude, s.longitude]);
@@ -2249,13 +2249,14 @@ class CarburantsFranceMapCard extends HTMLElement {
     return `${new Intl.NumberFormat(this._locale(), { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(value)} €`;
   }
 
-  _popup(s, fuels, best, t, now) {
+  // `count`: stations shown on the map. A lone station is not "the best price", as for its pin.
+  _popup(s, fuels, best, t, now, count) {
     var opening = carbOpening(s, t, now, this._locale());
     var rows = fuels.map((f) => {
       var fuel = s.fuels?.[f.key];
       if (!fuel || fuel.rupture === 'definitive') return '';
       var value = fuel.available
-        ? `<b${best[f.key] === fuel.price ? ' class="best"' : ''}>${this._price(fuel.price)}</b>`
+        ? `<b${best[f.key] === fuel.price && count > 1 ? ' class="best"' : ''}>${this._price(fuel.price)}</b>`
         : fuel.rupture
           ? `<span class="out">${carbEsc(t.out_of_stock)}</span>`
           : `<span class="nodata">${carbEsc(t.no_price)}</span>`;

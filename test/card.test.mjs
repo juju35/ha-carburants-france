@@ -284,3 +284,34 @@ test('every card language has exactly the keys of English', () => {
     }
   }
 });
+
+// The map popup, rendered alone: `this` only needs what _popup reads.
+const popup = (stationsShown, s, best) => CarburantsFranceMapCard.prototype._popup.call(
+  {
+    _locale: () => 'en',
+    _price: CarburantsFranceMapCard.prototype._price,
+    _results: null,
+    _mt: () => ({}),
+  },
+  { ...s, station_name: `S${s.station_id}`, address: 'x', city: 'y', latitude: 48, longitude: -1 },
+  fuels.map((f) => ({ ...f, name: f.key })),
+  best,
+  { out_of_stock: 'out', no_price: 'no price', directions: 'go', always_open: 'open' },
+  new Date(),
+  stationsShown,
+);
+
+test('the map popup does not mark a lone station as the best price', () => {
+  const lone = station(1, 1.8, 1.7);
+  const html = popup(1, lone, carbBestPrices([lone], fuels));
+  assert.doesNotMatch(html, /class="best"/);
+});
+
+test('the map popup marks the best price only on the cheapest of several stations', () => {
+  const shown = [station(1, 1.8, 1.7), station(2, 1.75, 1.72)];
+  const best = carbBestPrices(shown, fuels);
+  assert.equal(popup(2, shown[0], best).match(/class="best"/g)?.length, 1);
+  assert.equal(popup(2, shown[1], best).match(/class="best"/g)?.length, 1);
+  // Stations hidden from the map (e.g. out of stock) do not count: a single one shown is not "the best".
+  assert.doesNotMatch(popup(1, shown[0], best), /class="best"/);
+});
