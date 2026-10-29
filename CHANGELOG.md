@@ -13,7 +13,7 @@
 - German and Spanish: the refresh action's entry field uses Home Assistant's term ("Konfigurationseintrag", "Entrada de configuración").
 
 ### Maintenance
-- Screenshots workflow: works on pull requests from forks, Playwright pinned, fails clearly when the apt steps fail three times.
+- Screenshots workflow: works on pull requests from forks, Playwright pinned, fails clearly when the apt steps fail three times. After committing refreshed screenshots to a pull request, it re-runs the Lint, Validate and HACS checks on that commit (a push made with the workflow token does not start them).
 - Unused translation strings removed from the cards.
 
 ## 1.8.0
