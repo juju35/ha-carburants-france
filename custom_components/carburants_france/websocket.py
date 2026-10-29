@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import CarburantsApi, CarburantsError, sold_fuels
-from .const import DEFAULT_RADIUS, DOMAIN, FUELS, MAX_SEARCH_RADIUS, ST_LOGO
+from .const import DEFAULT_RADIUS, DOMAIN, FUELS, MAX_RESULTS, MAX_SEARCH_RADIUS, ST_LOGO
 from .coordinator import pretty_city, station_brand, station_title
 from .names import async_get_names
 from .sensor import card_station
@@ -97,6 +97,8 @@ async def ws_search(hass: HomeAssistant, connection: websocket_api.ActiveConnect
     except CarburantsError as err:
         connection.send_error(msg["id"], "api_error", str(err))
         return
+    # The API answers at most MAX_RESULTS stations: more may exist (narrower search needed).
+    truncated = len(found) >= MAX_RESULTS
 
     place = None
     if query and not re.fullmatch(r"\d{2,8}|2[AB]", query, re.IGNORECASE):
@@ -123,5 +125,6 @@ async def ws_search(hass: HomeAssistant, connection: websocket_api.ActiveConnect
             "longitude": longitude,
             "fuels": [{"key": k, "name": FUELS[k]} for k in fuels],
             "stations": stations,
+            "truncated": truncated,
         },
     )

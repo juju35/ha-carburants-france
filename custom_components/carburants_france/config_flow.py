@@ -40,6 +40,7 @@ from .const import (
     DOMAIN,
     FUELS,
     LOGO_VERSION,
+    MAX_RESULTS,
     MIN_SCAN_INTERVAL,
     ST_BRAND,
     ST_BRAND_CHECKED,
@@ -188,7 +189,7 @@ class StationPickerMixin:
             step_id="stations",
             data_schema=schema,
             errors=errors,
-            description_placeholders={"count": str(len(self._found))},
+            description_placeholders={"count": str(len(self._found)), "max": str(MAX_RESULTS)},
         )
 
     async def _async_add_logos(self) -> None:

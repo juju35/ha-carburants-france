@@ -596,6 +596,28 @@ async def test_community_names_first(hass, aioclient_mock, entry, community_name
     assert hass.states.get("sensor.relais_saint_malo_gazole") is not None
 
 
+async def test_community_names_missing_at_setup_picked_up_later(hass, aioclient_mock, entry, community_names):
+    """Names missing at setup (failed download) reach the stations and devices at a later update."""
+    from datetime import timedelta
+
+    from freezegun import freeze_time
+    from homeassistant.helpers import device_registry as dr
+
+    await _setup(hass, aioclient_mock, entry)
+    stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert stations[35000013]["station_name"] != "Relais Saint-Malo"
+
+    community_names["35000013"] = {"name": "RELAIS SAINT-MALO", "brand": "Total Access"}
+    with freeze_time(dt_util.utcnow() + timedelta(hours=2)):
+        await entry.runtime_data.async_refresh()
+        await hass.async_block_till_done()
+    stations = {s["station_id"]: s for s in hass.states.get("sensor.carburants_stations").attributes["stations"]}
+    assert stations[35000013]["station_name"] == "Relais Saint-Malo"
+    device = get_device(dr.async_get(hass), (DOMAIN, f"{entry.entry_id}_35000013"), entry.entry_id)
+    assert device.name == "Relais Saint-Malo"
+    assert device.manufacturer == "Total Access"
+
+
 async def test_community_brand_when_osm_has_none(hass, aioclient_mock, entry, community_names):
     options = dict(entry.options)
     stations = [dict(s) for s in options["stations"]]
@@ -784,8 +806,24 @@ async def test_ws_search_nearby(hass, aioclient_mock, entry, hass_ws_client, com
     assert (b["station_id"], b["followed"], b["logo"]) == (35000099, False, None)
     assert b["distance"] is not None
     assert set(b["fuels"]) == {"gazole", "sp98", "e10"}
+    assert result["truncated"] is False
     # Nothing was added to the integration.
     assert [s["id"] for s in entry.options["stations"]] == [35000013, 35000025]
+
+
+async def test_ws_search_truncated(hass, aioclient_mock, entry, hass_ws_client):
+    """A full page of results (the API limit) is flagged: more stations may exist."""
+    from custom_components.carburants_france.const import MAX_RESULTS
+
+    await _setup(hass, aioclient_mock, entry)
+    aioclient_mock.clear_requests()
+    page = [{**STATION_B, "id": 35100000 + i} for i in range(MAX_RESULTS)]
+    aioclient_mock.get(API_RECORDS, json={"total_count": 120, "results": page})
+    client = await hass_ws_client(hass)
+    await client.send_json({"id": 1, "type": "carburants_france/search", "query": "35"})
+    msg = await client.receive_json()
+    assert msg["success"], msg
+    assert msg["result"]["truncated"] is True
 
 
 async def test_ws_search_city(hass, aioclient_mock, entry, hass_ws_client):

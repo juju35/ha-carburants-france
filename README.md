@@ -108,6 +108,7 @@ type: custom:carburants-france-card
 |---|---|---|
 | `entity` | detected | Stations sensor to show (useful with several entries) |
 | `title` | `Fuel` | Card title |
+| `language` | `auto` | Card language: `auto` (Home Assistant's), `en`, `fr`, `de` or `es` |
 | `fuels` | all | Fuels shown, for example `[gazole, e10]` |
 | `sort` | `price` | `price`, `distance`, `name` or `config` (configuration order) |
 | `sort_fuel` | first fuel | Fuel used to sort by price |
@@ -140,6 +141,7 @@ type: custom:carburants-france-map-card
 |---|---|---|
 | `entity` | detected | Stations sensor to show (useful with several entries) |
 | `title` | `Stations map` | Card title, `""` to hide it |
+| `language` | `auto` | Card language: `auto` (Home Assistant's), `en`, `fr`, `de` or `es` |
 | `show_icon` | `true` | Icon next to the title, opening the data page on data.economie.gouv.fr |
 | `show_fullscreen` | `true` | Full screen button, under the zoom buttons |
 | `fuel` | cheapest | Fuel shown on the markers. Without a value, each marker shows the cheapest available fuel of the station, with its name ("E10 1,990 €") |
@@ -239,7 +241,7 @@ While it looks up the stations around you, the "locate me" button pulses until t
 |---|---|
 | ![stations around me](screenshots/map-nearby.png) | ![stations of a town](screenshots/map-search.png) |
 
-Screenshots are in English; station names, addresses and fuel names at the pump stay French, like the feed.
+Screenshots are in English; station names, addresses and fuel names at the pump stay French, like the feed. Station services ("Boutique alimentaire", "Lavage automatique"…) also come as is from the feed: the cards show them in French whatever the language (the screenshots use translated sample data).
 
 ## How it works
 
@@ -287,7 +289,7 @@ python scripts/screenshots.py   # renders the list card, the map card, and the r
 
 ## Translations
 
-The integration and the cards follow the language of Home Assistant. Currently supported:
+The integration and the cards follow the language of Home Assistant; each card can also be set to another one with its `language` option. Station names, addresses and services come from the feed and stay French. Currently supported:
 
 | Language | Code |
 |---|---|

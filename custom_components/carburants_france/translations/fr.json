@@ -13,7 +13,7 @@
       },
       "stations": {
         "title": "Choisir les stations",
-        "description": "{count} stations trouvées, triées par distance de votre domicile. Cochez « Nouvelle recherche » pour en ajouter d'autres ailleurs : la sélection est conservée.",
+        "description": "{count} stations trouvées, triées par distance de votre domicile. Cochez « Nouvelle recherche » pour en ajouter d'autres ailleurs : la sélection est conservée. Une recherche renvoie au plus {max} stations : affinez-la (code postal, rayon plus petit) si la vôtre manque.",
         "data": { "stations": "Stations", "search_again": "Nouvelle recherche" }
       }
     },
@@ -53,7 +53,7 @@
       },
       "stations": {
         "title": "Choisir les stations",
-        "description": "{count} stations trouvées, triées par distance de votre domicile. Cochez « Nouvelle recherche » pour en ajouter d'autres ailleurs : la sélection est conservée.",
+        "description": "{count} stations trouvées, triées par distance de votre domicile. Cochez « Nouvelle recherche » pour en ajouter d'autres ailleurs : la sélection est conservée. Une recherche renvoie au plus {max} stations : affinez-la (code postal, rayon plus petit) si la vôtre manque.",
         "data": { "stations": "Stations", "search_again": "Nouvelle recherche" }
       }
     },

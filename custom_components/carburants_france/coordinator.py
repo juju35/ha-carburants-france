@@ -28,6 +28,7 @@ from .const import (
     ST_NAME,
     ST_OSM_NAME,
 )
+from .names import async_get_names
 from .registry_compat import get_device
 
 _LOGGER = logging.getLogger(__name__)
@@ -173,18 +174,24 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
         self.stations = {int(s[ST_ID]): s for s in stations}
         for station_id, station in (self.data or {}).items():
             self._apply_stored(station_id, station)
+        self._async_update_devices()
+        self.async_update_listeners()
+
+    @callback
+    def _async_update_devices(self, data: dict[int, dict[str, Any]] | None = None) -> None:
+        """Device names and manufacturers from the stored stations and the community names."""
+        data = self.data if data is None else data
         device_registry = dr.async_get(self.hass)
         for station_id, stored in self.stations.items():
             entry_id = self.config_entry.entry_id
             device = get_device(device_registry, (DOMAIN, station_device_id(entry_id, station_id)), entry_id)
             if device:
-                live = (self.data or {}).get(station_id, {})
+                live = (data or {}).get(station_id, {})
                 device_registry.async_update_device(
                     device.id,
                     name=station_title(stored or live, self.names),
                     manufacturer=station_brand(stored or live, self.names) or "Station-service",
                 )
-        self.async_update_listeners()
 
     def _apply_stored(self, station_id: int, station: dict[str, Any]) -> None:
         stored = self.stations.get(station_id, {})
@@ -199,6 +206,11 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
             data = await self.api.get_stations(list(self.stations))
         except CarburantsError as err:
             raise UpdateFailed(str(err)) from err
+        # Community names: cached by names.py (a week, an hour after a failed download), so cheap
+        # here; picks up names that were missing at setup without reloading the entry.
+        names = await async_get_names(self.hass)
+        names_changed = names != self.names
+        self.names = names
         home = (self.hass.config.latitude, self.hass.config.longitude)
         for station_id, station in data.items():
             for fuel in self.fuels:
@@ -208,6 +220,8 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
                     station["fuels"][fuel] = empty_fuel()
             station["distance"] = distance_km(home[0], home[1], station["latitude"], station["longitude"])
             self._apply_stored(station_id, station)
+        if names_changed:
+            self._async_update_devices(data)
         return data
 
     def best(self, fuel: str) -> dict[str, Any] | None:

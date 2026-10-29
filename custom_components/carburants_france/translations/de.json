@@ -13,7 +13,7 @@
       },
       "stations": {
         "title": "Tankstellen auswählen",
-        "description": "{count} Tankstellen gefunden, nach Entfernung von deinem Zuhause sortiert. Aktiviere „Neue Suche“, um Tankstellen an einem anderen Ort hinzuzufügen: Die Auswahl bleibt erhalten.",
+        "description": "{count} Tankstellen gefunden, nach Entfernung von deinem Zuhause sortiert. Aktiviere „Neue Suche“, um Tankstellen an einem anderen Ort hinzuzufügen: Die Auswahl bleibt erhalten. Eine Suche liefert höchstens {max} Tankstellen: Grenze sie ein (Postleitzahl, kleinerer Radius), wenn deine fehlt.",
         "data": { "stations": "Tankstellen", "search_again": "Neue Suche" }
       }
     },
@@ -53,7 +53,7 @@
       },
       "stations": {
         "title": "Tankstellen auswählen",
-        "description": "{count} Tankstellen gefunden, nach Entfernung von deinem Zuhause sortiert. Aktiviere „Neue Suche“, um Tankstellen an einem anderen Ort hinzuzufügen: Die Auswahl bleibt erhalten.",
+        "description": "{count} Tankstellen gefunden, nach Entfernung von deinem Zuhause sortiert. Aktiviere „Neue Suche“, um Tankstellen an einem anderen Ort hinzuzufügen: Die Auswahl bleibt erhalten. Eine Suche liefert höchstens {max} Tankstellen: Grenze sie ein (Postleitzahl, kleinerer Radius), wenn deine fehlt.",
         "data": { "stations": "Tankstellen", "search_again": "Neue Suche" }
       }
     },
@@ -80,7 +80,7 @@
       "name": "Aktualisieren",
       "description": "Ruft die Preise sofort ab.",
       "fields": {
-        "config_entry_id": { "name": "Eintrag", "description": "Nur dieser Eintrag. Standardmäßig alle." }
+        "config_entry_id": { "name": "Konfigurationseintrag", "description": "Nur dieser Eintrag. Standardmäßig alle." }
       }
     }
   }
