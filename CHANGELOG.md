@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.9.0
+
+### Changes
+- List and map cards: new `language` option (Home Assistant's language by default, or English, French, German, Spanish), also in the visual editors.
+- Station search: the setup and options forms say that a search shows at most 50 stations, to narrow it when a station is missing; the `carburants_france/search` websocket answer gets a `truncated` flag when its results were cut at that limit.
+
+### Fixes
+- List card: opening hours crossing midnight are read on the right day. A station open Friday 22:00 to 02:00 is shown open on Saturday at 01:00, even when closed on Saturdays, and no longer open on Friday at 01:00 when closed on Thursdays.
+- List card: the next opening day is abbreviated in the card's language ("Mon", "Mo", "lun.") instead of "mon.".
+- Community station names that could not be downloaded at startup now reach the stations and their devices at a later update, without reloading the integration.
+- German and Spanish: the refresh action's entry field uses Home Assistant's term ("Konfigurationseintrag", "Entrada de configuración").
+
+### Maintenance
+- Screenshots workflow: works on pull requests from forks, Playwright pinned, fails clearly when the apt steps fail three times.
+- Unused translation strings removed from the cards.
+
 ## 1.8.0
 
 ### Changes
