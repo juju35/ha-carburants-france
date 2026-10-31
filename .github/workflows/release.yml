@@ -10,8 +10,29 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  # The checks run on this very commit; the release waits for all of them.
+  lint:
+    uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+
+  validate:
+    uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
+
+  hacs:
+    uses: ./.github/workflows/hacs.yml
+    permissions:
+      contents: read
+
   release:
+    needs: [lint, validate, hacs]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
