@@ -319,8 +319,15 @@ ALL_FUEL_STATES = {
 
 SHOTS = [
     {"file": "card", "theme": "light", "config": {}, "expand": None},
+    {"file": "card-dark", "theme": "dark", "config": {}, "expand": None},
     {
-        "file": "card-dark",
+        "file": "card-expanded",
+        "theme": "light",
+        "config": {"title": "Around home", "sort": "distance"},
+        "expand": "35000021",
+    },
+    {
+        "file": "card-expanded-dark",
         "theme": "dark",
         "config": {"title": "Around home", "sort": "distance"},
         "expand": "35000021",
@@ -467,8 +474,8 @@ MAP_SHOTS = [
     {"file": "map-dark", "theme": "dark", "config": {}, "action": None},
     {"file": "map-nearby", "theme": "light", "config": {"radius": 2}, "action": "near"},
     {"file": "map-nearby-dark", "theme": "dark", "config": {"radius": 2}, "action": "near"},
-    {"file": "map-search-light", "theme": "light", "config": {}, "action": "city"},
-    {"file": "map-search", "theme": "dark", "config": {}, "action": "city"},
+    {"file": "map-search", "theme": "light", "config": {}, "action": "city"},
+    {"file": "map-search-dark", "theme": "dark", "config": {}, "action": "city"},
 ]
 
 
