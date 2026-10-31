@@ -229,9 +229,13 @@ While it looks up the stations around you, the "locate me" button pulses until t
 |---|---|
 | ![locate animation](screenshots/locate.gif) | ![locate animation, dark](screenshots/locate-dark.gif) |
 
-| Light | Dark (station expanded, sorted by distance) |
+| Light | Dark |
 |---|---|
 | ![card](screenshots/card.png) | ![card dark](screenshots/card-dark.png) |
+
+| Station expanded, sorted by distance | Station expanded, sorted by distance, dark |
+|---|---|
+| ![card with a station expanded](screenshots/card-expanded.png) | ![card with a station expanded, dark](screenshots/card-expanded-dark.png) |
 
 | All fuels | All fuels, dark |
 |---|---|
@@ -247,7 +251,7 @@ While it looks up the stations around you, the "locate me" button pulses until t
 
 | Search by town | Search by town, dark |
 |---|---|
-| ![stations of a town](screenshots/map-search-light.png) | ![stations of a town, dark](screenshots/map-search.png) |
+| ![stations of a town](screenshots/map-search.png) | ![stations of a town, dark](screenshots/map-search-dark.png) |
 
 Screenshots are in English; station names, addresses and fuel names at the pump stay French, like the feed. Station services ("Boutique alimentaire", "Lavage automatique"…) also come as is from the feed: the cards show them in French whatever the language (the screenshots use translated sample data).
 
