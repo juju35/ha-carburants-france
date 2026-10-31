@@ -237,9 +237,13 @@ While it looks up the stations around you, the "locate me" button pulses until t
 |---|---|
 | ![map card](screenshots/map.png) | ![map card, dark](screenshots/map-dark.png) |
 
-| Locate me (2 km) | Search by town, dark |
+| Locate me (2 km) | Locate me (2 km), dark |
 |---|---|
-| ![stations around me](screenshots/map-nearby.png) | ![stations of a town](screenshots/map-search.png) |
+| ![stations around me](screenshots/map-nearby.png) | ![stations around me, dark](screenshots/map-nearby-dark.png) |
+
+| Search by town | Search by town, dark |
+|---|---|
+| ![stations of a town](screenshots/map-search-light.png) | ![stations of a town, dark](screenshots/map-search.png) |
 
 Screenshots are in English; station names, addresses and fuel names at the pump stay French, like the feed. Station services ("Boutique alimentaire", "Lavage automatique"…) also come as is from the feed: the cards show them in French whatever the language (the screenshots use translated sample data).
 

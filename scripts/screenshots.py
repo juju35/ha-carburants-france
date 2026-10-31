@@ -466,6 +466,8 @@ MAP_SHOTS = [
     {"file": "map", "theme": "light", "config": {}, "action": None},
     {"file": "map-dark", "theme": "dark", "config": {}, "action": None},
     {"file": "map-nearby", "theme": "light", "config": {"radius": 2}, "action": "near"},
+    {"file": "map-nearby-dark", "theme": "dark", "config": {"radius": 2}, "action": "near"},
+    {"file": "map-search-light", "theme": "light", "config": {}, "action": "city"},
     {"file": "map-search", "theme": "dark", "config": {}, "action": "city"},
 ]
 
