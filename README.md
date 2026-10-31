@@ -219,11 +219,15 @@ actions:
 
 While prices refresh, the card animates: the refresh button spins until the update finishes. It settles to a still card once done (and honours `prefers-reduced-motion`).
 
-![refresh animation](screenshots/refreshing.gif)
+| Light | Dark |
+|---|---|
+| ![refresh animation](screenshots/refreshing.gif) | ![refresh animation, dark](screenshots/refreshing-dark.gif) |
 
 While it looks up the stations around you, the "locate me" button pulses until the nearby list is ready. It settles to a still card once done (and honours `prefers-reduced-motion`).
 
-![locate animation](screenshots/locate.gif)
+| Light | Dark |
+|---|---|
+| ![locate animation](screenshots/locate.gif) | ![locate animation, dark](screenshots/locate-dark.gif) |
 
 | Light | Dark (station expanded, sorted by distance) |
 |---|---|

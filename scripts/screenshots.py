@@ -565,18 +565,33 @@ def mount_map(context, shot):
 
 
 def wait_tiles(page):
-    """Every tile loaded and the fit animation over."""
+    """The map settled on its final view: no zoom or pan animation, the tiles of the final zoom all loaded and
+    faded in, and the scaled-up tiles of the zooms passed through on the way pruned (they would show blurry),
+    the view unchanged for 600 ms."""
     if ERRORS:
         raise TileError(ERRORS[0])
     page.wait_for_function(
         """() => {
-          const root = document.querySelector("carburants-france-map-card").shadowRoot;
-          const tiles = [...root.querySelectorAll(".leaflet-tile")];
-          return tiles.length && tiles.every((t) => t.complete && t.classList.contains("leaflet-tile-loaded"));
+          const map = document.querySelector("carburants-france-map-card")._map;
+          const grid = map && Object.values(map._layers).find((l) => l._levels && l._tiles);
+          if (!grid || map._animatingZoom || map._panAnim?._inProgress || grid._loading) return false;
+          const levels = Object.values(grid._levels).filter((l) => l.el.querySelector(".leaflet-tile"));
+          const tiles = levels.flatMap((l) => [...l.el.querySelectorAll(".leaflet-tile")]);
+          const settled = levels.length === 1 && levels[0].zoom === grid._tileZoom && tiles.length
+            && tiles.every((t) => t.complete && t.naturalWidth && t.classList.contains("leaflet-tile-loaded")
+                                  && getComputedStyle(t).opacity === "1");
+          const view = `${map.getCenter().lat},${map.getCenter().lng},${map.getZoom()}`;
+          const now = performance.now();
+          if (!settled || window.__view !== view) {
+            window.__view = view;
+            window.__since = now;
+            return false;
+          }
+          return now - window.__since > 600;
         }""",
         timeout=60000,
+        polling=100,
     )
-    page.wait_for_timeout(800)
     if ERRORS:
         raise TileError(ERRORS[0])
 
@@ -714,8 +729,10 @@ def main():
             page.close()
             print(f"screenshots/{name}")
 
-        # The refresh button spinning while prices reload, as a looping GIF (same mount as the plain card shot).
-        animate(context, {"file": "refreshing", "theme": "light", "config": SHOTS[0]["config"]})
+        # The refresh button spinning while prices reload, as a looping GIF (same mount as the plain card shot),
+        # in both themes.
+        for theme, file in (("light", "refreshing"), ("dark", "refreshing-dark")):
+            animate(context, {"file": file, "theme": theme, "config": SHOTS[0]["config"]})
 
         # The map card: Leaflet and the tiles come from the made-up origin, the position from the browser.
         context = browser.new_context(
@@ -733,12 +750,13 @@ def main():
         try:
             for shot in MAP_SHOTS:
                 map_shot(context, shot, out_dir)
-            # The "locate me" button pulsing while the map looks up the nearby stations (map card only).
-            animate(
-                context,
-                {"file": "locate", "theme": "light", "config": {}, "card": "map", "width": MAP_WIDTH},
-                prime="el._busy = 'near';",
-            )
+            # The "locate me" button pulsing while the map looks up the nearby stations (map card only), both themes.
+            for theme, file in (("light", "locate"), ("dark", "locate-dark")):
+                animate(
+                    context,
+                    {"file": file, "theme": theme, "config": {}, "card": "map", "width": MAP_WIDTH},
+                    prime="el._busy = 'near';",
+                )
         except Exception as err:
             raise SystemExit(
                 f"Map screenshots not made, OpenStreetMap tiles unreachable: {ERRORS[0] if ERRORS else err}"
