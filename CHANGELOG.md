@@ -9,9 +9,15 @@
 - List card on a narrow card: the fuel tiles wrap under the station instead of overflowing, the opening status goes under the station name, and the opening hours stay inside the card. In a Sections view the card now takes at least 9 of the 12 columns (about 240 px), where the station names stay readable.
 - List and map cards on a narrow card: the title keeps a few letters visible; the refresh button, the radius list and the "locate me" button go to a second line instead of leaving the card.
 - Map card: the map attribution is small print again (11 px) instead of the card's text size.
+- List and map cards without `entity`: an unavailable Stations sensor is still found (through the entity registry), so the cards say the data is unavailable instead of "Stations sensor not found".
+- List card: the header subtitle wraps instead of being cut ("Data unavailable" in Serbian or Polish on a phone).
+- List card on a narrow card: a fuel the station does not sell no longer leaves a hole among the fuel tiles.
+- List card: the title gives up its room to the refresh button first, and the card keeps a usable width (220 px) in a container sized by its content (layout-card, a grid column set to `auto`) instead of shrinking to nothing.
+- List and map cards: giving the focus back to a station row after a refresh, or to the search field after clearing it, no longer scrolls the page.
 
 ### Maintenance
 - Screenshots are saved as 256-colour PNGs (about a third of the size), so refreshing them adds much less to the repository.
+- The screenshot script only rewrites a screenshot (PNG or GIF) whose pixels changed.
 
 ## 1.9.5 (2026-11-01)
 

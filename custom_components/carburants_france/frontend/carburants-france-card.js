@@ -900,7 +900,11 @@ class CarburantsFranceCard extends HTMLElement {
         return ids[i];
       }
     }
-    return null;
+    // An unavailable sensor has no attributes (Home Assistant drops them): find it in the entity registry instead.
+    var entities = hass.entities || {};
+    var found = Object.keys(entities).find((id) => id.indexOf('sensor.') === 0 && hass.states[id] &&
+      entities[id].platform === 'carburants_france' && entities[id].translation_key === 'stations');
+    return found || null;
   }
 
   setConfig(config) {
@@ -1060,7 +1064,7 @@ class CarburantsFranceCard extends HTMLElement {
     list.innerHTML = listHtml;
     if (focusedId !== null) {
       var again = Array.prototype.find.call(list.querySelectorAll('.station'), (el) => el.getAttribute('data-id') === focusedId);
-      again?.querySelector('.row')?.focus();
+      again?.querySelector('.row')?.focus({ preventScroll: true });
     }
     list.querySelectorAll('img.logo').forEach((img) => {
       img.addEventListener('error', () => {
@@ -1243,7 +1247,9 @@ class CarburantsFranceCard extends HTMLElement {
 
   static _styles() {
     return [
-      ':host { display: block; }',
+      // ha-card is an inline-size container (no width of its own): in a container sized by its content (layout-card,
+      // grid column `auto`) the card keeps 220 px, under the 234 px of its narrowest Sections view size.
+      ':host { display: block; min-width: 220px; }',
       // Status texts: the state colour mixed with the text colour, so that they reach 4.5:1 on the card in light
       // and dark themes (the plain colours stay on borders, pins and dots).
       ':host { --carb-success-text: color-mix(in srgb, var(--success-color, #43a047) 55%, var(--primary-text-color, #212121)); --carb-info-text: color-mix(in srgb, var(--info-color, #039be5) 55%, var(--primary-text-color, #212121)); --carb-error-text: color-mix(in srgb, var(--error-color, #db4437) 55%, var(--primary-text-color, #212121)); --carb-warning-text: color-mix(in srgb, var(--warning-color, #ffa600) 50%, var(--primary-text-color, #212121)); }',
@@ -1253,9 +1259,10 @@ class CarburantsFranceCard extends HTMLElement {
       // Narrow card: the title keeps the icon and 5 letters; below that the refresh button wraps instead of leaving the card.
       '.header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; padding: 12px 12px 0; }',
       '.title { flex: 1 1 0; display: flex; align-items: center; gap: 10px; }',
-      '.titles { flex: 1 1 auto; min-width: 5ch; contain: inline-size; }',
+      '.titles { flex: 1 1 0; min-width: 5ch; contain: inline-size; }',
       '.hname { font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
-      '.hsub { font-size: 12px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+      // The subtitle wraps rather than being cut ("Podaci nisu dostupni" on a 234 px card).
+      '.hsub { font-size: 12px; color: var(--secondary-text-color); white-space: normal; overflow-wrap: anywhere; }',
       '.icon-link { display: flex; flex: none; }',
       // Generic fuel pump in a round badge tinted with the theme's primary colour.
       '.hbadge { --c: var(--primary-color, #03a9f4); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); --mdc-icon-size: 24px; }',
@@ -1321,7 +1328,7 @@ class CarburantsFranceCard extends HTMLElement {
       '.toggle ha-icon { --mdc-icon-size: 18px; }',
       // Narrow card (half a Sections view section): the fuel tiles wrap two or one per row under the station instead of
       // overflowing, the opening status goes under the name (which keeps the whole width) and wraps, so do the hours. !important: the tile columns are an inline style (carbFuelColumns).
-      '@container carb-card (max-width: 299px) { .fuels { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)) !important; margin-left: 0; } .details { margin-left: 0; } .line1 { flex-flow: column nowrap; align-items: stretch; gap: 0; } .opening { white-space: normal; } }',
+      '@container carb-card (max-width: 299px) { .fuels { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)) !important; margin-left: 0; } .details { margin-left: 0; } .line1 { flex-flow: column nowrap; align-items: stretch; gap: 0; } .opening { white-space: normal; } .fuel.empty { display: none; } }',
       // Last, so that it outranks the rules above. Reduced motion: no spin nor swing; a dimmed icon still says a refresh is running.
       '@media (prefers-reduced-motion: reduce) { .refresh-btn.spinning ha-icon { animation: none; opacity: .5; } .chevron { transition: none; } }',
     ].join('\n');
@@ -2358,7 +2365,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
       ev.preventDefault();
       this._clearSearch();
-      input.focus();
+      input.focus({ preventScroll: true });
     };
     clear.addEventListener('click', onClear);
     clear.addEventListener('keydown', onClear);
