@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.4 (2026-11-01)
+
+### Changes
+- Added Serbian (Cyrillic and Latin) translations: configuration and options forms, entity names, the refresh action, and both cards (list and map, with their visual editors). The cards pick `sr-Latn` when Home Assistant is set to Serbian Latin, and the `language` option offers `sr` and `sr-Latn`.
+- List and map cards: with `language: auto`, a regional Home Assistant language falls back to its base language (`fr-FR` → French), and an unknown one to English.
+
 ## 1.9.3
 
 ### Fixes
