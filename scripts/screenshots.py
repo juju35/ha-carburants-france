@@ -12,6 +12,7 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -639,15 +640,45 @@ def shrink_png(path):
     small.save(path, optimize=True)
 
 
+def same_pixels(a, b):
+    """True when two images (every frame of a GIF) decode to the same pixels, whatever their bytes."""
+    from PIL import Image, ImageChops, ImageSequence
+
+    if not Path(a).exists() or not Path(b).exists():
+        return False
+    with Image.open(a) as image_a, Image.open(b) as image_b:
+        frames_a = [frame.convert("RGBA") for frame in ImageSequence.Iterator(image_a)]
+        frames_b = [frame.convert("RGBA") for frame in ImageSequence.Iterator(image_b)]
+    if len(frames_a) != len(frames_b):
+        return False
+    return all(
+        x.size == y.size and ImageChops.difference(x, y).getbbox() is None
+        for x, y in zip(frames_a, frames_b, strict=True)
+    )
+
+
+def replace_if_changed(new, path):
+    """Move a fresh render over the committed screenshot only when its pixels differ: an unchanged screenshot keeps
+    its file (no commit of new bytes for the same image)."""
+    new, path = Path(new), Path(path)
+    if same_pixels(new, path):
+        new.unlink()
+        return False
+    shutil.move(new, path)
+    return True
+
+
 def framed_shot(page, path, width):
     """The card with 16 px of theme background around it."""
     box = page.locator("#root").bounding_box()
+    fresh = Path(tempfile.mkdtemp()) / Path(path).name
     page.screenshot(
-        path=str(path),
+        path=str(fresh),
         clip={"x": 0, "y": 0, "width": width + 32, "height": int(box["height"] + 0.999) + 32},
         animations="disabled",
     )
-    shrink_png(path)
+    shrink_png(fresh)
+    replace_if_changed(fresh, path)
 
 
 def mount(context, shot):
@@ -701,7 +732,7 @@ def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;")
             )
             page.screenshot(path=f"{frame_dir}/f{i:03d}.png", clip=clip)
         page.close()
-        out = str(ROOT / "screenshots" / f"{shot['file']}.gif")
+        out = f"{frame_dir}/{shot['file']}.gif"
         subprocess.run(
             [
                 "ffmpeg",
@@ -720,6 +751,7 @@ def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;")
             ],
             check=True,
         )
+        replace_if_changed(out, ROOT / "screenshots" / f"{shot['file']}.gif")
     print(f"screenshots/{shot['file']}.gif")
 
 
