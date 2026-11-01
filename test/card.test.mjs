@@ -315,3 +315,124 @@ test('the map popup marks the best price only on the cheapest of several station
   // Stations hidden from the map (e.g. out of stock) do not count: a single one shown is not "the best".
   assert.doesNotMatch(popup(1, shown[0], best), /class="best"/);
 });
+
+// List card with a stub shadow root: the list keeps the HTML written to it, and hands out one stub row
+// per station found in that HTML (a fresh one each render, as innerHTML would), recording focus().
+const listCard = () => {
+  const focused = [];
+  const list = {
+    html: '',
+    set innerHTML(html) { this.html = html; },
+    get innerHTML() { return this.html; },
+    querySelectorAll(sel) {
+      if (sel !== '.station') return [];
+      if (this.nodesOf !== this.html) {
+        this.nodesOf = this.html;
+        this.nodes = [...this.html.matchAll(/<div class="station" data-id="([^"]*)">/g)].map((m) => {
+          const item = { getAttribute: (name) => (name === 'data-id' ? m[1] : null) };
+          const row = { focus: () => focused.push(m[1]), closest: (c) => (c === '.station' ? item : null) };
+          item.querySelector = (s) => (s === '.row' ? row : null);
+          return item;
+        });
+      }
+      return this.nodes;
+    },
+  };
+  const node = () => ({ innerHTML: '', hidden: false, querySelector: () => null });
+  const parts = { '.header': node(), '.list': list, '.footer': node() };
+  const card = Object.assign(Object.create(CarburantsFranceCard.prototype), {
+    _root: { querySelector: (sel) => parts[sel] ?? null, activeElement: null },
+  });
+  const state = { state: '2', attributes: { config_entry_id: 'x', fuels: fuels.map((f) => ({ ...f, name: f.key })), stations: [station(1, 1.8, 1.7), station(2, 1.75, 1.72)] } };
+  card.setConfig({ entity: 'sensor.x', language: 'en', show_logo: false });
+  card.hass = { language: 'en', states: { 'sensor.x': state } };
+  return { card, list, focused };
+};
+// A key press on a station row, as the list's keydown listener receives it.
+const keyOnRow = (list, id, key) => {
+  const row = list.querySelectorAll('.station').find((s) => s.getAttribute('data-id') === id).querySelector('.row');
+  let prevented = false;
+  return { row, ev: { key, target: row, preventDefault: () => { prevented = true; } }, prevented: () => prevented };
+};
+
+test('a list station row is a keyboard button that says whether it is expanded', () => {
+  const { card, list } = listCard();
+  assert.equal(list.html.match(/<div class="row" role="button" tabindex="0" aria-expanded="false">/g)?.length, 2);
+  card._expandedId = '2';
+  card._render();
+  assert.match(list.html, /data-id="2"><div class="row" role="button" tabindex="0" aria-expanded="true">/);
+  assert.match(list.html, /data-id="1"><div class="row" role="button" tabindex="0" aria-expanded="false">/);
+});
+
+test('Enter and Space on a list station row expand and collapse it, other keys do nothing', () => {
+  const { card, list } = listCard();
+  for (const [key, expected] of [['Enter', '1'], [' ', null], ['a', null], ['Tab', null]]) {
+    const k = keyOnRow(list, '1', key);
+    card._onListKey(k.ev);
+    assert.equal(card._expandedId, expected, key);
+    assert.equal(k.prevented(), key === 'Enter' || key === ' ', key);
+  }
+  // Keys typed on a link of the expanded details (Enter on "Directions") never toggle the station.
+  card._expandedId = '1';
+  const link = { closest: (sel) => (sel === '.station' ? list.querySelectorAll('.station')[0] : null) };
+  card._onListKey({ key: 'Enter', target: link, preventDefault() { throw new Error('prevented'); } });
+  assert.equal(card._expandedId, '1');
+});
+
+test('the focused list station row keeps the focus when the list is redrawn', () => {
+  const { card, list, focused } = listCard();
+  const k = keyOnRow(list, '2', 'Enter');
+  card._root.activeElement = k.row;
+  card._onListKey(k.ev);
+  assert.deepEqual(focused, ['2']);
+  // Nothing focused in the card (or focus elsewhere): a redraw moves no focus.
+  card._root.activeElement = null;
+  card._expandedId = null;
+  card._render();
+  assert.deepEqual(focused, ['2']);
+});
+
+test('the focused row of a station that is gone after a redraw does not fail', () => {
+  const { card, list, focused } = listCard();
+  const k = keyOnRow(list, '2', 'Enter');
+  card._root.activeElement = k.row;
+  card._lastState = { ...card._lastState, attributes: { ...card._lastState.attributes, stations: [station(1, 1.8, 1.7)] } };
+  card._render();
+  assert.deepEqual(focused, []);
+});
+
+const styles = (Card) => Card._styles().replace(/\s+/g, ' ');
+// The reduced motion block, which must come after every rule it overrides (same specificity: the last one wins).
+const reducedMotion = (css) => {
+  const at = css.indexOf('@media (prefers-reduced-motion: reduce)');
+  if (at === -1) return '';
+  const rest = css.slice(at);
+  assert.doesNotMatch(rest.slice(rest.indexOf('} }')), /(\.chevron|\.refresh-btn\.spinning ha-icon|\.locate\.busy ha-icon) \{/, 'a rule after the reduced motion block');
+  return rest.slice(0, rest.indexOf('} }'));
+};
+
+test('the spinning and pulsing icons and the chevron stop when the system asks for reduced motion', () => {
+  const list = reducedMotion(styles(CarburantsFranceCard));
+  assert.match(list, /\.refresh-btn\.spinning ha-icon \{[^}]*animation: none/);
+  assert.match(list, /\.chevron \{[^}]*transition: none/);
+  const map = reducedMotion(styles(CarburantsFranceMapCard));
+  assert.match(map, /\.locate\.busy ha-icon \{[^}]*animation: none/);
+});
+
+test('the Leaflet controls of the map card follow the theme (no hard-coded colours)', () => {
+  const css = styles(CarburantsFranceMapCard);
+  assert.doesNotMatch(css, /\.carb-fs a \{[^}]*#333/);
+  assert.match(css, /\.leaflet-bar a \{[^}]*background-color: var\(--card-background-color[^}]*color: var\(--primary-text-color/);
+  assert.match(css, /\.leaflet-bar a:hover, \.leaflet-bar a:focus \{[^}]*background-color: var\(--secondary-background-color/);
+  assert.match(css, /\.leaflet-touch \.leaflet-bar \{[^}]*border-color: var\(--divider-color/);
+  assert.match(css, /\.leaflet-container \.leaflet-control-attribution \{[^}]*background: color-mix\([^)]*var\(--card-background-color[^}]*color: var\(--primary-text-color/);
+  assert.match(css, /\.leaflet-container \.leaflet-control-attribution a \{[^}]*color: /);
+});
+
+test('the map card search bar lines up with the header, and the position halo follows the primary colour', () => {
+  const css = styles(CarburantsFranceMapCard);
+  assert.match(css, /\.header \{[^}]*padding: 12px 12px 8px/);
+  assert.match(css, /\.searchbar \{ padding: 0 12px 8px; \}/);
+  assert.doesNotMatch(css, /rgba\(3,169,244/);
+  assert.match(css, /\.me \{[^}]*box-shadow: 0 0 0 6px color-mix\(in srgb, var\(--primary-color, #03a9f4\) 25%, transparent\)/);
+});
