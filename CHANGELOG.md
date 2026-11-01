@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.9.6 (2026-11-01)
+
+### Fixes
+- List card: when the Stations sensor is unavailable or unknown (feed unreachable at startup, integration reloading), the header says "Data unavailable" in the card language instead of "unavailable stations", and the list explains that the prices are unavailable for now instead of "No station to show". The map card shows the same message above the map.
+- List card: the station count agrees with its number in every language: "1 station" in English and French, "1 Tankstelle", "1 estación", and in Serbian "2 станице" / "2 stanice" for 2-4, 22-24…
+- List and map cards: the status texts (Open, Closed, 24/7 automat, Out of stock, best price, and the coloured prices and labels on the map) are now readable in light and dark themes (contrast of at least 4.5:1); borders and map pins keep their state colour. Out of stock fuel tiles are no longer faded.
+- List card on a narrow card: the fuel tiles wrap under the station instead of overflowing, the opening status goes under the station name, and the opening hours stay inside the card. In a Sections view the card now takes at least 9 of the 12 columns (about 240 px), where the station names stay readable.
+- List and map cards on a narrow card: the title keeps a few letters visible; the refresh button, the radius list and the "locate me" button go to a second line instead of leaving the card.
+- Map card: the map attribution is small print again (11 px) instead of the card's text size.
+
+### Maintenance
+- Screenshots are saved as 256-colour PNGs (about a third of the size), so refreshing them adds much less to the repository.
+
 ## 1.9.5 (2026-11-01)
 
 ### Changes
