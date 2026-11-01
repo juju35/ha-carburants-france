@@ -771,7 +771,8 @@ def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;")
     if shot.get("card") == "map":
         page = mount_map(context, shot)
         wait_tiles(page)
-        # Frozen only now: Leaflet needs a running clock to fade the tiles in (see main()).
+        # Frozen only now: Leaflet needs a running clock to fade the tiles in. The clock is the whole context's, so
+        # the caller gives this GIF a context of its own (see main()).
         page.clock.set_fixed_time(NOW)
         render = "el._renderHeader();"
     else:
@@ -793,6 +794,21 @@ def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;")
         encode_gif(frame_dir, fps, clip["width"], out)
         replace_if_changed(out, ROOT / "screenshots" / f"{shot['file']}.gif")
     print(f"screenshots/{shot['file']}.gif")
+
+
+def map_context(browser):
+    """A browser context for the map card: Leaflet and the tiles come from the made-up origin, the position from
+    the browser."""
+    context = browser.new_context(
+        device_scale_factor=2,
+        viewport={"width": 1000, "height": 1400},
+        locale="en-US",
+        timezone_id="Europe/Paris",
+        geolocation=HERE,
+        permissions=["geolocation"],
+    )
+    context.route(f"{ORIGIN}/**", serve)
+    return context
 
 
 def main():
@@ -825,15 +841,7 @@ def main():
             animate(context, {"file": file, "theme": theme, "config": SHOTS[0]["config"]})
 
         # The map card: Leaflet and the tiles come from the made-up origin, the position from the browser.
-        context = browser.new_context(
-            device_scale_factor=2,
-            viewport={"width": 1000, "height": 1400},
-            locale="en-US",
-            timezone_id="Europe/Paris",
-            geolocation=HERE,
-            permissions=["geolocation"],
-        )
-        context.route(f"{ORIGIN}/**", serve)
+        context = map_context(browser)
         HTTP["client"] = p.request.new_context()
         # No frozen clock here: Leaflet fades the tiles in with the current time, a fixed one
         # leaves them transparent. The map shows no time, the popups stay closed.
@@ -841,12 +849,16 @@ def main():
             for shot in MAP_SHOTS:
                 map_shot(context, shot, out_dir)
             # The "locate me" button pulsing while the map looks up the nearby stations (map card only), both themes.
+            # Each GIF in its own context: animate() freezes the clock once the tiles settled, and the clock belongs
+            # to the whole context (a frozen one would leave the next map's tiles transparent).
             for theme, file in (("light", "locate"), ("dark", "locate-dark")):
+                gif_context = map_context(browser)
                 animate(
-                    context,
+                    gif_context,
                     {"file": file, "theme": theme, "config": {}, "card": "map", "width": MAP_WIDTH},
                     prime="el._busy = 'near';",
                 )
+                gif_context.close()
         except Exception as err:
             raise SystemExit(
                 f"Map screenshots not made, OpenStreetMap tiles unreachable: {ERRORS[0] if ERRORS else err}"

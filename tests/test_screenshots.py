@@ -226,3 +226,32 @@ def test_gif_encoding_is_deterministic(tmp_path):
     source = ast.unparse(next(n for n in SCRIPT.body if isinstance(n, ast.FunctionDef) and n.name == "encode_gif"))
     assert "dither=bayer" in source
     assert not re.search(r"dither=(sierra|floyd|heckbert)", source)
+
+
+def test_each_map_gif_gets_its_own_context():
+    """animate() freezes the clock of a map GIF once its tiles settled, and a Playwright clock belongs to the whole
+    context: a second map in that context would never fade its tiles in (the dark locate GIF timed out on CI).
+    Each map GIF is therefore made in a context created for it, in the loop that makes it."""
+    main = next(n for n in SCRIPT.body if isinstance(n, ast.FunctionDef) and n.name == "main")
+    map_loops = [
+        loop
+        for loop in ast.walk(main)
+        if isinstance(loop, ast.For)
+        and any(
+            isinstance(c, ast.Call) and getattr(c.func, "id", None) == "animate" and "'map'" in ast.unparse(c)
+            for c in ast.walk(loop)
+        )
+    ]
+    assert map_loops, "no map GIF loop in main()"
+    for loop in map_loops:
+        call = next(c for c in ast.walk(loop) if isinstance(c, ast.Call) and getattr(c.func, "id", None) == "animate")
+        name = call.args[0].id
+        created = {
+            t.id
+            for a in loop.body
+            if isinstance(a, ast.Assign)
+            and isinstance(a.value, ast.Call)
+            and getattr(a.value.func, "id", None) == "map_context"
+            for t in a.targets
+        }
+        assert name in created, f"the map GIF uses {name}, not a context created in its loop"
