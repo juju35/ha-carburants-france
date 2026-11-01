@@ -124,3 +124,30 @@ def test_every_png_shot_is_shrunk_to_a_palette(tmp_path):
         assert shrunk.size == (300, 200)
     assert first.stat().st_size < before
     assert first.read_bytes() == second.read_bytes()
+
+
+def test_same_pixels_compares_every_colour_channel(tmp_path):
+    """replace_if_changed keeps a screenshot only when its decoded pixels are the same: two opaque images that
+    differ in colour must not count as the same (comparing RGBA with getbbox() only looks at the alpha channel)."""
+    image_module = pytest.importorskip("PIL.Image")
+    node = next(n for n in SCRIPT.body if isinstance(n, ast.FunctionDef) and n.name == "same_pixels")
+    namespace = {"Path": Path}
+    exec(compile(ast.Module(body=[node], type_ignores=[]), "screenshots.py", "exec"), namespace)  # noqa: S102
+    same_pixels = namespace["same_pixels"]
+    white = image_module.new("RGB", (40, 30), (255, 255, 255))
+    tinted = white.copy()
+    tinted.putpixel((10, 10), (254, 255, 255))
+    white.save(tmp_path / "white.png")
+    tinted.save(tmp_path / "tinted.png")
+    # The same pixels in another encoding (palette PNG): the same image.
+    white.quantize(colors=4).save(tmp_path / "white-palette.png")
+    assert same_pixels(tmp_path / "white.png", tmp_path / "white-palette.png")
+    assert not same_pixels(tmp_path / "white.png", tmp_path / "tinted.png")
+    assert not same_pixels(tmp_path / "white.png", tmp_path / "missing.png")
+    # GIF: one frame of colour changed among two.
+    black = image_module.new("RGB", (40, 30), (0, 0, 0))
+    white.save(tmp_path / "a.gif", save_all=True, append_images=[black])
+    white.save(tmp_path / "b.gif", save_all=True, append_images=[black])
+    white.save(tmp_path / "c.gif", save_all=True, append_images=[image_module.new("RGB", (40, 30), (0, 0, 128))])
+    assert same_pixels(tmp_path / "a.gif", tmp_path / "b.gif")
+    assert not same_pixels(tmp_path / "a.gif", tmp_path / "c.gif")

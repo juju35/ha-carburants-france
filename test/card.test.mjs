@@ -755,15 +755,25 @@ test('narrow list card: the fuel tiles, opening status and details reflow instea
   assert.equal(CarburantsFranceMapCard.prototype.getGridOptions().min_columns, 6);
 });
 
-test('the list card keeps a usable width in a container sized by its content (layout-card, grid column auto)', () => {
-  // ha-card is an inline-size container, so it has no width of its own: without a minimum on the host, an
-  // inline-block or `auto` grid column would shrink the card to its padding.
+test('the list card keeps a usable width in a container sized by its content, and still shrinks in a 1fr 1fr grid', () => {
+  // ha-card is an inline-size container, so it has no width of its own: an inline-block or `auto` grid column
+  // would shrink the card to its padding. A min-width (or contain-intrinsic-*) on the host would be a minimum:
+  // in a `1fr 1fr` grid (layout-card, grid card, horizontal stack) the card would then overflow its track.
   const list = styles(CarburantsFranceCard);
   assert.match(list, /ha-card \{[^}]*container: carb-card \/ inline-size/);
-  const host = list.match(/:host \{ display: block;([^}]*)\}/)?.[1] ?? '';
-  const min = Number(host.match(/min-width: (\d+)px/)?.[1]);
+  const hostRules = [...list.matchAll(/:host \{([^}]*)\}/g)].map((m) => m[1]).join(';');
+  assert.doesNotMatch(hostRules, /min-width: *[1-9]\d*px/);
+  assert.doesNotMatch(list, /contain-intrinsic-/);
+  // The natural width comes from an empty grid pseudo-element whose only track is minmax(0, N px): its
+  // max-content width is N px (inline-block, `auto` column) and its min-content width is 0 (1fr track, card
+  // wrapped in a div or not), with no height.
+  const before = list.match(/:host::before \{([^}]*)\}/)?.[1] ?? '';
+  assert.match(before, /content: "";/);
+  assert.match(before, /display: grid;/);
+  assert.match(before, /height: 0;/);
+  const natural = Number(before.match(/grid-template-columns: minmax\(0, (\d+)px\)/)?.[1]);
   // Below the narrowest width the Sections view gives it (9 of 12 columns on a 320 px phone section: 234 px).
-  assert.ok(min >= 200 && min <= 234, `min-width ${min}`);
+  assert.ok(natural >= 200 && natural <= 234, `natural width ${natural}`);
 });
 
 test('auto-detection finds an unavailable stations sensor from the entity registry (no attributes then)', () => {
