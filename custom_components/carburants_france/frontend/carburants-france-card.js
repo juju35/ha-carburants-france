@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.9.5';
+var CARBURANTS_CARD_VERSION = '1.9.6';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -8,7 +8,10 @@ var CarburantsI18n = {
   fr: {
     default_title: 'Carburants',
     stations: 'stations',
+    stations_one: 'station',
     empty: 'Aucune station à afficher',
+    unavailable: 'Données indisponibles',
+    unavailable_hint: 'Les prix sont indisponibles pour l\'instant (source de données injoignable). Ils reviendront à la prochaine actualisation.',
     no_entity: 'Capteur Stations introuvable. Ajoutez l\'intégration Carburants France ou renseignez « entity ».',
     refresh: 'Actualiser',
     refresh_failed: 'Actualisation impossible :',
@@ -59,7 +62,10 @@ var CarburantsI18n = {
   en: {
     default_title: 'Fuel',
     stations: 'stations',
+    stations_one: 'station',
     empty: 'No station to show',
+    unavailable: 'Data unavailable',
+    unavailable_hint: 'Prices are unavailable for now (the data source cannot be reached). They will come back with the next refresh.',
     no_entity: 'Stations sensor not found. Add the Carburants France integration or set "entity".',
     refresh: 'Refresh',
     refresh_failed: 'Refresh failed:',
@@ -110,7 +116,10 @@ var CarburantsI18n = {
   de: {
     default_title: 'Kraftstoffe',
     stations: 'Tankstellen',
+    stations_one: 'Tankstelle',
     empty: 'Keine Tankstelle anzuzeigen',
+    unavailable: 'Daten nicht verfügbar',
+    unavailable_hint: 'Die Preise sind gerade nicht verfügbar (Datenquelle nicht erreichbar). Sie kommen mit der nächsten Aktualisierung zurück.',
     no_entity: 'Sensor „Tankstellen“ nicht gefunden. Füge die Integration Carburants France hinzu oder setze „entity“.',
     refresh: 'Aktualisieren',
     refresh_failed: 'Aktualisierung fehlgeschlagen:',
@@ -161,7 +170,10 @@ var CarburantsI18n = {
   es: {
     default_title: 'Carburantes',
     stations: 'estaciones',
+    stations_one: 'estación',
     empty: 'No hay ninguna estación que mostrar',
+    unavailable: 'Datos no disponibles',
+    unavailable_hint: 'Los precios no están disponibles por ahora (no se puede acceder a la fuente de datos). Volverán con la próxima actualización.',
     no_entity: 'No se encuentra el sensor Estaciones. Añade la integración Carburants France o indica «entity».',
     refresh: 'Actualizar',
     refresh_failed: 'Error al actualizar:',
@@ -214,6 +226,8 @@ var CarburantsI18n = {
     stations: 'stazioni',
     stations_one: 'stazione',
     empty: 'Nessuna stazione da mostrare',
+    unavailable: 'Dati non disponibili',
+    unavailable_hint: 'I prezzi non sono disponibili al momento (fonte dei dati non raggiungibile). Torneranno con il prossimo aggiornamento.',
     no_entity: 'Sensore Stazioni non trovato. Aggiungi l\'integrazione Carburants France o imposta «entity».',
     refresh: 'Aggiorna',
     refresh_failed: 'Aggiornamento non riuscito:',
@@ -268,6 +282,8 @@ var CarburantsI18n = {
     stations: 'tankstations',
     stations_one: 'tankstation',
     empty: 'Geen tankstation om te tonen',
+    unavailable: 'Gegevens niet beschikbaar',
+    unavailable_hint: 'De prijzen zijn nu niet beschikbaar (de gegevensbron is onbereikbaar). Ze komen terug bij de volgende vernieuwing.',
     no_entity: 'Sensor Tankstations niet gevonden. Voeg de integratie Carburants France toe of stel "entity" in.',
     refresh: 'Vernieuwen',
     refresh_failed: 'Vernieuwen mislukt:',
@@ -322,6 +338,8 @@ var CarburantsI18n = {
     stations: 'postos',
     stations_one: 'posto',
     empty: 'Nenhum posto para mostrar',
+    unavailable: 'Dados indisponíveis',
+    unavailable_hint: 'Os preços estão indisponíveis de momento (não é possível aceder à fonte de dados). Voltarão com a próxima atualização.',
     no_entity: 'Sensor Postos não encontrado. Adicione a integração Carburants France ou defina «entity».',
     refresh: 'Atualizar',
     refresh_failed: 'Falha ao atualizar:',
@@ -377,6 +395,8 @@ var CarburantsI18n = {
     stations_few: 'stacje',
     stations_many: 'stacji',
     empty: 'Brak stacji do wyświetlenia',
+    unavailable: 'Dane niedostępne',
+    unavailable_hint: 'Ceny są chwilowo niedostępne (brak połączenia ze źródłem danych). Pojawią się po następnym odświeżeniu.',
     no_entity: 'Nie znaleziono czujnika Stacje. Dodaj integrację Carburants France lub ustaw „entity”.',
     refresh: 'Odśwież',
     refresh_failed: 'Odświeżanie nie powiodło się:',
@@ -428,7 +448,11 @@ var CarburantsI18n = {
   sr: {
     default_title: 'Гориво',
     stations: 'станица',
+    stations_one: 'станица',
+    stations_few: 'станице',
     empty: 'Нема станица за приказ',
+    unavailable: 'Подаци нису доступни',
+    unavailable_hint: 'Цене тренутно нису доступне (извор података није доступан). Вратиће се при следећем освежавању.',
     no_entity: 'Сензор „Станице“ није пронађен. Додајте интеграцију Carburants France или подесите „entity“.',
     refresh: 'Освежи',
     refresh_failed: 'Освежавање није успело:',
@@ -479,7 +503,11 @@ var CarburantsI18n = {
   'sr-Latn': {
     default_title: 'Gorivo',
     stations: 'stanica',
+    stations_one: 'stanica',
+    stations_few: 'stanice',
     empty: 'Nema stanica za prikaz',
+    unavailable: 'Podaci nisu dostupni',
+    unavailable_hint: 'Cene trenutno nisu dostupne (izvor podataka nije dostupan). Vratiće se pri sledećem osvežavanju.',
     no_entity: 'Senzor „Stanice“ nije pronađen. Dodajte integraciju Carburants France ili podesite „entity“.',
     refresh: 'Osveži',
     refresh_failed: 'Osvežavanje nije uspelo:',
@@ -545,6 +573,11 @@ var CARBURANTS_DEFAULTS = {
   hide_out_of_stock_stations: true,
   show_refresh: true,
 };
+
+// The sensor has no value (source unreachable at startup, integration reloading): never shown as a count.
+function carbUnavailable(st) {
+  return !!st && (st.state === 'unavailable' || st.state === 'unknown');
+}
 
 function carbEsc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -919,7 +952,9 @@ class CarburantsFranceCard extends HTMLElement {
   }
 
   getGridOptions() {
-    return { columns: 12, min_columns: 6, rows: 'auto' };
+    // 9 of 12 columns: at least ~240 px in a Sections view (320 px section), where the stations reflow and their
+    // names stay readable; half a section (~160 px) only left a few letters of each name.
+    return { columns: 12, min_columns: 9, rows: 'auto' };
   }
 
   _entityId() {
@@ -994,9 +1029,11 @@ class CarburantsFranceCard extends HTMLElement {
         carbEsc(carbToggleLabel(t, this._showAll, hidden)) + '</button>'
       : '';
 
+    var unavailable = carbUnavailable(st);
+    var sub = unavailable ? t.unavailable : `${st.state} ${carbPlural(t, 'stations', st.state, this._locale())}`;
     var headerHtml =
       '<div class="title">' + icon + '<div class="titles"><div class="hname">' + carbEsc(title) + '</div>' +
-      '<div class="hsub">' + carbEsc(st.state) + ' ' + carbEsc(carbPlural(t, 'stations', st.state, this._locale())) + '</div></div></div>' +
+      '<div class="hsub">' + carbEsc(sub) + '</div></div></div>' +
       (this._config.show_refresh
         ? '<ha-icon-button class="refresh-btn' + (this._refreshing ? ' spinning' : '') + '" label="' + carbEsc(t.refresh) +
           '" title="' + carbEsc(refreshTitle) + '"><ha-icon icon="mdi:refresh"></ha-icon></ha-icon-button>'
@@ -1011,7 +1048,7 @@ class CarburantsFranceCard extends HTMLElement {
     var now = new Date();
     var listHtml = stations.length
       ? stations.map((s) => this._renderStation(s, fuels, best, t, now, stations.length > 1)).join('')
-      : `<div class="empty">${carbEsc(hidden ? t.all_out : t.empty)}</div>`;
+      : `<div class="empty">${carbEsc(hidden ? t.all_out : unavailable ? t.unavailable_hint : t.empty)}</div>`;
     // The minute timer only refreshes the relative ages and the opening status: when nothing
     // changed, leave the DOM alone (keeps a text selection, no listeners to re-attach).
     if (listHtml === this._listHtml) return;
@@ -1207,18 +1244,23 @@ class CarburantsFranceCard extends HTMLElement {
   static _styles() {
     return [
       ':host { display: block; }',
-      'ha-card { padding: 0 0 8px; overflow: hidden; }',
+      // Status texts: the state colour mixed with the text colour, so that they reach 4.5:1 on the card in light
+      // and dark themes (the plain colours stay on borders, pins and dots).
+      ':host { --carb-success-text: color-mix(in srgb, var(--success-color, #43a047) 55%, var(--primary-text-color, #212121)); --carb-info-text: color-mix(in srgb, var(--info-color, #039be5) 55%, var(--primary-text-color, #212121)); --carb-error-text: color-mix(in srgb, var(--error-color, #db4437) 55%, var(--primary-text-color, #212121)); --carb-warning-text: color-mix(in srgb, var(--warning-color, #ffa600) 50%, var(--primary-text-color, #212121)); }',
+      // A container, so that the stations reflow on a narrow card (see the end of the list).
+      'ha-card { padding: 0 0 8px; overflow: hidden; container: carb-card / inline-size; }',
       // Icon 12 px from the top and left edges; the first station's own 8 px padding sets the body 8 px below.
-      '.header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 12px 0; }',
-      '.title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }',
-      '.titles { min-width: 0; }',
+      // Narrow card: the title keeps the icon and 5 letters; below that the refresh button wraps instead of leaving the card.
+      '.header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; padding: 12px 12px 0; }',
+      '.title { flex: 1 1 0; display: flex; align-items: center; gap: 10px; }',
+      '.titles { flex: 1 1 auto; min-width: 5ch; contain: inline-size; }',
       '.hname { font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.hsub { font-size: 12px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.icon-link { display: flex; flex: none; }',
       // Generic fuel pump in a round badge tinted with the theme's primary colour.
       '.hbadge { --c: var(--primary-color, #03a9f4); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); --mdc-icon-size: 24px; }',
       // The 48 px button would make the row taller than the 40 px icon: it overlaps the padding instead.
-      '.refresh-btn { flex: none; margin: -4px -4px -4px 0; }',
+      '.refresh-btn { flex: none; margin: -4px -4px -4px auto; }',
       '.refresh-btn.spinning ha-icon { animation: carb-spin 1s linear infinite; }',
       '@keyframes carb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }',
       '.empty { padding: 12px 16px; color: var(--secondary-text-color); }',
@@ -1238,9 +1280,9 @@ class CarburantsFranceCard extends HTMLElement {
       '.line1 { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; flex-wrap: wrap; }',
       '.name { font-weight: 500; color: var(--primary-text-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
       '.opening { font-size: 12px; white-space: nowrap; }',
-      '.opening.open, .opening.always { color: var(--success-color, #43a047); }',
-      '.opening.automate { color: var(--info-color, #039be5); }',
-      '.opening.closed { color: var(--error-color, #db4437); }',
+      '.opening.open, .opening.always { color: var(--carb-success-text); }',
+      '.opening.automate { color: var(--carb-info-text); }',
+      '.opening.closed { color: var(--carb-error-text); }',
       '.meta { font-size: 12px; color: var(--secondary-text-color); margin-top: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
       '.chevron { flex: none; color: var(--secondary-text-color); --mdc-icon-size: 20px; transition: transform .2s ease; }',
       '.chevron.closed { transform: rotate(-90deg); }',
@@ -1256,9 +1298,9 @@ class CarburantsFranceCard extends HTMLElement {
       '@container (min-width: 130px) { .fage { grid-column: 2; grid-row: 1; justify-self: end; } }',
       '.fuel.empty { visibility: hidden; }',
       '.fuel.best { border-color: var(--success-color, #43a047); background: color-mix(in srgb, var(--success-color, #43a047) 10%, transparent); }',
-      '.fuel.best .fprice, .fuel.best .fname ha-icon { color: var(--success-color, #43a047); }',
-      '.fuel.out { opacity: .85; border-color: var(--warning-color, #ffa600); background: color-mix(in srgb, var(--warning-color, #ffa600) 8%, transparent); }',
-      '.fuel.out .fprice { font-size: 13px; color: var(--warning-color, #ffa600); }',
+      '.fuel.best .fprice, .fuel.best .fname ha-icon { color: var(--carb-success-text); }',
+      '.fuel.out { border-color: var(--warning-color, #ffa600); background: color-mix(in srgb, var(--warning-color, #ffa600) 8%, transparent); }',
+      '.fuel.out .fprice { font-size: 13px; color: var(--carb-warning-text); }',
       '.fuel.nodata { border-style: dashed; border-color: var(--divider-color, rgba(0,0,0,.2)); }',
       '.fuel.nodata .fprice { font-size: 13px; font-weight: 500; color: var(--secondary-text-color); }',
       '.details { margin: 8px 0 2px 46px; font-size: 12px; color: var(--primary-text-color); }',
@@ -1277,6 +1319,9 @@ class CarburantsFranceCard extends HTMLElement {
       '.footer[hidden] { display: none; }',
       '.toggle { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12px; font-weight: 500; padding: 4px 0; border: none; background: none; color: var(--primary-color); cursor: pointer; }',
       '.toggle ha-icon { --mdc-icon-size: 18px; }',
+      // Narrow card (half a Sections view section): the fuel tiles wrap two or one per row under the station instead of
+      // overflowing, the opening status goes under the name (which keeps the whole width) and wraps, so do the hours. !important: the tile columns are an inline style (carbFuelColumns).
+      '@container carb-card (max-width: 299px) { .fuels { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)) !important; margin-left: 0; } .details { margin-left: 0; } .line1 { flex-flow: column nowrap; align-items: stretch; gap: 0; } .opening { white-space: normal; } }',
       // Last, so that it outranks the rules above. Reduced motion: no spin nor swing; a dimmed icon still says a refresh is running.
       '@media (prefers-reduced-motion: reduce) { .refresh-btn.spinning ha-icon { animation: none; opacity: .5; } .chevron { transition: none; } }',
     ].join('\n');
@@ -2463,7 +2508,9 @@ class CarburantsFranceMapCard extends HTMLElement {
       message.textContent = this._t().no_entity;
       return;
     }
-    var text = this._error || (this._results && !this._results.stations.length ? this._mt().no_results : '');
+    var text = this._error || (this._results
+      ? (!this._results.stations.length ? this._mt().no_results : '')
+      : (carbUnavailable(this._lastState) ? this._t().unavailable_hint : ''));
     message.hidden = !text;
     message.textContent = text;
     carbLoadLeaflet().then((L) => {
@@ -2954,9 +3001,13 @@ class CarburantsFranceMapCard extends HTMLElement {
   static _styles() {
     return [
       ':host { display: block; }',
+      // Status texts: the state colour mixed with the text colour, so that they reach 4.5:1 on the card in light
+      // and dark themes (the plain colours stay on borders, pins and dots).
+      ':host { --carb-success-text: color-mix(in srgb, var(--success-color, #43a047) 55%, var(--primary-text-color, #212121)); --carb-info-text: color-mix(in srgb, var(--info-color, #039be5) 55%, var(--primary-text-color, #212121)); --carb-error-text: color-mix(in srgb, var(--error-color, #db4437) 55%, var(--primary-text-color, #212121)); --carb-warning-text: color-mix(in srgb, var(--warning-color, #ffa600) 50%, var(--primary-text-color, #212121)); }',
       'ha-card { overflow: hidden; }',
-      '.header { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 12px 12px 8px; }',
-      '.hname { min-width: 0; font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+      // Narrow card: the title keeps 5 letters; below that the radius and "locate me" tools wrap instead of leaving the card.
+      '.header { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-height: 36px; padding: 12px 12px 8px; }',
+      '.hname { flex: 1 1 0; min-width: 5ch; font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.icon-link { display: flex; flex: none; }',
       // Generic fuel pump in a round badge tinted with the theme's primary colour.
       '.hbadge { --c: var(--primary-color, #03a9f4); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); --mdc-icon-size: 24px; }',
@@ -2974,7 +3025,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.leaflet-bar a:hover, .leaflet-bar a:focus { background-color: var(--secondary-background-color, #f4f4f4); }',
       '.leaflet-bar a.leaflet-disabled { background-color: var(--secondary-background-color, #f4f4f4); color: var(--disabled-text-color, #bbb); }',
       '.leaflet-touch .leaflet-bar { border-color: var(--divider-color, rgba(0,0,0,.2)); }',
-      '.leaflet-container .leaflet-control-attribution { background: color-mix(in srgb, var(--card-background-color, #fff) 80%, transparent); color: var(--primary-text-color, #333); }',
+      // Leaflet's small print: `.leaflet-container { font: inherit; }` below would give it the card's text size.
+      '.leaflet-container .leaflet-control-attribution { background: color-mix(in srgb, var(--card-background-color, #fff) 80%, transparent); color: var(--primary-text-color, #333); font-size: 11px; }',
       '.leaflet-container .leaflet-control-attribution a { color: color-mix(in srgb, var(--primary-color, #03a9f4) 60%, var(--primary-text-color, #212121)); }',
       '.leaflet-container a.leaflet-popup-close-button { color: var(--secondary-text-color, #757575); }',
       '.leaflet-container a.leaflet-popup-close-button:hover, .leaflet-container a.leaflet-popup-close-button:focus { color: var(--primary-text-color, #585858); }',
@@ -2990,8 +3042,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.pin .fcode { min-width: 11px; height: 11px; border-radius: 6px; font-size: 7px; }',
       '.pname-pin { max-width: 130px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--primary-text-color, #212121); }',
       '.pin { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
-      '.pin.best { border-color: var(--success-color, #43a047); color: var(--success-color, #43a047); }',
-      '.pin.out { border-color: var(--warning-color, #ffa600); color: var(--warning-color, #ffa600); }',
+      '.pin.best { border-color: var(--success-color, #43a047); color: var(--carb-success-text); }',
+      '.pin.out { border-color: var(--warning-color, #ffa600); color: var(--carb-warning-text); }',
       '.pin.none { opacity: .6; }',
       // Leaflet forces width:auto and max-width:none on marker images: these selectors must outrank it.
       // Rounded corners stay small: a pill shape would cut the corners of wide logos (Avia).
@@ -3007,21 +3059,21 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.pbrand { font-size: 12px; font-weight: 500; color: var(--secondary-text-color, #727272); }',
       '.paddr { color: var(--secondary-text-color, #727272); margin-top: 2px; }',
       '.popening { margin-top: 4px; font-size: 12px; }',
-      '.popening.open, .popening.always { color: var(--success-color, #43a047); }',
-      '.popening.automate { color: var(--info-color, #039be5); }',
-      '.popening.closed { color: var(--error-color, #db4437); }',
+      '.popening.open, .popening.always { color: var(--carb-success-text); }',
+      '.popening.automate { color: var(--carb-info-text); }',
+      '.popening.closed { color: var(--carb-error-text); }',
       '.popup table { margin-top: 6px; border-collapse: collapse; width: 100%; }',
       '.popup td { padding: 2px 8px 2px 0; }',
       '.popup td.age { color: var(--secondary-text-color, #727272); font-size: 11px; text-align: right; padding-right: 0; }',
-      '.popup b.best { color: var(--success-color, #43a047); }',
-      '.popup .out { color: var(--warning-color, #ffa600); font-weight: 500; }',
+      '.popup b.best { color: var(--carb-success-text); }',
+      '.popup .out { color: var(--carb-warning-text); font-weight: 500; }',
       '.popup .nodata { color: var(--secondary-text-color, #727272); }',
       '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 4px; border: 2px solid var(--divider-color, rgba(0,0,0,.2)); background: var(--card-background-color, #fff); color: var(--primary-color, #03a9f4); cursor: pointer; background-clip: padding-box; }',
       '.carb-toggle[hidden] { display: none; }',
       // Header tools: radius of the nearby search and "locate me".
       '.tools { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: none; }',
       '.radius { font: inherit; font-size: 13px; height: 32px; padding: 0 6px; border-radius: 10px; border: 1px solid var(--divider-color, rgba(127,127,127,.3)); background: var(--secondary-background-color, rgba(127,127,127,.08)); color: var(--primary-text-color); cursor: pointer; }',
-      '.locate { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--secondary-text-color); cursor: pointer; --mdc-icon-size: 22px; }',
+      '.locate { flex: none; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--secondary-text-color); cursor: pointer; --mdc-icon-size: 22px; }',
       '.locate:hover { background: var(--divider-color, rgba(127,127,127,.25)); color: var(--primary-text-color); }',
       '.locate.active { background: color-mix(in srgb, var(--primary-color, #03a9f4) 16%, transparent); color: var(--primary-color, #03a9f4); }',
       '.locate.active:hover { background: color-mix(in srgb, var(--primary-color, #03a9f4) 24%, transparent); color: var(--primary-color, #03a9f4); }',
