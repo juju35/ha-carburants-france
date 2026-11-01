@@ -22,8 +22,8 @@ const runTimers = () => {
   for (const fn of timers.splice(0)) fn?.();
 };
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
-const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, CarburantsFranceCard, CarburantsFranceMapCard } = context.carb;
+vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
+const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, CarburantsFranceCard, CarburantsFranceMapCard } = context.carb;
 
 const fuels = [{ key: 'gazole' }, { key: 'e10' }];
 const station = (id, gazole, e10) => ({
@@ -103,6 +103,65 @@ test('carbLang prefers the language option over the Home Assistant language', ()
   assert.equal(carbLang(hass, 'auto'), 'fr');
   assert.equal(carbLang(hass, 'de'), 'de');
   assert.equal(carbLang({ language: 'it' }), 'en');
+});
+
+test('carbLang: the full language when the card has it, else the part before the dash, else English', () => {
+  assert.equal(carbLang({ locale: { language: 'fr-FR' } }), 'fr');
+  assert.equal(carbLang({ locale: { language: 'sr-Latn' } }), 'sr-Latn');
+  assert.equal(carbLang({ locale: { language: 'sr' } }), 'sr');
+  assert.equal(carbLang({ language: 'sr-Cyrl' }), 'sr');
+  assert.equal(carbLang({ locale: { language: 'pt-BR' } }), 'en');
+  // The `language` option still wins over Home Assistant's.
+  assert.equal(carbLang({ locale: { language: 'fr' } }, 'sr-Latn'), 'sr-Latn');
+  assert.equal(carbLang({ locale: { language: 'sr-Latn' } }, 'sr'), 'sr');
+});
+
+const CYRILLIC = /[\u0400-\u04FF]/;
+test('Serbian Latin dates and weekdays are in the Latin script, Cyrillic ones in Cyrillic', () => {
+  const monday = { hours: week({ 1: [['08:00', '20:00']] }) };
+  const thu = at('2026-10-29T12:00:00');
+  const latin = carbOpening(monday, context.CarburantsI18n['sr-Latn'], thu, carbLocale(null, 'sr-Latn')).text;
+  assert.doesNotMatch(latin, CYRILLIC, latin);
+  assert.match(latin, /^Zatvoreno · otvara se u /);
+  const cyrillic = carbOpening(monday, context.CarburantsI18n.sr, thu, carbLocale(null, 'sr')).text;
+  assert.match(cyrillic, /^Затворено · отвара се у [\u0400-\u04FF]/);
+  assert.equal(carbLocale({ locale: { language: 'sr-Latn' } }, 'auto'), 'sr-Latn');
+  assert.doesNotMatch(new Intl.RelativeTimeFormat(carbLocale(null, 'sr-Latn'), { numeric: 'auto', style: 'short' }).format(-2, 'day'), CYRILLIC);
+});
+
+test('the editors offer Serbian in both scripts, each in its own name', () => {
+  const options = carbLanguageOptions('auto');
+  assert.equal(JSON.stringify(options.slice(-2)), JSON.stringify([{ value: 'sr', label: 'Српски' }, { value: 'sr-Latn', label: 'Srpski (latinica)' }]));
+});
+
+// Serbian Cyrillic letter by letter, and its Latin spelling (љ, њ and џ take two letters).
+const SR_CYR = 'абвгдђежзијклљмнњопрстћуфхцчџш';
+const SR_LAT = ['a', 'b', 'v', 'g', 'd', 'đ', 'e', 'ž', 'z', 'i', 'j', 'k', 'l', 'lj', 'm', 'n', 'nj', 'o', 'p', 'r', 's', 't', 'ć', 'u', 'f', 'h', 'c', 'č', 'dž', 'š'];
+const toLatin = new Map();
+[...SR_CYR].forEach((c, i) => {
+  toLatin.set(c, SR_LAT[i]);
+  toLatin.set(c.toUpperCase(), SR_LAT[i][0].toUpperCase() + SR_LAT[i].slice(1));
+});
+const strings = (value) => (typeof value === 'string' ? [value] : Object.values(value).flatMap(strings));
+
+test('Serbian: the Cyrillic and Latin cards say the same thing, letter for letter', () => {
+  for (const i18n of [context.CarburantsI18n, context.CarburantsMapI18n]) {
+    const cyr = strings(i18n.sr);
+    const lat = strings(i18n['sr-Latn']);
+    assert.equal(lat.length, cyr.length);
+    cyr.forEach((text, i) => {
+      assert.equal([...text].map((c) => toLatin.get(c) ?? c).join(''), lat[i], text);
+    });
+  }
+});
+
+test('Serbian Cyrillic has no Latin word left, except names, units and placeholders', () => {
+  const allowed = /Home Assistant|Carburants France|OpenStreetMap( France)?|OpenTopoMap|CyclOSM|Esri|IGN|URL|entity|km|px|\{\w+\}/g;
+  for (const i18n of [context.CarburantsI18n, context.CarburantsMapI18n]) {
+    for (const text of strings(i18n.sr)) {
+      assert.doesNotMatch(text.replace(allowed, ''), /[A-Za-z]/, text);
+    }
+  }
 });
 
 test('carbSetSchema only hands ha-form a schema that changed', () => {
@@ -277,7 +336,7 @@ test('every card language has exactly the keys of English', () => {
   };
   const placeholders = (value) => JSON.stringify(value).match(/\{\w+\}/g)?.sort() ?? [];
   for (const i18n of [context.CarburantsI18n, context.CarburantsMapI18n]) {
-    assert.deepEqual(Object.keys(i18n).sort(), ['de', 'en', 'es', 'fr']);
+    assert.deepEqual(Object.keys(i18n).sort(), ['de', 'en', 'es', 'fr', 'sr', 'sr-Latn']);
     for (const lang of Object.keys(i18n)) {
       assert.deepEqual(shape(i18n[lang]), shape(i18n.en), lang);
       assert.deepEqual(placeholders(i18n[lang]), placeholders(i18n.en), lang);
