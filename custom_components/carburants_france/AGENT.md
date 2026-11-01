@@ -20,7 +20,7 @@ custom_components/carburants_france/
 ├── websocket.py       # carburants_france/search: nearby / town search for the map card, nothing stored
 ├── config_flow.py     # user (name, fuels) → search → stations; options: fuels, stations, add, scan_interval
 ├── const.py           # Constants, fuel keys
-├── icons.json / services.yaml / translations/{en,fr}.json
+├── icons.json / services.yaml / translations/{en,fr,de,es,it,nl,pt,pl,sr,sr-Latn}.json
 ├── frontend/carburants-france-card.js   # Both cards (list + map), vanilla JS
 ├── frontend/brands/                     # Brand logos (PNG) shipped with the cards
 ├── frontend/leaflet/                    # Leaflet 1.9.4 (BSD-2), loaded by the map card

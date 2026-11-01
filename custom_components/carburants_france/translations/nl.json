@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Brandstofprijzen en -beschikbaarheid gepubliceerd door de Franse overheid (data.economie.gouv.fr), geen API-sleutel nodig.",
+        "data": { "name": "Naam", "fuels": "Te volgen brandstoffen" }
+      },
+      "search": {
+        "title": "Tankstations zoeken",
+        "description": "Postcode, gemeente, departementsnummer of station-ID. Laat leeg om rond je huis binnen de straal te zoeken.",
+        "data": { "query": "Zoeken", "radius": "Straal rond huis" }
+      },
+      "stations": {
+        "title": "Tankstations kiezen",
+        "description": "Gevonden tankstations: {count}, gesorteerd op afstand tot je huis. Vink \"Nieuwe zoekopdracht\" aan om elders tankstations toe te voegen: de selectie blijft behouden. Een zoekopdracht geeft maximaal {max} tankstations: verfijn die (postcode, kleinere straal) als het jouwe ontbreekt.",
+        "data": { "stations": "Tankstations", "search_again": "Nieuwe zoekopdracht" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan de API van de brandstofprijzen niet bereiken. Probeer het later opnieuw.",
+      "no_results": "Geen tankstation gevonden. Probeer een postcode, een andere gemeente of een grotere straal.",
+      "no_station": "Kies minstens één tankstation.",
+      "no_fuel": "Kies minstens één brandstof.",
+      "unknown": "Onverwachte fout, zie het logboek van Home Assistant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opties Carburants France",
+        "data": {
+          "fuels": "Te volgen brandstoffen",
+          "stations": "Gevolgde tankstations",
+          "add_stations": "Tankstations toevoegen",
+          "rename_stations": "Tankstations hernoemen",
+          "scan_interval": "Update-interval"
+        },
+        "data_description": {
+          "stations": "Vink een tankstation uit om het niet meer te volgen.",
+          "rename_stations": "Geef de tankstations je eigen namen, in de volgende stap.",
+          "scan_interval": "De overheidsfeed wordt elke 10 minuten bijgewerkt."
+        }
+      },
+      "names": {
+        "title": "Tankstations hernoemen",
+        "description": "Getoonde naam voor elk tankstation. Laat leeg om de automatische naam te behouden (OpenStreetMap, of merk en gemeente), getoond vóór het streepje."
+      },
+      "search": {
+        "title": "Tankstations zoeken",
+        "description": "Postcode, gemeente, departementsnummer of station-ID. Laat leeg om rond je huis binnen de straal te zoeken.",
+        "data": { "query": "Zoeken", "radius": "Straal rond huis" }
+      },
+      "stations": {
+        "title": "Tankstations kiezen",
+        "description": "Gevonden tankstations: {count}, gesorteerd op afstand tot je huis. Vink \"Nieuwe zoekopdracht\" aan om elders tankstations toe te voegen: de selectie blijft behouden. Een zoekopdracht geeft maximaal {max} tankstations: verfijn die (postcode, kleinere straal) als het jouwe ontbreekt.",
+        "data": { "stations": "Tankstations", "search_again": "Nieuwe zoekopdracht" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan de API van de brandstofprijzen niet bereiken. Probeer het later opnieuw.",
+      "no_results": "Geen tankstation gevonden. Probeer een postcode, een andere gemeente of een grotere straal.",
+      "no_station": "Kies minstens één tankstation.",
+      "no_fuel": "Kies minstens één brandstof.",
+      "unknown": "Onverwachte fout, zie het logboek van Home Assistant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Beste prijs {fuel}" },
+      "stations": { "name": "Tankstations" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} beschikbaar" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Vernieuwen",
+      "description": "Haalt de prijzen nu op.",
+      "fields": {
+        "config_entry_id": { "name": "Item", "description": "Alleen dit item. Standaard allemaal." }
+      }
+    }
+  }
+}

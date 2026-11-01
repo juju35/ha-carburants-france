@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.5 (2026-11-01)
+
+### Changes
+- Added Italian, Dutch, European Portuguese and Polish translations: configuration and options forms, entity names, the refresh action, and both cards (list and map, with their visual editors). The `language` option offers `it`, `nl`, `pt` and `pl`; with `language: auto`, Brazilian Portuguese (`pt-BR`) falls back to European Portuguese.
+
 ## 1.9.4 (2026-11-01)
 
 ### Changes

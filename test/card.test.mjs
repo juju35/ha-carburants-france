@@ -102,7 +102,7 @@ test('carbLang prefers the language option over the Home Assistant language', ()
   assert.equal(carbLang(hass), 'fr');
   assert.equal(carbLang(hass, 'auto'), 'fr');
   assert.equal(carbLang(hass, 'de'), 'de');
-  assert.equal(carbLang({ language: 'it' }), 'en');
+  assert.equal(carbLang({ language: 'ja' }), 'en');
 });
 
 test('carbLang: the full language when the card has it, else the part before the dash, else English', () => {
@@ -110,10 +110,33 @@ test('carbLang: the full language when the card has it, else the part before the
   assert.equal(carbLang({ locale: { language: 'sr-Latn' } }), 'sr-Latn');
   assert.equal(carbLang({ locale: { language: 'sr' } }), 'sr');
   assert.equal(carbLang({ language: 'sr-Cyrl' }), 'sr');
-  assert.equal(carbLang({ locale: { language: 'pt-BR' } }), 'en');
+  assert.equal(carbLang({ locale: { language: 'ja' } }), 'en');
   // The `language` option still wins over Home Assistant's.
   assert.equal(carbLang({ locale: { language: 'fr' } }, 'sr-Latn'), 'sr-Latn');
   assert.equal(carbLang({ locale: { language: 'sr-Latn' } }, 'sr'), 'sr');
+});
+
+test('carbLang: Italian, Dutch, European Portuguese and Polish, with their regional variants', () => {
+  const lang = (code) => carbLang({ locale: { language: code } });
+  assert.equal(lang('it-IT'), 'it');
+  assert.equal(lang('nl-BE'), 'nl');
+  assert.equal(lang('pt'), 'pt');
+  // Brazilian Portuguese falls back to European Portuguese.
+  assert.equal(lang('pt-BR'), 'pt');
+  assert.equal(lang('pl-PL'), 'pl');
+  assert.equal(lang('sr-Latn'), 'sr-Latn');
+  assert.equal(lang('ja'), 'en');
+  assert.equal(carbLang({ locale: { language: 'en' } }, 'pl'), 'pl');
+});
+
+test('the editors offer Italian, Dutch, Portuguese and Polish, each in its own name', () => {
+  const labels = Object.fromEntries(carbLanguageOptions('auto').map((o) => [o.value, o.label]));
+  assert.equal(labels.it, 'Italiano');
+  assert.equal(labels.nl, 'Nederlands');
+  assert.equal(labels.pt, 'Português');
+  assert.equal(labels.pl, 'Polski');
+  // Every card language is offered, and only those.
+  assert.deepEqual(Object.keys(labels).filter((v) => v !== 'auto').sort(), Object.keys(context.CarburantsI18n).sort());
 });
 
 const CYRILLIC = /[\u0400-\u04FF]/;
@@ -336,10 +359,11 @@ test('every card language has exactly the keys of English', () => {
   };
   const placeholders = (value) => JSON.stringify(value).match(/\{\w+\}/g)?.sort() ?? [];
   for (const i18n of [context.CarburantsI18n, context.CarburantsMapI18n]) {
-    assert.deepEqual(Object.keys(i18n).sort(), ['de', 'en', 'es', 'fr', 'sr', 'sr-Latn']);
+    assert.deepEqual(Object.keys(i18n).sort(), ['de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'sr', 'sr-Latn']);
     for (const lang of Object.keys(i18n)) {
       assert.deepEqual(shape(i18n[lang]), shape(i18n.en), lang);
       assert.deepEqual(placeholders(i18n[lang]), placeholders(i18n.en), lang);
+      for (const text of strings(i18n[lang])) assert.ok(text.trim(), `${lang}: empty string`);
     }
   }
 });
