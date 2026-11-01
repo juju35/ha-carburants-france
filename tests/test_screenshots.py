@@ -6,6 +6,7 @@ showing exactly the same state, and every README image is one the script produce
 
 import ast
 import re
+import shutil
 from pathlib import Path
 
 import pytest
@@ -151,3 +152,77 @@ def test_same_pixels_compares_every_colour_channel(tmp_path):
     white.save(tmp_path / "c.gif", save_all=True, append_images=[image_module.new("RGB", (40, 30), (0, 0, 128))])
     assert same_pixels(tmp_path / "a.gif", tmp_path / "b.gif")
     assert not same_pixels(tmp_path / "a.gif", tmp_path / "c.gif")
+
+
+def _script_functions(*names):
+    """Some top-level definitions of scripts/screenshots.py, run on their own (no Playwright import needed)."""
+    nodes = [
+        n
+        for n in SCRIPT.body
+        if (isinstance(n, ast.FunctionDef) and n.name in names)
+        or (isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id in names for t in n.targets))
+    ]
+    import subprocess  # noqa: PLC0415
+
+    namespace = {"Path": Path, "subprocess": subprocess}
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), "screenshots.py", "exec"), namespace)  # noqa: S102
+    return namespace
+
+
+def test_gif_frames_step_every_animation_of_the_shadow_roots():
+    """The spinner and the pulse run in the cards' shadow roots, which document.getAnimations() does not see: left
+    running, each render caught them at another point and the GIFs changed on every CI run. The stepping must
+    freeze them (two screenshots at the same t are the same pixels) and fail loudly when nothing is animated."""
+    sync_api = pytest.importorskip("playwright.sync_api")
+    step_animations = _script_functions("STEP_ANIMATIONS", "step_animations")["step_animations"]
+    html = """<!doctype html><style>body{margin:0}</style><div id="host"></div><script>
+      const root = document.getElementById("host").attachShadow({mode: "open"});
+      root.innerHTML = `<style>@keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 50% { opacity: .3; } }
+        .s { width: 60px; height: 20px; background: #c00; animation: spin 1s linear infinite; }
+        .p { width: 60px; height: 20px; background: #00c; animation: pulse 1s ease-in-out infinite; }
+        .t { width: 60px; height: 20px; background: #0c0; transition: opacity 5s; }</style>
+        <div class="s"></div><div class="p"></div><div class="t"></div>`;
+      </script>"""
+    with sync_api.sync_playwright() as p:
+        try:
+            browser = p.chromium.launch()
+        except Exception as err:  # noqa: BLE001
+            pytest.skip(f"no Chromium: {err}")
+        page = browser.new_page(viewport={"width": 100, "height": 80})
+        page.set_content(html)
+        page.evaluate("""() => { const t = document.getElementById("host").shadowRoot.querySelector(".t");
+                                 t.getBoundingClientRect(); t.style.opacity = "0.2"; }""")
+        clip = {"x": 0, "y": 0, "width": 100, "height": 80}
+        assert step_animations(page, 250) == 2
+        first = page.screenshot(clip=clip)
+        page.wait_for_timeout(400)
+        assert step_animations(page, 250) == 2
+        again = page.screenshot(clip=clip)
+        states = page.evaluate(
+            """() => document.getElementById("host").shadowRoot.getAnimations().map((a) => a.playState)"""
+        )
+        page.set_content("<p>still</p>")
+        assert step_animations(page, 0) == 0
+        browser.close()
+    assert states == ["paused", "paused"]  # the transition was finished (and dropped), the loops paused
+    assert first == again
+
+
+def test_gif_encoding_is_deterministic(tmp_path):
+    """The same frames always give the same GIF file: palette computed from the frames, ordered (Bayer) dithering,
+    one thread (no error diffusion, no random dithering, no timestamps)."""
+    image_module = pytest.importorskip("PIL.Image")
+    if not shutil.which("ffmpeg"):
+        pytest.skip("no ffmpeg")
+    encode_gif = _script_functions("encode_gif")["encode_gif"]
+    for i in range(4):
+        frame = image_module.radial_gradient("L").resize((80, 60)).convert("RGB")
+        frame.putpixel((i, i), (255, 0, 0))
+        frame.save(tmp_path / f"f{i:03d}.png")
+    encode_gif(tmp_path, 20, 80, tmp_path / "a.gif")
+    encode_gif(tmp_path, 20, 80, tmp_path / "b.gif")
+    assert (tmp_path / "a.gif").read_bytes() == (tmp_path / "b.gif").read_bytes()
+    source = ast.unparse(next(n for n in SCRIPT.body if isinstance(n, ast.FunctionDef) and n.name == "encode_gif"))
+    assert "dither=bayer" in source
+    assert not re.search(r"dither=(sierra|floyd|heckbert)", source)

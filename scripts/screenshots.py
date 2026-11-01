@@ -709,13 +709,70 @@ def mount(context, shot):
     return page
 
 
+# Every animation of the page, in the document and in every shadow root (document.getAnimations() does not see the
+# cards' shadow roots, where the spinner and the pulse run): a finite one (a CSS transition) is finished, a looping
+# one is paused at t ms. Returns how many looping animations were stepped.
+STEP_ANIMATIONS = """(t) => {
+  const all = [];
+  const walk = (root) => {
+    all.push(...root.getAnimations());
+    for (const el of root.querySelectorAll("*")) if (el.shadowRoot) walk(el.shadowRoot);
+  };
+  walk(document);
+  let looping = 0;
+  for (const a of all) {
+    if (a.effect?.getComputedTiming().iterations !== Infinity) { a.finish(); continue; }
+    a.pause();
+    a.currentTime = t;
+    looping += 1;
+  }
+  return looping;
+}"""
+
+
+def step_animations(page, t):
+    """Freeze every animation of the page (shadow roots included) at t ms; returns the looping ones stepped."""
+    return page.evaluate(STEP_ANIMATIONS, t)
+
+
+def encode_gif(frame_dir, fps, width, out):
+    """The frames f000.png… of frame_dir as a looping GIF. Deterministic: the palette is computed from the frames
+    alone and the dithering is ordered (Bayer), never error diffusion or random, on one thread, so the same
+    frames always give the same file."""
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-filter_threads",
+            "1",
+            "-framerate",
+            str(fps),
+            "-i",
+            f"{frame_dir}/f%03d.png",
+            "-vf",
+            f"scale={width}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer:bayer_scale=4",
+            "-threads",
+            "1",
+            "-bitexact",
+            "-loop",
+            "0",
+            str(out),
+        ],
+        check=True,
+    )
+
+
 def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;"):
     """Record a card animation as a looping screenshots/<file>.gif (needs ffmpeg). `prime` is the JS that puts the
-    card in its animated state. Every animation is paused and stepped frame by frame, so the GIF is identical
-    whatever the machine's speed."""
+    card in its animated state. The clock is frozen and every animation (shadow roots included) is paused and
+    stepped frame by frame, so the GIF is identical whatever the machine's speed and from one run to the next."""
     if shot.get("card") == "map":
         page = mount_map(context, shot)
         wait_tiles(page)
+        # Frozen only now: Leaflet needs a running clock to fade the tiles in (see main()).
+        page.clock.set_fixed_time(NOW)
         render = "el._renderHeader();"
     else:
         page = mount(context, shot)
@@ -728,31 +785,12 @@ def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;")
     frames = round(fps * seconds)
     with tempfile.TemporaryDirectory() as frame_dir:
         for i in range(frames):
-            page.evaluate(
-                "(t) => { for (const a of document.getAnimations()) { a.pause(); a.currentTime = t; } }",
-                (i * 1000) / fps,
-            )
+            if not step_animations(page, (i * 1000) / fps):
+                raise SystemExit(f"{shot['file']}.gif: no animation to step")
             page.screenshot(path=f"{frame_dir}/f{i:03d}.png", clip=clip)
         page.close()
         out = f"{frame_dir}/{shot['file']}.gif"
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-y",
-                "-loglevel",
-                "error",
-                "-framerate",
-                str(fps),
-                "-i",
-                f"{frame_dir}/f%03d.png",
-                "-vf",
-                f"scale={clip['width']}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer:bayer_scale=4",
-                "-loop",
-                "0",
-                out,
-            ],
-            check=True,
-        )
+        encode_gif(frame_dir, fps, clip["width"], out)
         replace_if_changed(out, ROOT / "screenshots" / f"{shot['file']}.gif")
     print(f"screenshots/{shot['file']}.gif")
 
