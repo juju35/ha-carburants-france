@@ -212,6 +212,7 @@ var CarburantsI18n = {
   it: {
     default_title: 'Carburante',
     stations: 'stazioni',
+    stations_one: 'stazione',
     empty: 'Nessuna stazione da mostrare',
     no_entity: 'Sensore Stazioni non trovato. Aggiungi l\'integrazione Carburants France o imposta «entity».',
     refresh: 'Aggiorna',
@@ -220,6 +221,7 @@ var CarburantsI18n = {
     closed: 'Chiuso',
     closes_at: 'chiude alle',
     opens_at: 'apre alle',
+    opens_on: 'apre {d} alle {t}',
     always_open: '24/7',
     automate: 'Self-service 24/7',
     out_of_stock: 'Esaurito',
@@ -227,6 +229,7 @@ var CarburantsI18n = {
     no_price_hint: 'Né prezzo né esaurimento ancora pubblicati',
     rupture_ended: 'esaurimento terminato',
     since: 'da',
+    out_since: 'Esaurito · {s}',
     best: 'Miglior prezzo',
     hours: 'Orari',
     services: 'Servizi',
@@ -263,6 +266,7 @@ var CarburantsI18n = {
   nl: {
     default_title: 'Brandstof',
     stations: 'tankstations',
+    stations_one: 'tankstation',
     empty: 'Geen tankstation om te tonen',
     no_entity: 'Sensor Tankstations niet gevonden. Voeg de integratie Carburants France toe of stel "entity" in.',
     refresh: 'Vernieuwen',
@@ -271,6 +275,7 @@ var CarburantsI18n = {
     closed: 'Gesloten',
     closes_at: 'sluit om',
     opens_at: 'opent om',
+    opens_on: 'opent {d} om {t}',
     always_open: '24/7',
     automate: '24/7 betalen aan de pomp',
     out_of_stock: 'Uitverkocht',
@@ -278,6 +283,7 @@ var CarburantsI18n = {
     no_price_hint: 'Nog geen prijs of tekort gepubliceerd',
     rupture_ended: 'tekort opgeheven',
     since: 'sinds',
+    out_since: 'Uitverkocht · {s}',
     best: 'Beste prijs',
     hours: 'Openingstijden',
     services: 'Diensten',
@@ -314,6 +320,7 @@ var CarburantsI18n = {
   pt: {
     default_title: 'Combustível',
     stations: 'postos',
+    stations_one: 'posto',
     empty: 'Nenhum posto para mostrar',
     no_entity: 'Sensor Postos não encontrado. Adicione a integração Carburants France ou defina «entity».',
     refresh: 'Atualizar',
@@ -322,6 +329,7 @@ var CarburantsI18n = {
     closed: 'Fechado',
     closes_at: 'fecha às',
     opens_at: 'abre às',
+    opens_on: 'abre {d} às {t}',
     always_open: '24/7',
     automate: 'Pagamento na bomba 24/7',
     out_of_stock: 'Esgotado',
@@ -365,6 +373,9 @@ var CarburantsI18n = {
   pl: {
     default_title: 'Paliwo',
     stations: 'stacji',
+    stations_one: 'stacja',
+    stations_few: 'stacje',
+    stations_many: 'stacji',
     empty: 'Brak stacji do wyświetlenia',
     no_entity: 'Nie znaleziono czujnika Stacje. Dodaj integrację Carburants France lub ustaw „entity”.',
     refresh: 'Odśwież',
@@ -378,8 +389,9 @@ var CarburantsI18n = {
     out_of_stock: 'Brak paliwa',
     no_price: 'Brak ceny',
     no_price_hint: 'Nie opublikowano jeszcze ani ceny, ani braku paliwa',
-    rupture_ended: 'brak paliwa zakończony',
+    rupture_ended: 'znów dostępne',
     since: 'od',
+    out_since: 'Brak paliwa · {s}',
     best: 'Najlepsza cena',
     hours: 'Godziny otwarcia',
     services: 'Usługi',
@@ -548,16 +560,28 @@ function carbLang(hass, language) {
   return CarburantsI18n[lang] ? lang : 'en';
 }
 
-// Number and date locale: the configured language wins over Home Assistant's.
+// Number and date locale: Home Assistant's full locale (fr-FR, pt-BR…) when it is a variant of the card language,
+// else the card language itself, European Portuguese being pt-PT (plain `pt` is Brazilian for Intl).
 function carbLocale(hass, language) {
-  if (language && CarburantsI18n[language]) return language;
-  return (hass?.locale?.language) || navigator.language || 'fr';
+  var lang = carbLang(hass, language);
+  var ha = (hass && (hass.locale?.language || hass.language)) || navigator.language || '';
+  var locale = ha === lang || (ha.split('-')[0] === lang && !CarburantsI18n[ha]) ? ha : lang;
+  return locale === 'pt' ? 'pt-PT' : locale;
+}
+
+// Plural form of `key` for n: `key_one` / `key_few` / `key_many` when the language has it, else `key`.
+function carbPlural(t, key, n, locale) {
+  var category = 'other';
+  try {
+    category = new Intl.PluralRules(locale).select(Number(n));
+  } catch (_e) {}
+  return t[`${key}_${category}`] || t[key];
 }
 
 // Choices of the editors' `language` option, each language in its own name.
 function carbLanguageOptions(autoLabel) {
   return [{ value: 'auto', label: autoLabel }].concat(
-    [['en', 'English'], ['fr', 'Français'], ['de', 'Deutsch'], ['es', 'Español'], ['it', 'Italiano'], ['nl', 'Nederlands'], ['pt', 'Português'], ['pl', 'Polski'], ['sr', 'Српски'], ['sr-Latn', 'Srpski (latinica)']].map((l) => ({ value: l[0], label: l[1] })),
+    [['en', 'English'], ['fr', 'Français'], ['de', 'Deutsch'], ['es', 'Español'], ['it', 'Italiano'], ['nl', 'Nederlands'], ['pt', 'Português (Portugal)'], ['pl', 'Polski'], ['sr', 'Српски'], ['sr-Latn', 'Srpski (latinica)']].map((l) => ({ value: l[0], label: l[1] })),
   );
 }
 
@@ -800,8 +824,11 @@ function carbOpening(station, t, now, locale) {
   for (var k = 1; k <= 7; k++) {
     var d = hours.filter((x) => x.day === ((day - 1 + k) % 7) + 1)[0];
     if (d && !d.closed && d.ranges.length) {
-      var label = k === 1 ? '' : `${carbWeekday(new Date(now.getFullYear(), now.getMonth(), now.getDate() + k), locale)} `;
-      return { key: 'closed', text: `${t.closed} · ${t.opens_at} ${label}${d.ranges[0][0]}` };
+      var start = d.ranges[0][0];
+      if (k === 1) return { key: 'closed', text: `${t.closed} · ${t.opens_at} ${start}` };
+      var dayName = carbWeekday(new Date(now.getFullYear(), now.getMonth(), now.getDate() + k), locale);
+      var opens = t.opens_on ? t.opens_on.replace('{d}', dayName).replace('{t}', start) : `${t.opens_at} ${dayName} ${start}`;
+      return { key: 'closed', text: `${t.closed} · ${opens}` };
     }
   }
   return { key: 'closed', text: t.closed };
@@ -969,7 +996,7 @@ class CarburantsFranceCard extends HTMLElement {
 
     var headerHtml =
       '<div class="title">' + icon + '<div class="titles"><div class="hname">' + carbEsc(title) + '</div>' +
-      '<div class="hsub">' + carbEsc(st.state) + ' ' + carbEsc(t.stations) + '</div></div></div>' +
+      '<div class="hsub">' + carbEsc(st.state) + ' ' + carbEsc(carbPlural(t, 'stations', st.state, this._locale())) + '</div></div></div>' +
       (this._config.show_refresh
         ? '<ha-icon-button class="refresh-btn' + (this._refreshing ? ' spinning' : '') + '" label="' + carbEsc(t.refresh) +
           '" title="' + carbEsc(refreshTitle) + '"><ha-icon icon="mdi:refresh"></ha-icon></ha-icon-button>'
@@ -1075,7 +1102,8 @@ class CarburantsFranceCard extends HTMLElement {
       if (!fuel.available) {
         if (!cfg.show_out_of_stock || fuel.rupture === 'definitive') return slot;
         var since = fuel.rupture_since ? carbRelative(fuel.rupture_since, this._locale()) : '';
-        return '<div class="fuel out" title="' + carbEsc(t.out_of_stock + (since ? ` ${t.since} ${since}` : '')) + '">' +
+        var outTitle = !since ? t.out_of_stock : t.out_since ? t.out_since.replace('{s}', since) : `${t.out_of_stock} ${t.since} ${since}`;
+        return '<div class="fuel out" title="' + carbEsc(outTitle) + '">' +
           '<span class="fname">' + carbFuelBadge(f.key, f.name) + '</span><span class="fprice">' + carbEsc(t.out_of_stock) + '</span>' +
           (cfg.show_updated && since ? `<span class="fage">${carbEsc(since)}</span>` : '') + '</div>';
       }
@@ -1690,7 +1718,7 @@ var CarburantsMapI18n = {
     },
   },
   nl: {
-    default_title: 'Kaart van tankstations',
+    default_title: 'Tankstationkaart',
     home: 'Thuis',
     fullscreen: 'Volledig scherm',
     exit_fullscreen: 'Volledig scherm verlaten',

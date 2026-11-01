@@ -19,7 +19,7 @@
     },
     "error": {
       "cannot_connect": "Nie można połączyć się z API cen paliw. Spróbuj ponownie później.",
-      "no_results": "Nie znaleziono żadnej stacji. Spróbuj kodu pocztowego, innej miejscowości lub większego promienia.",
+      "no_results": "Nie znaleziono żadnej stacji. Spróbuj podać kod pocztowy, inną miejscowość lub większy promień.",
       "no_station": "Wybierz co najmniej jedną stację.",
       "no_fuel": "Wybierz co najmniej jedno paliwo.",
       "unknown": "Nieoczekiwany błąd, sprawdź dziennik Home Assistant."
@@ -59,7 +59,7 @@
     },
     "error": {
       "cannot_connect": "Nie można połączyć się z API cen paliw. Spróbuj ponownie później.",
-      "no_results": "Nie znaleziono żadnej stacji. Spróbuj kodu pocztowego, innej miejscowości lub większego promienia.",
+      "no_results": "Nie znaleziono żadnej stacji. Spróbuj podać kod pocztowy, inną miejscowość lub większy promień.",
       "no_station": "Wybierz co najmniej jedną stację.",
       "no_fuel": "Wybierz co najmniej jedno paliwo.",
       "unknown": "Nieoczekiwany błąd, sprawdź dziennik Home Assistant."

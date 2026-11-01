@@ -28,7 +28,7 @@ def _load(lang: str) -> dict[str, str]:
 
 
 def test_languages() -> None:
-    """English, French, German, Spanish, Italian, Dutch, Portuguese, Polish and Serbian (both scripts) are shipped."""
+    """English, French, German, Spanish, Italian, Dutch, Portuguese (pt, and pt-BR as a copy), Polish and Serbian (both scripts) are shipped."""
     assert {p.stem for p in TRANSLATIONS.glob("*.json")} == {
         "en",
         "fr",
@@ -37,6 +37,7 @@ def test_languages() -> None:
         "it",
         "nl",
         "pt",
+        "pt-BR",
         "pl",
         "sr",
         "sr-Latn",
@@ -72,3 +73,8 @@ def test_serbian_cyrillic_has_no_latin_word() -> None:
     """Only names and placeholders stay in the Latin script in the Cyrillic file."""
     for key, text in _load("sr").items():
         assert not re.search(r"[A-Za-z]", _LATIN_NAMES.sub("", text)), key
+
+
+def test_brazilian_portuguese_is_the_european_text() -> None:
+    """pt-BR.json is an exact copy of pt.json: Home Assistant does not fall back from pt-BR to pt by itself."""
+    assert (TRANSLATIONS / "pt-BR.json").read_bytes() == (TRANSLATIONS / "pt.json").read_bytes()

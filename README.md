@@ -301,7 +301,7 @@ python scripts/screenshots.py   # renders the list card, the map card, and the r
 
 ## Translations
 
-The integration and the cards follow the language of Home Assistant; each card can also be set to another one with its `language` option. A regional variant falls back to its base language (`pt-BR` → `pt`), and an unsupported language to English. Station names, addresses and services come from the feed and stay French. Currently supported:
+The integration and the cards follow the language of Home Assistant; each card can also be set to another one with its `language` option. In the cards, a regional variant falls back to its base language (`fr-FR` → `fr`), and an unsupported language to English. pt-BR uses the European Portuguese texts, in the integration (`pt-BR.json` is a copy of `pt.json`) as in the cards. Station names, addresses and services come from the feed and stay French. Currently supported:
 
 | Language | Code |
 |---|---|
