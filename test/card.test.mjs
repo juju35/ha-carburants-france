@@ -366,8 +366,8 @@ test('every card language has exactly the keys of English', () => {
   for (const i18n of [context.CarburantsI18n, context.CarburantsMapI18n]) {
     assert.deepEqual(Object.keys(i18n).sort(), ['de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'sr', 'sr-Latn']);
     for (const lang of Object.keys(i18n)) {
-      assert.deepEqual(shape(withoutOptional(i18n[lang])), shape(i18n.en), lang);
-      assert.deepEqual(placeholders(withoutOptional(i18n[lang])), placeholders(i18n.en), lang);
+      assert.deepEqual(shape(withoutOptional(i18n[lang])), shape(withoutOptional(i18n.en)), lang);
+      assert.deepEqual(placeholders(withoutOptional(i18n[lang])), placeholders(withoutOptional(i18n.en)), lang);
       const extra = Object.keys(i18n[lang]).filter((key) => OPTIONAL_KEYS.includes(key));
       for (const key of extra) assert.equal(typeof i18n[lang][key], 'string', `${lang}: ${key}`);
       if (i18n[lang].opens_on) assert.deepEqual(placeholders(i18n[lang].opens_on), ['{d}', '{t}'], lang);
@@ -541,9 +541,9 @@ test('the station count agrees with its number (Polish one / few / many, Italian
   assert.equal(plural('nl', '1'), 'tankstation');
   assert.equal(plural('pt', '1'), 'posto');
   assert.equal(context.carbPlural(context.CarburantsI18n.pt, 'stations', '0', 'pt-PT'), 'postos');
-  // Languages without plural keys keep their single label.
-  assert.equal(plural('fr', '1'), 'stations');
-  assert.equal(plural('en', '1'), 'stations');
+  // French and English have their singular too (review pass 9).
+  assert.equal(plural('fr', '1'), 'station');
+  assert.equal(plural('en', '1'), 'station');
 });
 
 test('Italian, Dutch and Portuguese name the next opening day inside the sentence', () => {
@@ -568,4 +568,165 @@ test('carbLocale: Home Assistant\'s full locale for a variant of the card langua
   assert.equal(carbLocale({ locale: { language: 'de-DE' } }, 'fr'), 'fr');
   assert.equal(carbLocale({ locale: { language: 'sr-Latn' } }, 'sr'), 'sr');
   assert.equal(carbLocale({ locale: { language: 'ja' } }), 'en');
+});
+
+// ── Review pass 9 ─────────────────────────────────────────────────────────────
+
+test('the station count is singular for 1 in every language, and Serbian has its 2-4 form', () => {
+  const plural = (lang, n) => context.carbPlural(context.CarburantsI18n[lang], 'stations', String(n), lang);
+  const expected = {
+    fr: { 1: 'station', 2: 'stations', 5: 'stations', 21: 'stations', 22: 'stations' },
+    en: { 1: 'station', 2: 'stations', 5: 'stations', 21: 'stations', 22: 'stations' },
+    de: { 1: 'Tankstelle', 2: 'Tankstellen', 5: 'Tankstellen', 21: 'Tankstellen', 22: 'Tankstellen' },
+    es: { 1: 'estación', 2: 'estaciones', 5: 'estaciones', 21: 'estaciones', 22: 'estaciones' },
+    it: { 1: 'stazione', 2: 'stazioni', 5: 'stazioni', 21: 'stazioni', 22: 'stazioni' },
+    nl: { 1: 'tankstation', 2: 'tankstations', 5: 'tankstations', 21: 'tankstations', 22: 'tankstations' },
+    pt: { 1: 'posto', 2: 'postos', 5: 'postos', 21: 'postos', 22: 'postos' },
+    pl: { 1: 'stacja', 2: 'stacje', 5: 'stacji', 21: 'stacji', 22: 'stacje' },
+    sr: { 1: 'станица', 2: 'станице', 5: 'станица', 21: 'станица', 22: 'станице' },
+    'sr-Latn': { 1: 'stanica', 2: 'stanice', 5: 'stanica', 21: 'stanica', 22: 'stanice' },
+  };
+  for (const [lang, forms] of Object.entries(expected)) {
+    for (const [n, word] of Object.entries(forms)) assert.equal(plural(lang, n), word, `${lang} ${n}`);
+  }
+  // French counts 0 as one ("0 station"), English does not.
+  assert.equal(plural('fr', 0), 'station');
+  assert.equal(plural('en', 0), 'stations');
+});
+
+// The list card's header and list, rendered for a sensor state (stub shadow root, as listCard).
+const listFor = (state, lang = 'en') => {
+  const node = () => ({ innerHTML: '', hidden: false, querySelector: () => null, querySelectorAll: () => [] });
+  const parts = { '.header': node(), '.list': node(), '.footer': node() };
+  const card = Object.assign(Object.create(CarburantsFranceCard.prototype), {
+    _root: { querySelector: (sel) => parts[sel] ?? null, activeElement: null },
+  });
+  card.setConfig({ entity: 'sensor.x', language: lang, show_logo: false });
+  card.hass = { language: 'en', states: { 'sensor.x': state } };
+  const sub = parts['.header'].innerHTML.match(/<div class="hsub">([^<]*)<\/div>/)?.[1];
+  return { sub, list: parts['.list'].innerHTML };
+};
+
+test('an unavailable or unknown sensor says the data is unavailable, never "unavailable stations"', () => {
+  for (const value of ['unavailable', 'unknown']) {
+    for (const lang of ['fr', 'en', 'pl', 'sr-Latn']) {
+      const t = context.CarburantsI18n[lang];
+      const { sub, list } = listFor({ state: value, attributes: { friendly_name: 'Stations' } }, lang);
+      assert.equal(sub, t.unavailable, `${value} ${lang}`);
+      assert.doesNotMatch(sub, /unavailable stations|unknown/);
+      assert.ok(list.includes(`<div class="empty">${context.carbEsc(t.unavailable_hint)}</div>`), `${value} ${lang}`);
+      assert.ok(!list.includes(context.carbEsc(t.empty)));
+    }
+  }
+  assert.equal(listFor({ state: 'unavailable', attributes: {} }, 'fr').sub, 'Données indisponibles');
+});
+
+test('a sensor with no station left still counts them and says there is none to show', () => {
+  const { sub, list } = listFor({ state: '0', attributes: { fuels: [], stations: [] } }, 'en');
+  assert.equal(sub, '0 stations');
+  assert.match(list, /No station to show/);
+  assert.equal(listFor({ state: '1', attributes: { fuels: fuels.map((f) => ({ ...f, name: f.key })), stations: [station(1, 1.8, 1.7)] } }, 'en').sub, '1 station');
+});
+
+test('the map card says the data is unavailable when the sensor is, outside a search', () => {
+  const realLoad = context.carbLoadLeaflet;
+  context.carbLoadLeaflet = () => new Promise(() => {});
+  try {
+    const message = { hidden: true, textContent: '' };
+    const map = { style: {}, classList: { toggle() {} } };
+    const make = (state, results = null) => {
+      const card = Object.assign(Object.create(CarburantsFranceMapCard.prototype), {
+        _root: { querySelector: (sel) => ({ '.message': message, '.map': map })[sel] ?? null },
+        _ensureShell() {},
+        _renderHeader() {},
+        _renderSearchbar() {},
+        _reloadTilesIfNeeded() {},
+        _darkTiles: () => false,
+        _lastState: state,
+        _results: results,
+      });
+      card._config = { height: 400, language: 'fr' };
+      card._hass = { language: 'fr', states: {} };
+      card._update();
+      return message;
+    };
+    make({ state: 'unavailable', attributes: {} });
+    assert.equal(message.hidden, false);
+    assert.equal(message.textContent, context.CarburantsI18n.fr.unavailable_hint);
+    // A search shows its own results, whatever the sensor.
+    make({ state: 'unavailable', attributes: {} }, { mode: 'city', stations: [station(1, 1.8, 1.7)] });
+    assert.equal(message.hidden, true);
+    make({ state: '2', attributes: { stations: [] } });
+    assert.equal(message.hidden, true);
+  } finally {
+    context.carbLoadLeaflet = realLoad;
+  }
+});
+
+// Status texts (open, closed, out of stock, best price) on the card background: the state colour mixed with the
+// text colour, so they reach 4.5:1 in light and dark themes; borders, pins and icons keep the plain state colour.
+test('status texts mix their state colour with the text colour (contrast), borders keep the plain colour', () => {
+  const list = styles(CarburantsFranceCard);
+  const map = styles(CarburantsFranceMapCard);
+  for (const css of [list, map]) {
+    for (const [name, pct] of [['success', 55], ['info', 55], ['error', 55], ['warning', 50]]) {
+      assert.match(css, new RegExp(`--carb-${name}-text: color-mix\\(in srgb, var\\(--${name}-color, #[0-9a-f]+\\) ${pct}%, var\\(--primary-text-color, #212121\\)\\)`), name);
+    }
+  }
+  assert.match(list, /\.opening\.open, \.opening\.always \{ color: var\(--carb-success-text\); \}/);
+  assert.match(list, /\.opening\.automate \{ color: var\(--carb-info-text\); \}/);
+  assert.match(list, /\.opening\.closed \{ color: var\(--carb-error-text\); \}/);
+  assert.match(list, /\.fuel\.best \.fprice, \.fuel\.best \.fname ha-icon \{ color: var\(--carb-success-text\); \}/);
+  assert.match(list, /\.fuel\.out \.fprice \{[^}]*color: var\(--carb-warning-text\)/);
+  assert.match(list, /\.fuel\.best \{ border-color: var\(--success-color, #43a047\)/);
+  assert.match(list, /\.fuel\.out \{ border-color: var\(--warning-color, #ffa600\)/);
+  // No faded out of stock tile: opacity would bring the text back under 4.5:1.
+  assert.doesNotMatch(list, /\.fuel\.out \{[^}]*opacity/);
+  assert.match(map, /\.popening\.open, \.popening\.always \{ color: var\(--carb-success-text\); \}/);
+  assert.match(map, /\.popening\.automate \{ color: var\(--carb-info-text\); \}/);
+  assert.match(map, /\.popening\.closed \{ color: var\(--carb-error-text\); \}/);
+  assert.match(map, /\.popup b\.best \{ color: var\(--carb-success-text\); \}/);
+  assert.match(map, /\.popup \.out \{ color: var\(--carb-warning-text\);/);
+  assert.match(map, /\.pin\.best \{ border-color: var\(--success-color, #43a047\); color: var\(--carb-success-text\); \}/);
+  assert.match(map, /\.pin\.out \{ border-color: var\(--warning-color, #ffa600\); color: var\(--carb-warning-text\); \}/);
+  // Nothing left that writes text in a plain state colour.
+  for (const css of [list, map]) {
+    assert.doesNotMatch(css.replace(/border-color: var\(--[a-z]+-color[^;]*;/g, ''), /[^-]color: var\(--(success|info|error|warning)-color/);
+  }
+});
+
+test('the map attribution keeps Leaflet\'s small print, whatever the card font size', () => {
+  assert.match(styles(CarburantsFranceMapCard), /\.leaflet-container \.leaflet-control-attribution \{[^}]*font-size: 11px/);
+});
+
+test('narrow card: the title keeps a few letters and the header buttons wrap rather than leave the card', () => {
+  const list = styles(CarburantsFranceCard);
+  const map = styles(CarburantsFranceMapCard);
+  // List card: the title block grows from 0 but never below the icon and 5 letters; the refresh button never shrinks.
+  assert.match(list, /\.header \{[^}]*flex-wrap: wrap/);
+  assert.match(list, /\.title \{[^}]*flex: 1 1 0[^}]*\}/);
+  assert.doesNotMatch(list, /\.title \{[^}]*min-width: 0/);
+  assert.match(list, /\.titles \{[^}]*flex: 1 1 auto; min-width: 5ch; contain: inline-size/);
+  assert.match(list, /\.refresh-btn \{ flex: none;/);
+  // Map card: same for the title, the radius and "locate me" tools stay whole.
+  assert.match(map, /\.header \{[^}]*flex-wrap: wrap/);
+  assert.match(map, /\.hname \{[^}]*flex: 1 1 0; min-width: 5ch/);
+  assert.match(map, /\.tools \{[^}]*flex: none/);
+  assert.match(map, /\.locate \{[^}]*flex: none/);
+});
+
+test('narrow list card: the fuel tiles, opening status and details reflow instead of leaving the card', () => {
+  const list = styles(CarburantsFranceCard);
+  assert.match(list, /ha-card \{[^}]*container: carb-card \/ inline-size/);
+  const narrow = list.slice(list.indexOf('@container carb-card (max-width: 299px)'));
+  assert.ok(narrow.length > 0 && list.includes('@container carb-card (max-width: 299px)'));
+  // !important: the column count is an inline style set by carbFuelColumns.
+  assert.match(narrow, /\.fuels \{ grid-template-columns: repeat\(auto-fill, minmax\(88px, 1fr\)\) !important; margin-left: 0; \}/);
+  assert.match(narrow, /\.details \{ margin-left: 0; \}/);
+  assert.match(narrow, /\.opening \{ white-space: normal; \}/);
+  assert.match(narrow, /\.line1 \{ flex-flow: column nowrap; align-items: stretch; gap: 0; \}/);
+  // List card: at least 9 of 12 columns (~240 px), where the station names stay readable; the map card (header
+  // tools wrapping) still fits half a section.
+  assert.equal(CarburantsFranceCard.prototype.getGridOptions().min_columns, 9);
+  assert.equal(CarburantsFranceMapCard.prototype.getGridOptions().min_columns, 6);
 });

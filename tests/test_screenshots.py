@@ -8,6 +8,8 @@ import ast
 import re
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ast.parse((ROOT / "scripts/screenshots.py").read_text())
 README = (ROOT / "README.md").read_text()
@@ -91,3 +93,34 @@ def test_readme_rows_pair_light_with_its_dark_twin():
     for light, dark in rows:
         stem, ext = light.rsplit(".", 1)
         assert dark == f"{stem}-dark.{ext}", f"{light} is paired with {dark}"
+
+
+def _function(name):
+    """A top-level function of the script, compiled alone (the script itself needs Playwright)."""
+    node = next(n for n in SCRIPT.body if isinstance(n, ast.FunctionDef) and n.name == name)
+    namespace = {}
+    exec(compile(ast.Module(body=[node], type_ignores=[]), "screenshots.py", "exec"), namespace)  # noqa: S102
+    return node, namespace[name]
+
+
+def test_every_png_shot_is_shrunk_to_a_palette(tmp_path):
+    """framed_shot (list and map stills) rewrites each PNG as a 256-colour palette, much smaller, the same each time."""
+    framed, _ = _function("framed_shot")
+    calls = [n.func.id for n in ast.walk(framed) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)]
+    assert "shrink_png" in calls
+    image_module = pytest.importorskip("PIL.Image")
+    _, shrink_png = _function("shrink_png")
+    # A card-like picture with gradients (many colours), as Chromium saves it.
+    source = image_module.new("RGB", (300, 200))
+    source.putdata([(x % 256, (x * y) % 256, y % 256) for y in range(200) for x in range(300)])
+    first, second = tmp_path / "a.png", tmp_path / "b.png"
+    source.save(first)
+    source.save(second)
+    before = first.stat().st_size
+    shrink_png(first)
+    shrink_png(second)
+    with image_module.open(first) as shrunk:
+        assert shrunk.mode == "P"
+        assert shrunk.size == (300, 200)
+    assert first.stat().st_size < before
+    assert first.read_bytes() == second.read_bytes()
