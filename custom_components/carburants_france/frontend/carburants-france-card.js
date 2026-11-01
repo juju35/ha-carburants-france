@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.9.4';
+var CARBURANTS_CARD_VERSION = '1.9.5';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -209,6 +209,222 @@ var CarburantsI18n = {
     },
     sort_options: { price: 'Precio', distance: 'Distancia', name: 'Nombre', config: 'Orden de configuración' },
   },
+  it: {
+    default_title: 'Carburante',
+    stations: 'stazioni',
+    stations_one: 'stazione',
+    empty: 'Nessuna stazione da mostrare',
+    no_entity: 'Sensore Stazioni non trovato. Aggiungi l\'integrazione Carburants France o imposta «entity».',
+    refresh: 'Aggiorna',
+    refresh_failed: 'Aggiornamento non riuscito:',
+    open: 'Aperto',
+    closed: 'Chiuso',
+    closes_at: 'chiude alle',
+    opens_at: 'apre alle',
+    opens_on: 'apre {d} alle {t}',
+    always_open: '24/7',
+    automate: 'Self-service 24/7',
+    out_of_stock: 'Esaurito',
+    no_price: 'Senza prezzo',
+    no_price_hint: 'Né prezzo né esaurimento ancora pubblicati',
+    rupture_ended: 'esaurimento terminato',
+    since: 'da',
+    out_since: 'Esaurito · {s}',
+    best: 'Miglior prezzo',
+    hours: 'Orari',
+    services: 'Servizi',
+    directions: 'Indicazioni',
+    show_all_one: 'Mostra la stazione esaurita',
+    show_all: 'Mostra le {n} stazioni esaurite',
+    hide_out: 'Nascondi le stazioni esaurite',
+    all_out: 'Tutti i carburanti seguiti sono esauriti in queste stazioni.',
+    highway: 'Autostrada',
+    days: ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'],
+    editor: {
+      entity: 'Sensore Stazioni',
+      title: 'Titolo',
+      fuels: 'Carburanti mostrati (tutti se vuoto)',
+      sort: 'Ordinamento',
+      sort_fuel: 'Carburante per l\'ordinamento per prezzo',
+      max_stations: 'Numero massimo di stazioni (0 = tutte)',
+      show_icon: 'Icona',
+      show_logo: 'Loghi dei marchi',
+      show_brand: 'Marchio',
+      show_address: 'Indirizzo',
+      show_distance: 'Distanza',
+      show_hours: 'Stato di apertura',
+      show_updated: 'Data dei prezzi',
+      show_out_of_stock: 'Carburanti esauriti',
+      highlight_best: 'Miglior prezzo in verde',
+      show_refresh: 'Pulsante Aggiorna',
+      hide_out_of_stock_stations: 'Nascondi le stazioni esaurite',
+      language: 'Lingua',
+      language_auto: 'Lingua di Home Assistant',
+    },
+    sort_options: { price: 'Prezzo', distance: 'Distanza', name: 'Nome', config: 'Ordine di configurazione' },
+  },
+  nl: {
+    default_title: 'Brandstof',
+    stations: 'tankstations',
+    stations_one: 'tankstation',
+    empty: 'Geen tankstation om te tonen',
+    no_entity: 'Sensor Tankstations niet gevonden. Voeg de integratie Carburants France toe of stel "entity" in.',
+    refresh: 'Vernieuwen',
+    refresh_failed: 'Vernieuwen mislukt:',
+    open: 'Open',
+    closed: 'Gesloten',
+    closes_at: 'sluit om',
+    opens_at: 'opent om',
+    opens_on: 'opent {d} om {t}',
+    always_open: '24/7',
+    automate: '24/7 betalen aan de pomp',
+    out_of_stock: 'Uitverkocht',
+    no_price: 'Geen prijs',
+    no_price_hint: 'Nog geen prijs of tekort gepubliceerd',
+    rupture_ended: 'tekort opgeheven',
+    since: 'sinds',
+    out_since: 'Uitverkocht · {s}',
+    best: 'Beste prijs',
+    hours: 'Openingstijden',
+    services: 'Diensten',
+    directions: 'Route',
+    show_all_one: 'Het uitverkochte tankstation tonen',
+    show_all: 'De {n} uitverkochte tankstations tonen',
+    hide_out: 'Uitverkochte tankstations verbergen',
+    all_out: 'Alle gevolgde brandstoffen zijn uitverkocht bij deze tankstations.',
+    highway: 'Snelweg',
+    days: ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'],
+    editor: {
+      entity: 'Sensor Tankstations',
+      title: 'Titel',
+      fuels: 'Getoonde brandstoffen (alle indien leeg)',
+      sort: 'Sortering',
+      sort_fuel: 'Brandstof voor sorteren op prijs',
+      max_stations: 'Maximaal aantal tankstations (0 = alle)',
+      show_icon: 'Pictogram',
+      show_logo: 'Merklogo\'s',
+      show_brand: 'Merk',
+      show_address: 'Adres',
+      show_distance: 'Afstand',
+      show_hours: 'Openingsstatus',
+      show_updated: 'Prijsdatum',
+      show_out_of_stock: 'Uitverkochte brandstoffen',
+      highlight_best: 'Beste prijs in het groen',
+      show_refresh: 'Knop Vernieuwen',
+      hide_out_of_stock_stations: 'Uitverkochte tankstations verbergen',
+      language: 'Taal',
+      language_auto: 'Taal van Home Assistant',
+    },
+    sort_options: { price: 'Prijs', distance: 'Afstand', name: 'Naam', config: 'Volgorde van configuratie' },
+  },
+  pt: {
+    default_title: 'Combustível',
+    stations: 'postos',
+    stations_one: 'posto',
+    empty: 'Nenhum posto para mostrar',
+    no_entity: 'Sensor Postos não encontrado. Adicione a integração Carburants France ou defina «entity».',
+    refresh: 'Atualizar',
+    refresh_failed: 'Falha ao atualizar:',
+    open: 'Aberto',
+    closed: 'Fechado',
+    closes_at: 'fecha às',
+    opens_at: 'abre às',
+    opens_on: 'abre {d} às {t}',
+    always_open: '24/7',
+    automate: 'Pagamento na bomba 24/7',
+    out_of_stock: 'Esgotado',
+    no_price: 'Sem preço',
+    no_price_hint: 'Ainda não foi publicado preço nem rutura',
+    rupture_ended: 'rutura terminada',
+    since: 'desde',
+    best: 'Melhor preço',
+    hours: 'Horário',
+    services: 'Serviços',
+    directions: 'Itinerário',
+    show_all_one: 'Mostrar o posto esgotado',
+    show_all: 'Mostrar os {n} postos esgotados',
+    hide_out: 'Ocultar os postos esgotados',
+    all_out: 'Todos os combustíveis seguidos estão esgotados nestes postos.',
+    highway: 'Autoestrada',
+    days: ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'],
+    editor: {
+      entity: 'Sensor Postos',
+      title: 'Título',
+      fuels: 'Combustíveis mostrados (todos se vazio)',
+      sort: 'Ordenação',
+      sort_fuel: 'Combustível para ordenar por preço',
+      max_stations: 'Número máximo de postos (0 = todos)',
+      show_icon: 'Ícone',
+      show_logo: 'Logótipos das marcas',
+      show_brand: 'Marca',
+      show_address: 'Morada',
+      show_distance: 'Distância',
+      show_hours: 'Estado de abertura',
+      show_updated: 'Data dos preços',
+      show_out_of_stock: 'Combustíveis esgotados',
+      highlight_best: 'Melhor preço a verde',
+      show_refresh: 'Botão Atualizar',
+      hide_out_of_stock_stations: 'Ocultar os postos esgotados',
+      language: 'Idioma',
+      language_auto: 'Idioma do Home Assistant',
+    },
+    sort_options: { price: 'Preço', distance: 'Distância', name: 'Nome', config: 'Ordem da configuração' },
+  },
+  pl: {
+    default_title: 'Paliwo',
+    stations: 'stacji',
+    stations_one: 'stacja',
+    stations_few: 'stacje',
+    stations_many: 'stacji',
+    empty: 'Brak stacji do wyświetlenia',
+    no_entity: 'Nie znaleziono czujnika Stacje. Dodaj integrację Carburants France lub ustaw „entity”.',
+    refresh: 'Odśwież',
+    refresh_failed: 'Odświeżanie nie powiodło się:',
+    open: 'Otwarte',
+    closed: 'Zamknięte',
+    closes_at: 'zamknięcie o',
+    opens_at: 'otwarcie o',
+    always_open: '24/7',
+    automate: 'Samoobsługa 24/7',
+    out_of_stock: 'Brak paliwa',
+    no_price: 'Brak ceny',
+    no_price_hint: 'Nie opublikowano jeszcze ani ceny, ani braku paliwa',
+    rupture_ended: 'znów dostępne',
+    since: 'od',
+    out_since: 'Brak paliwa · {s}',
+    best: 'Najlepsza cena',
+    hours: 'Godziny otwarcia',
+    services: 'Usługi',
+    directions: 'Trasa',
+    show_all_one: 'Pokaż stację bez paliwa',
+    show_all: 'Pokaż stacje bez paliwa ({n})',
+    hide_out: 'Ukryj stacje bez paliwa',
+    all_out: 'Na tych stacjach brakuje wszystkich obserwowanych paliw.',
+    highway: 'Autostrada',
+    days: ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'],
+    editor: {
+      entity: 'Czujnik Stacje',
+      title: 'Tytuł',
+      fuels: 'Wyświetlane paliwa (wszystkie, jeśli puste)',
+      sort: 'Sortowanie',
+      sort_fuel: 'Paliwo do sortowania według ceny',
+      max_stations: 'Maksymalna liczba stacji (0 = wszystkie)',
+      show_icon: 'Ikona',
+      show_logo: 'Logo marek',
+      show_brand: 'Marka',
+      show_address: 'Adres',
+      show_distance: 'Odległość',
+      show_hours: 'Status otwarcia',
+      show_updated: 'Data cen',
+      show_out_of_stock: 'Niedostępne paliwa',
+      highlight_best: 'Najlepsza cena na zielono',
+      show_refresh: 'Przycisk Odśwież',
+      hide_out_of_stock_stations: 'Ukryj stacje bez paliwa',
+      language: 'Język',
+      language_auto: 'Język Home Assistant',
+    },
+    sort_options: { price: 'Cena', distance: 'Odległość', name: 'Nazwa', config: 'Kolejność z konfiguracji' },
+  },
   sr: {
     default_title: 'Гориво',
     stations: 'станица',
@@ -334,8 +550,8 @@ function carbEsc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 }
 
-// Card language: the `language` option when set (en/fr/de/es/sr/sr-Latn), else Home Assistant's language:
-// the full code when the card has it (sr-Latn), else the part before the dash (fr-FR → fr), else English.
+// Card language: the `language` option when set (en/fr/de/es/it/nl/pt/pl/sr/sr-Latn), else Home Assistant's language:
+// the full code when the card has it (sr-Latn), else the part before the dash (fr-FR → fr, pt-BR → pt), else English.
 function carbLang(hass, language) {
   if (language && CarburantsI18n[language]) return language;
   var lang = (hass && (hass.locale?.language || hass.language)) || navigator.language || 'en';
@@ -344,16 +560,28 @@ function carbLang(hass, language) {
   return CarburantsI18n[lang] ? lang : 'en';
 }
 
-// Number and date locale: the configured language wins over Home Assistant's.
+// Number and date locale: Home Assistant's full locale (fr-FR, pt-BR…) when it is a variant of the card language,
+// else the card language itself, European Portuguese being pt-PT (plain `pt` is Brazilian for Intl).
 function carbLocale(hass, language) {
-  if (language && CarburantsI18n[language]) return language;
-  return (hass?.locale?.language) || navigator.language || 'fr';
+  var lang = carbLang(hass, language);
+  var ha = (hass && (hass.locale?.language || hass.language)) || navigator.language || '';
+  var locale = ha === lang || (ha.split('-')[0] === lang && !CarburantsI18n[ha]) ? ha : lang;
+  return locale === 'pt' ? 'pt-PT' : locale;
+}
+
+// Plural form of `key` for n: `key_one` / `key_few` / `key_many` when the language has it, else `key`.
+function carbPlural(t, key, n, locale) {
+  var category = 'other';
+  try {
+    category = new Intl.PluralRules(locale).select(Number(n));
+  } catch (_e) {}
+  return t[`${key}_${category}`] || t[key];
 }
 
 // Choices of the editors' `language` option, each language in its own name.
 function carbLanguageOptions(autoLabel) {
   return [{ value: 'auto', label: autoLabel }].concat(
-    [['en', 'English'], ['fr', 'Français'], ['de', 'Deutsch'], ['es', 'Español'], ['sr', 'Српски'], ['sr-Latn', 'Srpski (latinica)']].map((l) => ({ value: l[0], label: l[1] })),
+    [['en', 'English'], ['fr', 'Français'], ['de', 'Deutsch'], ['es', 'Español'], ['it', 'Italiano'], ['nl', 'Nederlands'], ['pt', 'Português (Portugal)'], ['pl', 'Polski'], ['sr', 'Српски'], ['sr-Latn', 'Srpski (latinica)']].map((l) => ({ value: l[0], label: l[1] })),
   );
 }
 
@@ -596,8 +824,11 @@ function carbOpening(station, t, now, locale) {
   for (var k = 1; k <= 7; k++) {
     var d = hours.filter((x) => x.day === ((day - 1 + k) % 7) + 1)[0];
     if (d && !d.closed && d.ranges.length) {
-      var label = k === 1 ? '' : `${carbWeekday(new Date(now.getFullYear(), now.getMonth(), now.getDate() + k), locale)} `;
-      return { key: 'closed', text: `${t.closed} · ${t.opens_at} ${label}${d.ranges[0][0]}` };
+      var start = d.ranges[0][0];
+      if (k === 1) return { key: 'closed', text: `${t.closed} · ${t.opens_at} ${start}` };
+      var dayName = carbWeekday(new Date(now.getFullYear(), now.getMonth(), now.getDate() + k), locale);
+      var opens = t.opens_on ? t.opens_on.replace('{d}', dayName).replace('{t}', start) : `${t.opens_at} ${dayName} ${start}`;
+      return { key: 'closed', text: `${t.closed} · ${opens}` };
     }
   }
   return { key: 'closed', text: t.closed };
@@ -765,7 +996,7 @@ class CarburantsFranceCard extends HTMLElement {
 
     var headerHtml =
       '<div class="title">' + icon + '<div class="titles"><div class="hname">' + carbEsc(title) + '</div>' +
-      '<div class="hsub">' + carbEsc(st.state) + ' ' + carbEsc(t.stations) + '</div></div></div>' +
+      '<div class="hsub">' + carbEsc(st.state) + ' ' + carbEsc(carbPlural(t, 'stations', st.state, this._locale())) + '</div></div></div>' +
       (this._config.show_refresh
         ? '<ha-icon-button class="refresh-btn' + (this._refreshing ? ' spinning' : '') + '" label="' + carbEsc(t.refresh) +
           '" title="' + carbEsc(refreshTitle) + '"><ha-icon icon="mdi:refresh"></ha-icon></ha-icon-button>'
@@ -871,7 +1102,8 @@ class CarburantsFranceCard extends HTMLElement {
       if (!fuel.available) {
         if (!cfg.show_out_of_stock || fuel.rupture === 'definitive') return slot;
         var since = fuel.rupture_since ? carbRelative(fuel.rupture_since, this._locale()) : '';
-        return '<div class="fuel out" title="' + carbEsc(t.out_of_stock + (since ? ` ${t.since} ${since}` : '')) + '">' +
+        var outTitle = !since ? t.out_of_stock : t.out_since ? t.out_since.replace('{s}', since) : `${t.out_of_stock} ${t.since} ${since}`;
+        return '<div class="fuel out" title="' + carbEsc(outTitle) + '">' +
           '<span class="fname">' + carbFuelBadge(f.key, f.name) + '</span><span class="fprice">' + carbEsc(t.out_of_stock) + '</span>' +
           (cfg.show_updated && since ? `<span class="fage">${carbEsc(since)}</span>` : '') + '</div>';
       }
@@ -1431,6 +1663,214 @@ var CarburantsMapI18n = {
       cyclosm: 'CyclOSM (bicicleta)',
       satellite: 'Satélite (Esri)',
       custom: 'Personalizado (URL)',
+    },
+  },
+  it: {
+    default_title: 'Mappa delle stazioni',
+    home: 'Casa',
+    fullscreen: 'Schermo intero',
+    exit_fullscreen: 'Esci da schermo intero',
+    locate: 'Localizzami: stazioni intorno a me',
+    back_to_followed: 'Torna alle stazioni seguite',
+    radius: 'Raggio di ricerca',
+    near_title: 'Stazioni entro {r} km',
+    near_home_title: 'Stazioni entro {r} km da casa',
+    city_title: 'Stazioni: {q}',
+    you: 'Sei qui',
+    search_city: 'Cerca un comune o un CAP',
+    clear_search: 'Cancella la ricerca',
+    no_results: 'Nessuna stazione trovata.',
+    no_position: 'Posizione non disponibile.',
+    followed: 'Stazione seguita',
+    editor: {
+      entity: 'Sensore Stazioni',
+      title: 'Titolo (vuoto per nessuno)',
+      fuel: 'Carburante sui marcatori (vuoto = il più economico disponibile)',
+      height: 'Altezza (px)',
+      zoom: 'Zoom (vuoto = adattato alle stazioni)',
+      map_style: 'Mappa di base',
+      theme: 'Tema della mappa di base',
+      tile_url: 'URL dei riquadri ({z}, {x}, {y})',
+      tile_attribution: 'Attribuzione dei riquadri',
+      show_icon: 'Icona',
+      show_fullscreen: 'Pulsante schermo intero',
+      show_home: 'Casa',
+      show_logo: 'Loghi dei marchi',
+      show_name: 'Nomi delle stazioni sui marcatori',
+      hide_out_of_stock_stations: 'Nascondi le stazioni esaurite',
+      show_locate: 'Pulsante «Localizzami»',
+      show_search: 'Ricerca per comune',
+      radius: 'Raggio predefinito (km)',
+      language: 'Lingua',
+      language_auto: 'Lingua di Home Assistant',
+    },
+    themes: { auto: 'Segui il tema', light: 'Chiaro', dark: 'Scuro' },
+    styles: {
+      ha: 'Home Assistant',
+      osm: 'OpenStreetMap',
+      osm_fr: 'OpenStreetMap France',
+      ign: 'Mappa IGN',
+      ign_photo: 'Foto aeree IGN',
+      topo: 'OpenTopoMap (rilievo)',
+      cyclosm: 'CyclOSM (bici)',
+      satellite: 'Satellite (Esri)',
+      custom: 'Personalizzato (URL)',
+    },
+  },
+  nl: {
+    default_title: 'Tankstationkaart',
+    home: 'Thuis',
+    fullscreen: 'Volledig scherm',
+    exit_fullscreen: 'Volledig scherm verlaten',
+    locate: 'Mij lokaliseren: tankstations om mij heen',
+    back_to_followed: 'Terug naar de gevolgde tankstations',
+    radius: 'Zoekstraal',
+    near_title: 'Tankstations binnen {r} km',
+    near_home_title: 'Tankstations binnen {r} km van huis',
+    city_title: 'Tankstations: {q}',
+    you: 'Je bent hier',
+    search_city: 'Zoek een gemeente of postcode',
+    clear_search: 'Zoekopdracht wissen',
+    no_results: 'Geen tankstation gevonden.',
+    no_position: 'Positie niet beschikbaar.',
+    followed: 'Gevolgd tankstation',
+    editor: {
+      entity: 'Sensor Tankstations',
+      title: 'Titel (leeg voor geen)',
+      fuel: 'Brandstof op de markeringen (leeg = goedkoopste op voorraad)',
+      height: 'Hoogte (px)',
+      zoom: 'Zoom (leeg = passend bij de tankstations)',
+      map_style: 'Basiskaart',
+      theme: 'Thema van de basiskaart',
+      tile_url: 'Tegel-URL ({z}, {x}, {y})',
+      tile_attribution: 'Bronvermelding van de tegels',
+      show_icon: 'Pictogram',
+      show_fullscreen: 'Knop volledig scherm',
+      show_home: 'Thuis',
+      show_logo: 'Merklogo\'s',
+      show_name: 'Namen van tankstations op de markeringen',
+      hide_out_of_stock_stations: 'Uitverkochte tankstations verbergen',
+      show_locate: 'Knop "Mij lokaliseren"',
+      show_search: 'Zoeken op gemeente',
+      radius: 'Standaardstraal (km)',
+      language: 'Taal',
+      language_auto: 'Taal van Home Assistant',
+    },
+    themes: { auto: 'Thema volgen', light: 'Licht', dark: 'Donker' },
+    styles: {
+      ha: 'Home Assistant',
+      osm: 'OpenStreetMap',
+      osm_fr: 'OpenStreetMap France',
+      ign: 'IGN-kaart',
+      ign_photo: 'IGN-luchtfoto\'s',
+      topo: 'OpenTopoMap (reliëf)',
+      cyclosm: 'CyclOSM (fietsen)',
+      satellite: 'Satelliet (Esri)',
+      custom: 'Aangepast (URL)',
+    },
+  },
+  pt: {
+    default_title: 'Mapa dos postos',
+    home: 'Casa',
+    fullscreen: 'Ecrã inteiro',
+    exit_fullscreen: 'Sair do ecrã inteiro',
+    locate: 'Localizar-me: postos à minha volta',
+    back_to_followed: 'Voltar aos postos seguidos',
+    radius: 'Raio de pesquisa',
+    near_title: 'Postos a menos de {r} km',
+    near_home_title: 'Postos a menos de {r} km de casa',
+    city_title: 'Postos: {q}',
+    you: 'Está aqui',
+    search_city: 'Procurar uma localidade ou código postal',
+    clear_search: 'Limpar a pesquisa',
+    no_results: 'Nenhum posto encontrado.',
+    no_position: 'Localização indisponível.',
+    followed: 'Posto seguido',
+    editor: {
+      entity: 'Sensor Postos',
+      title: 'Título (vazio para nenhum)',
+      fuel: 'Combustível nos marcadores (vazio = o mais barato disponível)',
+      height: 'Altura (px)',
+      zoom: 'Zoom (vazio = ajustado aos postos)',
+      map_style: 'Mapa base',
+      theme: 'Tema do mapa base',
+      tile_url: 'URL dos mosaicos ({z}, {x}, {y})',
+      tile_attribution: 'Atribuição dos mosaicos',
+      show_icon: 'Ícone',
+      show_fullscreen: 'Botão de ecrã inteiro',
+      show_home: 'Casa',
+      show_logo: 'Logótipos das marcas',
+      show_name: 'Nomes dos postos nos marcadores',
+      hide_out_of_stock_stations: 'Ocultar os postos esgotados',
+      show_locate: 'Botão «Localizar-me»',
+      show_search: 'Pesquisa por localidade',
+      radius: 'Raio predefinido (km)',
+      language: 'Idioma',
+      language_auto: 'Idioma do Home Assistant',
+    },
+    themes: { auto: 'Seguir o tema', light: 'Claro', dark: 'Escuro' },
+    styles: {
+      ha: 'Home Assistant',
+      osm: 'OpenStreetMap',
+      osm_fr: 'OpenStreetMap France',
+      ign: 'Mapa IGN',
+      ign_photo: 'Fotografias aéreas IGN',
+      topo: 'OpenTopoMap (relevo)',
+      cyclosm: 'CyclOSM (bicicleta)',
+      satellite: 'Satélite (Esri)',
+      custom: 'Personalizado (URL)',
+    },
+  },
+  pl: {
+    default_title: 'Mapa stacji',
+    home: 'Dom',
+    fullscreen: 'Pełny ekran',
+    exit_fullscreen: 'Zamknij pełny ekran',
+    locate: 'Zlokalizuj mnie: stacje w pobliżu',
+    back_to_followed: 'Wróć do obserwowanych stacji',
+    radius: 'Promień wyszukiwania',
+    near_title: 'Stacje w promieniu {r} km',
+    near_home_title: 'Stacje w promieniu {r} km od domu',
+    city_title: 'Stacje: {q}',
+    you: 'Jesteś tutaj',
+    search_city: 'Wyszukaj miejscowość lub kod pocztowy',
+    clear_search: 'Wyczyść wyszukiwanie',
+    no_results: 'Nie znaleziono żadnej stacji.',
+    no_position: 'Pozycja niedostępna.',
+    followed: 'Obserwowana stacja',
+    editor: {
+      entity: 'Czujnik Stacje',
+      title: 'Tytuł (puste = bez tytułu)',
+      fuel: 'Paliwo na znacznikach (puste = najtańsze dostępne)',
+      height: 'Wysokość (px)',
+      zoom: 'Powiększenie (puste = dopasowane do stacji)',
+      map_style: 'Mapa bazowa',
+      theme: 'Motyw mapy bazowej',
+      tile_url: 'URL kafelków ({z}, {x}, {y})',
+      tile_attribution: 'Atrybucja kafelków',
+      show_icon: 'Ikona',
+      show_fullscreen: 'Przycisk pełnego ekranu',
+      show_home: 'Dom',
+      show_logo: 'Logo marek',
+      show_name: 'Nazwy stacji na znacznikach',
+      hide_out_of_stock_stations: 'Ukryj stacje bez paliwa',
+      show_locate: 'Przycisk „Zlokalizuj mnie”',
+      show_search: 'Wyszukiwanie według miejscowości',
+      radius: 'Domyślny promień (km)',
+      language: 'Język',
+      language_auto: 'Język Home Assistant',
+    },
+    themes: { auto: 'Zgodnie z motywem', light: 'Jasny', dark: 'Ciemny' },
+    styles: {
+      ha: 'Home Assistant',
+      osm: 'OpenStreetMap',
+      osm_fr: 'OpenStreetMap France',
+      ign: 'Mapa IGN',
+      ign_photo: 'Zdjęcia lotnicze IGN',
+      topo: 'OpenTopoMap (rzeźba terenu)',
+      cyclosm: 'CyclOSM (rower)',
+      satellite: 'Satelita (Esri)',
+      custom: 'Własny (URL)',
     },
   },
   sr: {

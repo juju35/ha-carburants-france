@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Preços e disponibilidade dos combustíveis publicados pelo governo francês (data.economie.gouv.fr), sem chave de API.",
+        "data": { "name": "Nome", "fuels": "Combustíveis a seguir" }
+      },
+      "search": {
+        "title": "Procurar postos",
+        "description": "Código postal, localidade, número de departamento ou ID do posto. Deixe vazio para procurar à volta de casa dentro do raio.",
+        "data": { "query": "Pesquisa", "radius": "Raio à volta de casa" }
+      },
+      "stations": {
+        "title": "Escolher os postos",
+        "description": "Postos encontrados: {count}, ordenados pela distância a casa. Marque \"Nova pesquisa\" para adicionar postos noutro sítio: a seleção é mantida. Uma pesquisa devolve no máximo {max} postos: restrinja-a (código postal, raio menor) se o seu faltar.",
+        "data": { "stations": "Postos", "search_again": "Nova pesquisa" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Não foi possível contactar a API dos preços dos combustíveis. Tente novamente mais tarde.",
+      "no_results": "Nenhum posto encontrado. Experimente um código postal, outra localidade ou um raio maior.",
+      "no_station": "Escolha pelo menos um posto.",
+      "no_fuel": "Escolha pelo menos um combustível.",
+      "unknown": "Erro inesperado, consulte o registo do Home Assistant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opções Carburants France",
+        "data": {
+          "fuels": "Combustíveis a seguir",
+          "stations": "Postos seguidos",
+          "add_stations": "Adicionar postos",
+          "rename_stations": "Mudar o nome dos postos",
+          "scan_interval": "Intervalo de atualização"
+        },
+        "data_description": {
+          "stations": "Desmarque um posto para deixar de o seguir.",
+          "rename_stations": "Dê os seus próprios nomes aos postos, no passo seguinte.",
+          "scan_interval": "O feed do governo é atualizado a cada 10 minutos."
+        }
+      },
+      "names": {
+        "title": "Mudar o nome dos postos",
+        "description": "Nome apresentado para cada posto. Deixe vazio para manter o nome automático (OpenStreetMap, ou marca e localidade), indicado antes do traço."
+      },
+      "search": {
+        "title": "Procurar postos",
+        "description": "Código postal, localidade, número de departamento ou ID do posto. Deixe vazio para procurar à volta de casa dentro do raio.",
+        "data": { "query": "Pesquisa", "radius": "Raio à volta de casa" }
+      },
+      "stations": {
+        "title": "Escolher os postos",
+        "description": "Postos encontrados: {count}, ordenados pela distância a casa. Marque \"Nova pesquisa\" para adicionar postos noutro sítio: a seleção é mantida. Uma pesquisa devolve no máximo {max} postos: restrinja-a (código postal, raio menor) se o seu faltar.",
+        "data": { "stations": "Postos", "search_again": "Nova pesquisa" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Não foi possível contactar a API dos preços dos combustíveis. Tente novamente mais tarde.",
+      "no_results": "Nenhum posto encontrado. Experimente um código postal, outra localidade ou um raio maior.",
+      "no_station": "Escolha pelo menos um posto.",
+      "no_fuel": "Escolha pelo menos um combustível.",
+      "unknown": "Erro inesperado, consulte o registo do Home Assistant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Melhor preço {fuel}" },
+      "stations": { "name": "Postos" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} disponível" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Atualizar",
+      "description": "Obtém os preços agora.",
+      "fields": {
+        "config_entry_id": { "name": "Entrada", "description": "Apenas esta entrada. Por predefinição, todas." }
+      }
+    }
+  }
+}

@@ -22,7 +22,7 @@ const runTimers = () => {
   for (const fn of timers.splice(0)) fn?.();
 };
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
+vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbPlural, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
 const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, CarburantsFranceCard, CarburantsFranceMapCard } = context.carb;
 
 const fuels = [{ key: 'gazole' }, { key: 'e10' }];
@@ -70,6 +70,7 @@ test('getCardSize counts the stations shown, max_stations and the footer', () =>
 const week = (spec) => [1, 2, 3, 4, 5, 6, 7].map((day) => (spec[day] ? { day, closed: false, ranges: spec[day] } : { day, closed: true, ranges: [] }));
 const at = (iso) => new Date(iso); // local time; 2026-10-29 is a Thursday
 const en = () => context.CarburantsI18n.en;
+context.carbPlural = context.carb.carbPlural;
 
 test('carbOpening: a range crossing midnight is open in the small hours of the next day only', () => {
   // Friday 22:00 → 02:00, Saturday closed: open on Saturday at 01:00.
@@ -102,7 +103,7 @@ test('carbLang prefers the language option over the Home Assistant language', ()
   assert.equal(carbLang(hass), 'fr');
   assert.equal(carbLang(hass, 'auto'), 'fr');
   assert.equal(carbLang(hass, 'de'), 'de');
-  assert.equal(carbLang({ language: 'it' }), 'en');
+  assert.equal(carbLang({ language: 'ja' }), 'en');
 });
 
 test('carbLang: the full language when the card has it, else the part before the dash, else English', () => {
@@ -110,10 +111,33 @@ test('carbLang: the full language when the card has it, else the part before the
   assert.equal(carbLang({ locale: { language: 'sr-Latn' } }), 'sr-Latn');
   assert.equal(carbLang({ locale: { language: 'sr' } }), 'sr');
   assert.equal(carbLang({ language: 'sr-Cyrl' }), 'sr');
-  assert.equal(carbLang({ locale: { language: 'pt-BR' } }), 'en');
+  assert.equal(carbLang({ locale: { language: 'ja' } }), 'en');
   // The `language` option still wins over Home Assistant's.
   assert.equal(carbLang({ locale: { language: 'fr' } }, 'sr-Latn'), 'sr-Latn');
   assert.equal(carbLang({ locale: { language: 'sr-Latn' } }, 'sr'), 'sr');
+});
+
+test('carbLang: Italian, Dutch, European Portuguese and Polish, with their regional variants', () => {
+  const lang = (code) => carbLang({ locale: { language: code } });
+  assert.equal(lang('it-IT'), 'it');
+  assert.equal(lang('nl-BE'), 'nl');
+  assert.equal(lang('pt'), 'pt');
+  // Brazilian Portuguese falls back to European Portuguese.
+  assert.equal(lang('pt-BR'), 'pt');
+  assert.equal(lang('pl-PL'), 'pl');
+  assert.equal(lang('sr-Latn'), 'sr-Latn');
+  assert.equal(lang('ja'), 'en');
+  assert.equal(carbLang({ locale: { language: 'en' } }, 'pl'), 'pl');
+});
+
+test('the editors offer Italian, Dutch, Portuguese and Polish, each in its own name', () => {
+  const labels = Object.fromEntries(carbLanguageOptions('auto').map((o) => [o.value, o.label]));
+  assert.equal(labels.it, 'Italiano');
+  assert.equal(labels.nl, 'Nederlands');
+  assert.equal(labels.pt, 'Português (Portugal)');
+  assert.equal(labels.pl, 'Polski');
+  // Every card language is offered, and only those.
+  assert.deepEqual(Object.keys(labels).filter((v) => v !== 'auto').sort(), Object.keys(context.CarburantsI18n).sort());
 });
 
 const CYRILLIC = /[\u0400-\u04FF]/;
@@ -326,6 +350,10 @@ test('with language: auto, the map card labels follow a Home Assistant language 
   assert.equal(fsLink.title, 'Vollbild');
 });
 
+// Keys a language adds when its grammar needs them; the others fall back to `stations`, `opens_at` and `since`.
+const OPTIONAL_KEYS = ['stations_one', 'stations_few', 'stations_many', 'stations_other', 'opens_on', 'out_since'];
+const withoutOptional = (dict) => Object.fromEntries(Object.entries(dict).filter(([key]) => !OPTIONAL_KEYS.includes(key)));
+
 test('every card language has exactly the keys of English', () => {
   const shape = (value) => {
     if (Array.isArray(value)) return `array:${value.length}`;
@@ -336,10 +364,15 @@ test('every card language has exactly the keys of English', () => {
   };
   const placeholders = (value) => JSON.stringify(value).match(/\{\w+\}/g)?.sort() ?? [];
   for (const i18n of [context.CarburantsI18n, context.CarburantsMapI18n]) {
-    assert.deepEqual(Object.keys(i18n).sort(), ['de', 'en', 'es', 'fr', 'sr', 'sr-Latn']);
+    assert.deepEqual(Object.keys(i18n).sort(), ['de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'sr', 'sr-Latn']);
     for (const lang of Object.keys(i18n)) {
-      assert.deepEqual(shape(i18n[lang]), shape(i18n.en), lang);
-      assert.deepEqual(placeholders(i18n[lang]), placeholders(i18n.en), lang);
+      assert.deepEqual(shape(withoutOptional(i18n[lang])), shape(i18n.en), lang);
+      assert.deepEqual(placeholders(withoutOptional(i18n[lang])), placeholders(i18n.en), lang);
+      const extra = Object.keys(i18n[lang]).filter((key) => OPTIONAL_KEYS.includes(key));
+      for (const key of extra) assert.equal(typeof i18n[lang][key], 'string', `${lang}: ${key}`);
+      if (i18n[lang].opens_on) assert.deepEqual(placeholders(i18n[lang].opens_on), ['{d}', '{t}'], lang);
+      if (i18n[lang].out_since) assert.deepEqual(placeholders(i18n[lang].out_since), ['{s}'], lang);
+      for (const text of strings(i18n[lang])) assert.ok(text.trim(), `${lang}: empty string`);
     }
   }
 });
@@ -494,4 +527,45 @@ test('the map card search bar lines up with the header, and the position halo fo
   assert.match(css, /\.searchbar \{ padding: 0 12px 8px; \}/);
   assert.doesNotMatch(css, /rgba\(3,169,244/);
   assert.match(css, /\.me \{[^}]*box-shadow: 0 0 0 6px color-mix\(in srgb, var\(--primary-color, #03a9f4\) 25%, transparent\)/);
+});
+
+test('the station count agrees with its number (Polish one / few / many, Italian, Dutch and Portuguese singular)', () => {
+  const plural = (lang, n) => context.carbPlural(context.CarburantsI18n[lang], 'stations', n, lang);
+  assert.equal(plural('pl', '1'), 'stacja');
+  assert.equal(plural('pl', '3'), 'stacje');
+  assert.equal(plural('pl', '22'), 'stacje');
+  assert.equal(plural('pl', '5'), 'stacji');
+  assert.equal(plural('pl', '12'), 'stacji');
+  assert.equal(plural('it', '1'), 'stazione');
+  assert.equal(plural('it', '2'), 'stazioni');
+  assert.equal(plural('nl', '1'), 'tankstation');
+  assert.equal(plural('pt', '1'), 'posto');
+  assert.equal(context.carbPlural(context.CarburantsI18n.pt, 'stations', '0', 'pt-PT'), 'postos');
+  // Languages without plural keys keep their single label.
+  assert.equal(plural('fr', '1'), 'stations');
+  assert.equal(plural('en', '1'), 'stations');
+});
+
+test('Italian, Dutch and Portuguese name the next opening day inside the sentence', () => {
+  const monday = { hours: week({ 1: [['06:00', '20:00']] }) };
+  const thu = at('2026-10-29T12:00:00');
+  const mon = (locale) => new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(at('2026-11-02T12:00:00'));
+  assert.equal(carbOpening(monday, context.CarburantsI18n.it, thu, 'it').text, `Chiuso · apre ${mon('it')} alle 06:00`);
+  assert.equal(carbOpening(monday, context.CarburantsI18n.nl, thu, 'nl').text, `Gesloten · opent ${mon('nl')} om 06:00`);
+  assert.equal(carbOpening(monday, context.CarburantsI18n.pt, thu, 'pt-PT').text, `Fechado · abre ${mon('pt-PT')} às 06:00`);
+  // Tomorrow: no day name, the plain "opens at".
+  const friday = { hours: week({ 5: [['06:00', '20:00']] }) };
+  assert.equal(carbOpening(friday, context.CarburantsI18n.it, thu, 'it').text, 'Chiuso · apre alle 06:00');
+});
+
+test('carbLocale: Home Assistant\'s full locale for a variant of the card language, else the card language (pt → pt-PT)', () => {
+  assert.equal(carbLocale({ locale: { language: 'pt-BR' } }), 'pt-BR');
+  assert.equal(carbLocale({ locale: { language: 'pt' } }), 'pt-PT');
+  assert.equal(carbLocale({ locale: { language: 'en' } }, 'pt'), 'pt-PT');
+  assert.equal(carbLocale({ locale: { language: 'fr-CA' } }), 'fr-CA');
+  assert.equal(carbLocale({ language: 'de-CH' }), 'de-CH');
+  // The language option still wins: French numbers on a French card, whatever Home Assistant's language.
+  assert.equal(carbLocale({ locale: { language: 'de-DE' } }, 'fr'), 'fr');
+  assert.equal(carbLocale({ locale: { language: 'sr-Latn' } }, 'sr'), 'sr');
+  assert.equal(carbLocale({ locale: { language: 'ja' } }), 'en');
 });

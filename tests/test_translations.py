@@ -28,16 +28,29 @@ def _load(lang: str) -> dict[str, str]:
 
 
 def test_languages() -> None:
-    """English, French, German, Spanish and Serbian (both scripts) are shipped."""
-    assert {p.stem for p in TRANSLATIONS.glob("*.json")} >= {"en", "fr", "de", "es", "sr", "sr-Latn"}
+    """English, French, German, Spanish, Italian, Dutch, Portuguese (pt, and pt-BR as a copy), Polish and Serbian (both scripts) are shipped."""
+    assert {p.stem for p in TRANSLATIONS.glob("*.json")} == {
+        "en",
+        "fr",
+        "de",
+        "es",
+        "it",
+        "nl",
+        "pt",
+        "pt-BR",
+        "pl",
+        "sr",
+        "sr-Latn",
+    }
 
 
 @pytest.mark.parametrize("lang", sorted(p.stem for p in TRANSLATIONS.glob("*.json") if p.stem != "en"))
 def test_parity(lang: str) -> None:
-    """Same keys as English, same placeholders in every string."""
+    """Same keys as English, same placeholders in every string, no empty string."""
     en, other = _load("en"), _load(lang)
     assert sorted(other) == sorted(en)
     for key, text in en.items():
+        assert other[key].strip(), f"{lang}: {key} is empty"
         assert sorted(PLACEHOLDER.findall(other[key])) == sorted(PLACEHOLDER.findall(text)), f"{lang}: {key}"
 
 
@@ -60,3 +73,8 @@ def test_serbian_cyrillic_has_no_latin_word() -> None:
     """Only names and placeholders stay in the Latin script in the Cyrillic file."""
     for key, text in _load("sr").items():
         assert not re.search(r"[A-Za-z]", _LATIN_NAMES.sub("", text)), key
+
+
+def test_brazilian_portuguese_is_the_european_text() -> None:
+    """pt-BR.json is an exact copy of pt.json: Home Assistant does not fall back from pt-BR to pt by itself."""
+    assert (TRANSLATIONS / "pt-BR.json").read_bytes() == (TRANSLATIONS / "pt.json").read_bytes()
