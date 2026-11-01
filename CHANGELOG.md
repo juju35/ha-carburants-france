@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.9.5 (2026-11-01)
+
+### Changes
+- Added Italian, Dutch, European Portuguese and Polish translations: configuration and options forms, entity names, the refresh action, and both cards (list and map, with their visual editors). The `language` option offers `it`, `nl`, `pt` and `pl`; pt-BR uses the European Portuguese texts, in the integration (`pt-BR.json`, a copy of `pt.json`) and in the cards (`language: auto`), with Brazilian date and number formats in the cards.
+
+## 1.9.4 (2026-11-01)
+
+### Changes
+- Added Serbian (Cyrillic and Latin) translations: configuration and options forms, entity names, the refresh action, and both cards (list and map, with their visual editors). The cards pick `sr-Latn` when Home Assistant is set to Serbian Latin, and the `language` option offers `sr` and `sr-Latn`.
+- List and map cards: with `language: auto`, a regional Home Assistant language falls back to its base language (`fr-FR` → French), and an unknown one to English.
+
+## 1.9.3
+
+### Fixes
+- List card: stations can be expanded with the keyboard. A station row is now a button: Tab reaches it, Enter or Space expands or collapses it (so the opening hours, services and Directions link can be reached), and it keeps the focus when the list is redrawn.
+- Map card: in a dark theme, the zoom, full screen and attribution controls follow the theme's colours instead of staying white, and the popup's close button follows the theme too.
+- List and map cards: with "reduce motion" set on the device, the refresh and "locate me" icons no longer spin or pulse (they are dimmed while busy), and the station chevron no longer animates.
+- Map card: the search bar lines up with the header, and the halo around the search position follows the theme's primary colour.
+
+### Maintenance
+- Lint workflow: ruff and Biome run the versions pinned in `.pre-commit-config.yaml` (ruff 0.17.3, Biome 2.6.3), so the CI and the pre-commit hooks always check with the same linters.
+
 ## 1.9.2
 
 ### Fixes

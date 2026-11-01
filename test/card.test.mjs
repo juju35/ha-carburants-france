@@ -22,8 +22,8 @@ const runTimers = () => {
   for (const fn of timers.splice(0)) fn?.();
 };
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
-const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, CarburantsFranceCard, CarburantsFranceMapCard } = context.carb;
+vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbPlural, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
+const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, CarburantsFranceCard, CarburantsFranceMapCard } = context.carb;
 
 const fuels = [{ key: 'gazole' }, { key: 'e10' }];
 const station = (id, gazole, e10) => ({
@@ -70,6 +70,7 @@ test('getCardSize counts the stations shown, max_stations and the footer', () =>
 const week = (spec) => [1, 2, 3, 4, 5, 6, 7].map((day) => (spec[day] ? { day, closed: false, ranges: spec[day] } : { day, closed: true, ranges: [] }));
 const at = (iso) => new Date(iso); // local time; 2026-10-29 is a Thursday
 const en = () => context.CarburantsI18n.en;
+context.carbPlural = context.carb.carbPlural;
 
 test('carbOpening: a range crossing midnight is open in the small hours of the next day only', () => {
   // Friday 22:00 → 02:00, Saturday closed: open on Saturday at 01:00.
@@ -102,7 +103,89 @@ test('carbLang prefers the language option over the Home Assistant language', ()
   assert.equal(carbLang(hass), 'fr');
   assert.equal(carbLang(hass, 'auto'), 'fr');
   assert.equal(carbLang(hass, 'de'), 'de');
-  assert.equal(carbLang({ language: 'it' }), 'en');
+  assert.equal(carbLang({ language: 'ja' }), 'en');
+});
+
+test('carbLang: the full language when the card has it, else the part before the dash, else English', () => {
+  assert.equal(carbLang({ locale: { language: 'fr-FR' } }), 'fr');
+  assert.equal(carbLang({ locale: { language: 'sr-Latn' } }), 'sr-Latn');
+  assert.equal(carbLang({ locale: { language: 'sr' } }), 'sr');
+  assert.equal(carbLang({ language: 'sr-Cyrl' }), 'sr');
+  assert.equal(carbLang({ locale: { language: 'ja' } }), 'en');
+  // The `language` option still wins over Home Assistant's.
+  assert.equal(carbLang({ locale: { language: 'fr' } }, 'sr-Latn'), 'sr-Latn');
+  assert.equal(carbLang({ locale: { language: 'sr-Latn' } }, 'sr'), 'sr');
+});
+
+test('carbLang: Italian, Dutch, European Portuguese and Polish, with their regional variants', () => {
+  const lang = (code) => carbLang({ locale: { language: code } });
+  assert.equal(lang('it-IT'), 'it');
+  assert.equal(lang('nl-BE'), 'nl');
+  assert.equal(lang('pt'), 'pt');
+  // Brazilian Portuguese falls back to European Portuguese.
+  assert.equal(lang('pt-BR'), 'pt');
+  assert.equal(lang('pl-PL'), 'pl');
+  assert.equal(lang('sr-Latn'), 'sr-Latn');
+  assert.equal(lang('ja'), 'en');
+  assert.equal(carbLang({ locale: { language: 'en' } }, 'pl'), 'pl');
+});
+
+test('the editors offer Italian, Dutch, Portuguese and Polish, each in its own name', () => {
+  const labels = Object.fromEntries(carbLanguageOptions('auto').map((o) => [o.value, o.label]));
+  assert.equal(labels.it, 'Italiano');
+  assert.equal(labels.nl, 'Nederlands');
+  assert.equal(labels.pt, 'Português (Portugal)');
+  assert.equal(labels.pl, 'Polski');
+  // Every card language is offered, and only those.
+  assert.deepEqual(Object.keys(labels).filter((v) => v !== 'auto').sort(), Object.keys(context.CarburantsI18n).sort());
+});
+
+const CYRILLIC = /[\u0400-\u04FF]/;
+test('Serbian Latin dates and weekdays are in the Latin script, Cyrillic ones in Cyrillic', () => {
+  const monday = { hours: week({ 1: [['08:00', '20:00']] }) };
+  const thu = at('2026-10-29T12:00:00');
+  const latin = carbOpening(monday, context.CarburantsI18n['sr-Latn'], thu, carbLocale(null, 'sr-Latn')).text;
+  assert.doesNotMatch(latin, CYRILLIC, latin);
+  assert.match(latin, /^Zatvoreno · otvara se u /);
+  const cyrillic = carbOpening(monday, context.CarburantsI18n.sr, thu, carbLocale(null, 'sr')).text;
+  assert.match(cyrillic, /^Затворено · отвара се у [\u0400-\u04FF]/);
+  assert.equal(carbLocale({ locale: { language: 'sr-Latn' } }, 'auto'), 'sr-Latn');
+  assert.doesNotMatch(new Intl.RelativeTimeFormat(carbLocale(null, 'sr-Latn'), { numeric: 'auto', style: 'short' }).format(-2, 'day'), CYRILLIC);
+});
+
+test('the editors offer Serbian in both scripts, each in its own name', () => {
+  const options = carbLanguageOptions('auto');
+  assert.equal(JSON.stringify(options.slice(-2)), JSON.stringify([{ value: 'sr', label: 'Српски' }, { value: 'sr-Latn', label: 'Srpski (latinica)' }]));
+});
+
+// Serbian Cyrillic letter by letter, and its Latin spelling (љ, њ and џ take two letters).
+const SR_CYR = 'абвгдђежзијклљмнњопрстћуфхцчџш';
+const SR_LAT = ['a', 'b', 'v', 'g', 'd', 'đ', 'e', 'ž', 'z', 'i', 'j', 'k', 'l', 'lj', 'm', 'n', 'nj', 'o', 'p', 'r', 's', 't', 'ć', 'u', 'f', 'h', 'c', 'č', 'dž', 'š'];
+const toLatin = new Map();
+[...SR_CYR].forEach((c, i) => {
+  toLatin.set(c, SR_LAT[i]);
+  toLatin.set(c.toUpperCase(), SR_LAT[i][0].toUpperCase() + SR_LAT[i].slice(1));
+});
+const strings = (value) => (typeof value === 'string' ? [value] : Object.values(value).flatMap(strings));
+
+test('Serbian: the Cyrillic and Latin cards say the same thing, letter for letter', () => {
+  for (const i18n of [context.CarburantsI18n, context.CarburantsMapI18n]) {
+    const cyr = strings(i18n.sr);
+    const lat = strings(i18n['sr-Latn']);
+    assert.equal(lat.length, cyr.length);
+    cyr.forEach((text, i) => {
+      assert.equal([...text].map((c) => toLatin.get(c) ?? c).join(''), lat[i], text);
+    });
+  }
+});
+
+test('Serbian Cyrillic has no Latin word left, except names, units and placeholders', () => {
+  const allowed = /Home Assistant|Carburants France|OpenStreetMap( France)?|OpenTopoMap|CyclOSM|Esri|IGN|URL|entity|km|px|\{\w+\}/g;
+  for (const i18n of [context.CarburantsI18n, context.CarburantsMapI18n]) {
+    for (const text of strings(i18n.sr)) {
+      assert.doesNotMatch(text.replace(allowed, ''), /[A-Za-z]/, text);
+    }
+  }
 });
 
 test('carbSetSchema only hands ha-form a schema that changed', () => {
@@ -267,6 +350,10 @@ test('with language: auto, the map card labels follow a Home Assistant language 
   assert.equal(fsLink.title, 'Vollbild');
 });
 
+// Keys a language adds when its grammar needs them; the others fall back to `stations`, `opens_at` and `since`.
+const OPTIONAL_KEYS = ['stations_one', 'stations_few', 'stations_many', 'stations_other', 'opens_on', 'out_since'];
+const withoutOptional = (dict) => Object.fromEntries(Object.entries(dict).filter(([key]) => !OPTIONAL_KEYS.includes(key)));
+
 test('every card language has exactly the keys of English', () => {
   const shape = (value) => {
     if (Array.isArray(value)) return `array:${value.length}`;
@@ -277,10 +364,15 @@ test('every card language has exactly the keys of English', () => {
   };
   const placeholders = (value) => JSON.stringify(value).match(/\{\w+\}/g)?.sort() ?? [];
   for (const i18n of [context.CarburantsI18n, context.CarburantsMapI18n]) {
-    assert.deepEqual(Object.keys(i18n).sort(), ['de', 'en', 'es', 'fr']);
+    assert.deepEqual(Object.keys(i18n).sort(), ['de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'sr', 'sr-Latn']);
     for (const lang of Object.keys(i18n)) {
-      assert.deepEqual(shape(i18n[lang]), shape(i18n.en), lang);
-      assert.deepEqual(placeholders(i18n[lang]), placeholders(i18n.en), lang);
+      assert.deepEqual(shape(withoutOptional(i18n[lang])), shape(i18n.en), lang);
+      assert.deepEqual(placeholders(withoutOptional(i18n[lang])), placeholders(i18n.en), lang);
+      const extra = Object.keys(i18n[lang]).filter((key) => OPTIONAL_KEYS.includes(key));
+      for (const key of extra) assert.equal(typeof i18n[lang][key], 'string', `${lang}: ${key}`);
+      if (i18n[lang].opens_on) assert.deepEqual(placeholders(i18n[lang].opens_on), ['{d}', '{t}'], lang);
+      if (i18n[lang].out_since) assert.deepEqual(placeholders(i18n[lang].out_since), ['{s}'], lang);
+      for (const text of strings(i18n[lang])) assert.ok(text.trim(), `${lang}: empty string`);
     }
   }
 });
@@ -314,4 +406,166 @@ test('the map popup marks the best price only on the cheapest of several station
   assert.equal(popup(2, shown[1], best).match(/class="best"/g)?.length, 1);
   // Stations hidden from the map (e.g. out of stock) do not count: a single one shown is not "the best".
   assert.doesNotMatch(popup(1, shown[0], best), /class="best"/);
+});
+
+// List card with a stub shadow root: the list keeps the HTML written to it, and hands out one stub row
+// per station found in that HTML (a fresh one each render, as innerHTML would), recording focus().
+const listCard = () => {
+  const focused = [];
+  const list = {
+    html: '',
+    set innerHTML(html) { this.html = html; },
+    get innerHTML() { return this.html; },
+    querySelectorAll(sel) {
+      if (sel !== '.station') return [];
+      if (this.nodesOf !== this.html) {
+        this.nodesOf = this.html;
+        this.nodes = [...this.html.matchAll(/<div class="station" data-id="([^"]*)">/g)].map((m) => {
+          const item = { getAttribute: (name) => (name === 'data-id' ? m[1] : null) };
+          const row = { focus: () => focused.push(m[1]), closest: (c) => (c === '.station' ? item : null) };
+          item.querySelector = (s) => (s === '.row' ? row : null);
+          return item;
+        });
+      }
+      return this.nodes;
+    },
+  };
+  const node = () => ({ innerHTML: '', hidden: false, querySelector: () => null });
+  const parts = { '.header': node(), '.list': list, '.footer': node() };
+  const card = Object.assign(Object.create(CarburantsFranceCard.prototype), {
+    _root: { querySelector: (sel) => parts[sel] ?? null, activeElement: null },
+  });
+  const state = { state: '2', attributes: { config_entry_id: 'x', fuels: fuels.map((f) => ({ ...f, name: f.key })), stations: [station(1, 1.8, 1.7), station(2, 1.75, 1.72)] } };
+  card.setConfig({ entity: 'sensor.x', language: 'en', show_logo: false });
+  card.hass = { language: 'en', states: { 'sensor.x': state } };
+  return { card, list, focused };
+};
+// A key press on a station row, as the list's keydown listener receives it.
+const keyOnRow = (list, id, key) => {
+  const row = list.querySelectorAll('.station').find((s) => s.getAttribute('data-id') === id).querySelector('.row');
+  let prevented = false;
+  return { row, ev: { key, target: row, preventDefault: () => { prevented = true; } }, prevented: () => prevented };
+};
+
+test('a list station row is a keyboard button that says whether it is expanded', () => {
+  const { card, list } = listCard();
+  assert.equal(list.html.match(/<div class="row" role="button" tabindex="0" aria-expanded="false">/g)?.length, 2);
+  card._expandedId = '2';
+  card._render();
+  assert.match(list.html, /data-id="2"><div class="row" role="button" tabindex="0" aria-expanded="true">/);
+  assert.match(list.html, /data-id="1"><div class="row" role="button" tabindex="0" aria-expanded="false">/);
+});
+
+test('Enter and Space on a list station row expand and collapse it, other keys do nothing', () => {
+  const { card, list } = listCard();
+  for (const [key, expected] of [['Enter', '1'], [' ', null], ['a', null], ['Tab', null]]) {
+    const k = keyOnRow(list, '1', key);
+    card._onListKey(k.ev);
+    assert.equal(card._expandedId, expected, key);
+    assert.equal(k.prevented(), key === 'Enter' || key === ' ', key);
+  }
+  // Keys typed on a link of the expanded details (Enter on "Directions") never toggle the station.
+  card._expandedId = '1';
+  const link = { closest: (sel) => (sel === '.station' ? list.querySelectorAll('.station')[0] : null) };
+  card._onListKey({ key: 'Enter', target: link, preventDefault() { throw new Error('prevented'); } });
+  assert.equal(card._expandedId, '1');
+});
+
+test('the focused list station row keeps the focus when the list is redrawn', () => {
+  const { card, list, focused } = listCard();
+  const k = keyOnRow(list, '2', 'Enter');
+  card._root.activeElement = k.row;
+  card._onListKey(k.ev);
+  assert.deepEqual(focused, ['2']);
+  // Nothing focused in the card (or focus elsewhere): a redraw moves no focus.
+  card._root.activeElement = null;
+  card._expandedId = null;
+  card._render();
+  assert.deepEqual(focused, ['2']);
+});
+
+test('the focused row of a station that is gone after a redraw does not fail', () => {
+  const { card, list, focused } = listCard();
+  const k = keyOnRow(list, '2', 'Enter');
+  card._root.activeElement = k.row;
+  card._lastState = { ...card._lastState, attributes: { ...card._lastState.attributes, stations: [station(1, 1.8, 1.7)] } };
+  card._render();
+  assert.deepEqual(focused, []);
+});
+
+const styles = (Card) => Card._styles().replace(/\s+/g, ' ');
+// The reduced motion block, which must come after every rule it overrides (same specificity: the last one wins).
+const reducedMotion = (css) => {
+  const at = css.indexOf('@media (prefers-reduced-motion: reduce)');
+  if (at === -1) return '';
+  const rest = css.slice(at);
+  assert.doesNotMatch(rest.slice(rest.indexOf('} }')), /(\.chevron|\.refresh-btn\.spinning ha-icon|\.locate\.busy ha-icon) \{/, 'a rule after the reduced motion block');
+  return rest.slice(0, rest.indexOf('} }'));
+};
+
+test('the spinning and pulsing icons and the chevron stop when the system asks for reduced motion', () => {
+  const list = reducedMotion(styles(CarburantsFranceCard));
+  assert.match(list, /\.refresh-btn\.spinning ha-icon \{[^}]*animation: none/);
+  assert.match(list, /\.chevron \{[^}]*transition: none/);
+  const map = reducedMotion(styles(CarburantsFranceMapCard));
+  assert.match(map, /\.locate\.busy ha-icon \{[^}]*animation: none/);
+});
+
+test('the Leaflet controls of the map card follow the theme (no hard-coded colours)', () => {
+  const css = styles(CarburantsFranceMapCard);
+  assert.doesNotMatch(css, /\.carb-fs a \{[^}]*#333/);
+  assert.match(css, /\.leaflet-bar a \{[^}]*background-color: var\(--card-background-color[^}]*color: var\(--primary-text-color/);
+  assert.match(css, /\.leaflet-bar a:hover, \.leaflet-bar a:focus \{[^}]*background-color: var\(--secondary-background-color/);
+  assert.match(css, /\.leaflet-touch \.leaflet-bar \{[^}]*border-color: var\(--divider-color/);
+  assert.match(css, /\.leaflet-container \.leaflet-control-attribution \{[^}]*background: color-mix\([^)]*var\(--card-background-color[^}]*color: var\(--primary-text-color/);
+  assert.match(css, /\.leaflet-container \.leaflet-control-attribution a \{[^}]*color: /);
+});
+
+test('the map card search bar lines up with the header, and the position halo follows the primary colour', () => {
+  const css = styles(CarburantsFranceMapCard);
+  assert.match(css, /\.header \{[^}]*padding: 12px 12px 8px/);
+  assert.match(css, /\.searchbar \{ padding: 0 12px 8px; \}/);
+  assert.doesNotMatch(css, /rgba\(3,169,244/);
+  assert.match(css, /\.me \{[^}]*box-shadow: 0 0 0 6px color-mix\(in srgb, var\(--primary-color, #03a9f4\) 25%, transparent\)/);
+});
+
+test('the station count agrees with its number (Polish one / few / many, Italian, Dutch and Portuguese singular)', () => {
+  const plural = (lang, n) => context.carbPlural(context.CarburantsI18n[lang], 'stations', n, lang);
+  assert.equal(plural('pl', '1'), 'stacja');
+  assert.equal(plural('pl', '3'), 'stacje');
+  assert.equal(plural('pl', '22'), 'stacje');
+  assert.equal(plural('pl', '5'), 'stacji');
+  assert.equal(plural('pl', '12'), 'stacji');
+  assert.equal(plural('it', '1'), 'stazione');
+  assert.equal(plural('it', '2'), 'stazioni');
+  assert.equal(plural('nl', '1'), 'tankstation');
+  assert.equal(plural('pt', '1'), 'posto');
+  assert.equal(context.carbPlural(context.CarburantsI18n.pt, 'stations', '0', 'pt-PT'), 'postos');
+  // Languages without plural keys keep their single label.
+  assert.equal(plural('fr', '1'), 'stations');
+  assert.equal(plural('en', '1'), 'stations');
+});
+
+test('Italian, Dutch and Portuguese name the next opening day inside the sentence', () => {
+  const monday = { hours: week({ 1: [['06:00', '20:00']] }) };
+  const thu = at('2026-10-29T12:00:00');
+  const mon = (locale) => new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(at('2026-11-02T12:00:00'));
+  assert.equal(carbOpening(monday, context.CarburantsI18n.it, thu, 'it').text, `Chiuso · apre ${mon('it')} alle 06:00`);
+  assert.equal(carbOpening(monday, context.CarburantsI18n.nl, thu, 'nl').text, `Gesloten · opent ${mon('nl')} om 06:00`);
+  assert.equal(carbOpening(monday, context.CarburantsI18n.pt, thu, 'pt-PT').text, `Fechado · abre ${mon('pt-PT')} às 06:00`);
+  // Tomorrow: no day name, the plain "opens at".
+  const friday = { hours: week({ 5: [['06:00', '20:00']] }) };
+  assert.equal(carbOpening(friday, context.CarburantsI18n.it, thu, 'it').text, 'Chiuso · apre alle 06:00');
+});
+
+test('carbLocale: Home Assistant\'s full locale for a variant of the card language, else the card language (pt → pt-PT)', () => {
+  assert.equal(carbLocale({ locale: { language: 'pt-BR' } }), 'pt-BR');
+  assert.equal(carbLocale({ locale: { language: 'pt' } }), 'pt-PT');
+  assert.equal(carbLocale({ locale: { language: 'en' } }, 'pt'), 'pt-PT');
+  assert.equal(carbLocale({ locale: { language: 'fr-CA' } }), 'fr-CA');
+  assert.equal(carbLocale({ language: 'de-CH' }), 'de-CH');
+  // The language option still wins: French numbers on a French card, whatever Home Assistant's language.
+  assert.equal(carbLocale({ locale: { language: 'de-DE' } }, 'fr'), 'fr');
+  assert.equal(carbLocale({ locale: { language: 'sr-Latn' } }, 'sr'), 'sr');
+  assert.equal(carbLocale({ locale: { language: 'ja' } }), 'en');
 });

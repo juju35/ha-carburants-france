@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Ceny i dostępność paliw publikowane przez rząd Francji (data.economie.gouv.fr), bez klucza API.",
+        "data": { "name": "Nazwa", "fuels": "Obserwowane paliwa" }
+      },
+      "search": {
+        "title": "Wyszukaj stacje",
+        "description": "Kod pocztowy, miejscowość, numer departamentu lub ID stacji. Pozostaw puste, aby szukać wokół domu w wybranym promieniu.",
+        "data": { "query": "Wyszukiwanie", "radius": "Promień wokół domu" }
+      },
+      "stations": {
+        "title": "Wybierz stacje",
+        "description": "Znalezione stacje: {count}, posortowane według odległości od domu. Zaznacz \"Nowe wyszukiwanie\", aby dodać stacje w innym miejscu: wybór zostanie zachowany. Wyszukiwanie zwraca maksymalnie {max} stacji: zawęź je (kod pocztowy, mniejszy promień), jeśli brakuje Twojej.",
+        "data": { "stations": "Stacje", "search_again": "Nowe wyszukiwanie" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nie można połączyć się z API cen paliw. Spróbuj ponownie później.",
+      "no_results": "Nie znaleziono żadnej stacji. Spróbuj podać kod pocztowy, inną miejscowość lub większy promień.",
+      "no_station": "Wybierz co najmniej jedną stację.",
+      "no_fuel": "Wybierz co najmniej jedno paliwo.",
+      "unknown": "Nieoczekiwany błąd, sprawdź dziennik Home Assistant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opcje Carburants France",
+        "data": {
+          "fuels": "Obserwowane paliwa",
+          "stations": "Obserwowane stacje",
+          "add_stations": "Dodaj stacje",
+          "rename_stations": "Zmień nazwy stacji",
+          "scan_interval": "Interwał aktualizacji"
+        },
+        "data_description": {
+          "stations": "Odznacz stację, aby przestać ją obserwować.",
+          "rename_stations": "Nadaj stacjom własne nazwy w następnym kroku.",
+          "scan_interval": "Rządowe dane są aktualizowane co 10 minut."
+        }
+      },
+      "names": {
+        "title": "Zmień nazwy stacji",
+        "description": "Nazwa wyświetlana dla każdej stacji. Pozostaw puste, aby zachować nazwę automatyczną (OpenStreetMap lub marka i miejscowość), podaną przed myślnikiem."
+      },
+      "search": {
+        "title": "Wyszukaj stacje",
+        "description": "Kod pocztowy, miejscowość, numer departamentu lub ID stacji. Pozostaw puste, aby szukać wokół domu w wybranym promieniu.",
+        "data": { "query": "Wyszukiwanie", "radius": "Promień wokół domu" }
+      },
+      "stations": {
+        "title": "Wybierz stacje",
+        "description": "Znalezione stacje: {count}, posortowane według odległości od domu. Zaznacz \"Nowe wyszukiwanie\", aby dodać stacje w innym miejscu: wybór zostanie zachowany. Wyszukiwanie zwraca maksymalnie {max} stacji: zawęź je (kod pocztowy, mniejszy promień), jeśli brakuje Twojej.",
+        "data": { "stations": "Stacje", "search_again": "Nowe wyszukiwanie" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nie można połączyć się z API cen paliw. Spróbuj ponownie później.",
+      "no_results": "Nie znaleziono żadnej stacji. Spróbuj podać kod pocztowy, inną miejscowość lub większy promień.",
+      "no_station": "Wybierz co najmniej jedną stację.",
+      "no_fuel": "Wybierz co najmniej jedno paliwo.",
+      "unknown": "Nieoczekiwany błąd, sprawdź dziennik Home Assistant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Najlepsza cena {fuel}" },
+      "stations": { "name": "Stacje" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "Dostępność {fuel}" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Odśwież",
+      "description": "Pobiera ceny teraz.",
+      "fields": {
+        "config_entry_id": { "name": "Wpis", "description": "Tylko ten wpis. Domyślnie wszystkie." }
+      }
+    }
+  }
+}
