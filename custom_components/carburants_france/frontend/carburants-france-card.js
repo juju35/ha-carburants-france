@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.9.2';
+var CARBURANTS_CARD_VERSION = '1.9.3';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -605,6 +605,7 @@ class CarburantsFranceCard extends HTMLElement {
       '<style>' + CarburantsFranceCard._styles() + '</style>' +
       '<ha-card><div class="header"></div><div class="list"></div><div class="footer" hidden></div></ha-card>';
     this._root.querySelector('.list').addEventListener('click', this._onListClick.bind(this));
+    this._root.querySelector('.list').addEventListener('keydown', this._onListKey.bind(this));
     this._root.querySelector('.footer').addEventListener('click', function (ev) {
       if (!ev.target.closest('.toggle')) return;
       this._showAll = !this._showAll;
@@ -679,7 +680,15 @@ class CarburantsFranceCard extends HTMLElement {
     // changed, leave the DOM alone (keeps a text selection, no listeners to re-attach).
     if (listHtml === this._listHtml) return;
     this._listHtml = listHtml;
+    // innerHTML replaces the rows: the row that had the focus gets it back (keyboard users stay in place).
+    var active = this._root.activeElement;
+    var focusedItem = active?.closest?.('.station');
+    var focusedId = focusedItem && focusedItem.querySelector('.row') === active ? focusedItem.getAttribute('data-id') : null;
     list.innerHTML = listHtml;
+    if (focusedId !== null) {
+      var again = Array.prototype.find.call(list.querySelectorAll('.station'), (el) => el.getAttribute('data-id') === focusedId);
+      again?.querySelector('.row')?.focus();
+    }
     list.querySelectorAll('img.logo').forEach((img) => {
       img.addEventListener('error', () => {
         CARBURANTS_FAILED_LOGOS.add(img.getAttribute('src'));
@@ -774,7 +783,8 @@ class CarburantsFranceCard extends HTMLElement {
 
     var html =
       '<div class="station" data-id="' + carbEsc(id) + '">' +
-      '<div class="row">' + this._logoHtml(s) +
+      // A button for the keyboard too: Enter or Space expands the station (_onListKey).
+      '<div class="row" role="button" tabindex="0" aria-expanded="' + expanded + '">' + this._logoHtml(s) +
       '<div class="main">' +
       '<div class="line1"><span class="name">' + carbEsc(s.station_name) + '</span>' +
       (opening ? `<span class="opening ${opening.key}">${carbEsc(opening.text)}</span>` : '') + '</div>' +
@@ -816,7 +826,19 @@ class CarburantsFranceCard extends HTMLElement {
     if (ev.target.closest('a') || ev.target.closest('.details')) return;
     var item = ev.target.closest('.station');
     if (!item) return;
-    var id = item.getAttribute('data-id');
+    this._toggleStation(item.getAttribute('data-id'));
+  }
+
+  // Enter or Space on a station row, as a click on it. Keys typed elsewhere (a link of the details) pass.
+  _onListKey(ev) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    var item = ev.target.closest('.station');
+    if (!item || item.querySelector('.row') !== ev.target) return;
+    ev.preventDefault();
+    this._toggleStation(item.getAttribute('data-id'));
+  }
+
+  _toggleStation(id) {
     this._expandedId = this._expandedId === id ? null : id;
     this._render();
   }
@@ -865,7 +887,9 @@ class CarburantsFranceCard extends HTMLElement {
       '.empty { padding: 12px 16px; color: var(--secondary-text-color); }',
       '.station { padding: 8px 12px; cursor: pointer; border-top: 1px solid var(--divider-color, rgba(0,0,0,.12)); }',
       '.station:first-child { border-top: none; }',
-      '.row { display: flex; align-items: center; gap: 10px; }',
+      '.row { display: flex; align-items: center; gap: 10px; border-radius: 8px; }',
+      '.row:focus { outline: none; }',
+      '.row:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }',
       '.logo { width: 36px; height: 36px; flex: none; border-radius: 10px; object-fit: contain; background: #fff; padding: 3px; box-sizing: border-box; border: 1px solid var(--divider-color, rgba(0,0,0,.12)); }',
       '.logo.badge { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; letter-spacing: .5px; border: none; }',
       // A logo that is a tile of its own (Total Access) keeps its own rounded corners.
@@ -916,6 +940,8 @@ class CarburantsFranceCard extends HTMLElement {
       '.footer[hidden] { display: none; }',
       '.toggle { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12px; font-weight: 500; padding: 4px 0; border: none; background: none; color: var(--primary-color); cursor: pointer; }',
       '.toggle ha-icon { --mdc-icon-size: 18px; }',
+      // Last, so that it outranks the rules above. Reduced motion: no spin nor swing; a dimmed icon still says a refresh is running.
+      '@media (prefers-reduced-motion: reduce) { .refresh-btn.spinning ha-icon { animation: none; opacity: .5; } .chevron { transition: none; } }',
     ].join('\n');
   }
 }
@@ -2293,7 +2319,16 @@ class CarburantsFranceMapCard extends HTMLElement {
       'ha-card.fullscreen { display: flex !important; flex-direction: column; width: 100%; height: 100vh; height: 100dvh; border-radius: 0; box-sizing: border-box; }',
       'ha-card.fullscreen .map { flex: 1; height: auto !important; }',
       'ha-card.pseudo { position: fixed; inset: 0; z-index: 9999; height: 100vh; height: 100dvh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }',
-      '.carb-fs a { display: flex; align-items: center; justify-content: center; color: #333; cursor: pointer; }',
+      '.carb-fs a { display: flex; align-items: center; justify-content: center; cursor: pointer; }',
+      // Leaflet's controls (zoom, full screen, attribution) in the theme's colours, light or dark.
+      '.leaflet-bar a { background-color: var(--card-background-color, #fff); color: var(--primary-text-color, #000); border-bottom-color: var(--divider-color, #ccc); }',
+      '.leaflet-bar a:hover, .leaflet-bar a:focus { background-color: var(--secondary-background-color, #f4f4f4); }',
+      '.leaflet-bar a.leaflet-disabled { background-color: var(--secondary-background-color, #f4f4f4); color: var(--disabled-text-color, #bbb); }',
+      '.leaflet-touch .leaflet-bar { border-color: var(--divider-color, rgba(0,0,0,.2)); }',
+      '.leaflet-container .leaflet-control-attribution { background: color-mix(in srgb, var(--card-background-color, #fff) 80%, transparent); color: var(--primary-text-color, #333); }',
+      '.leaflet-container .leaflet-control-attribution a { color: color-mix(in srgb, var(--primary-color, #03a9f4) 60%, var(--primary-text-color, #212121)); }',
+      '.leaflet-container a.leaflet-popup-close-button { color: var(--secondary-text-color, #757575); }',
+      '.leaflet-container a.leaflet-popup-close-button:hover, .leaflet-container a.leaflet-popup-close-button:focus { color: var(--primary-text-color, #585858); }',
       '.leaflet-container { font: inherit; }',
       '.map.dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }',
       '.carb-marker { background: none; border: none; }',
@@ -2332,7 +2367,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.popup b.best { color: var(--success-color, #43a047); }',
       '.popup .out { color: var(--warning-color, #ffa600); font-weight: 500; }',
       '.popup .nodata { color: var(--secondary-text-color, #727272); }',
-      '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 4px; border: 2px solid rgba(0,0,0,.2); background: var(--card-background-color, #fff); color: var(--primary-color, #03a9f4); cursor: pointer; background-clip: padding-box; }',
+      '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 4px; border: 2px solid var(--divider-color, rgba(0,0,0,.2)); background: var(--card-background-color, #fff); color: var(--primary-color, #03a9f4); cursor: pointer; background-clip: padding-box; }',
       '.carb-toggle[hidden] { display: none; }',
       // Header tools: radius of the nearby search and "locate me".
       '.tools { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: none; }',
@@ -2344,7 +2379,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.locate.busy ha-icon { animation: carb-pulse 1s ease-in-out infinite; }',
       '@keyframes carb-pulse { 50% { opacity: .3; } }',
       // Search field, as in ha-system-monitor-card.
-      '.searchbar { padding: 0 16px 8px; }',
+      '.searchbar { padding: 0 12px 8px; }',
       '.searchbar[hidden] { display: none; }',
       '.search { display: flex; align-items: center; gap: 6px; padding: 0 10px; height: 34px; border-radius: 10px; background: var(--secondary-background-color, rgba(127,127,127,.08)); color: var(--secondary-text-color); cursor: text; }',
       '.search:focus-within { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: -2px; }',
@@ -2358,12 +2393,14 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.search .clear .svg { width: 16px; height: 16px; }',
       // Nearby search: area and starting point.
       '.leaflet-container path.carb-area { stroke: var(--primary-color, #03a9f4); stroke-width: 1.5; stroke-opacity: .7; fill: var(--primary-color, #03a9f4); fill-opacity: .06; }',
-      '.me { position: absolute; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: var(--primary-color, #03a9f4); border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(3,169,244,.25), 0 1px 4px rgba(0,0,0,.35); }',
+      '.me { position: absolute; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: var(--primary-color, #03a9f4); border: 3px solid #fff; box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary-color, #03a9f4) 25%, transparent), 0 1px 4px rgba(0,0,0,.35); }',
       '.pfollowed { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 12px; color: var(--primary-color, #03a9f4); --mdc-icon-size: 14px; }',
       // Leaflet colours every link in the map: the selector must outrank '.leaflet-container a'.
       '.leaflet-container a.pdir { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 8px 14px; border-radius: 10px; background: color-mix(in srgb, var(--primary-color, #03a9f4) 16%, transparent); color: var(--primary-color, #03a9f4); text-decoration: none; font-weight: 500; font-size: 14px; }',
       '.leaflet-container a.pdir:hover { background: color-mix(in srgb, var(--primary-color, #03a9f4) 24%, transparent); }',
       '.pdir ha-icon { --mdc-icon-size: 18px; }',
+      // Last, so that it outranks the rules above. Reduced motion: no pulse; a dimmed icon still says the position is being looked up.
+      '@media (prefers-reduced-motion: reduce) { .locate.busy ha-icon { animation: none; opacity: .5; } }',
     ].join('\n');
   }
 }
