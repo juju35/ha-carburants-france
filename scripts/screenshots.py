@@ -629,6 +629,16 @@ def page_html(theme, width=WIDTH):
 </style></head><body><div id="root"></div></body></html>"""
 
 
+def shrink_png(path):
+    """Rewrite a screenshot as a 256-colour palette PNG: about a quarter of the size, no visible loss on a card,
+    so each refresh of the screenshots adds little to the repository history. Deterministic (same image, same file)."""
+    from PIL import Image
+
+    with Image.open(path) as image:
+        small = image.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+    small.save(path, optimize=True)
+
+
 def framed_shot(page, path, width):
     """The card with 16 px of theme background around it."""
     box = page.locator("#root").bounding_box()
@@ -637,6 +647,7 @@ def framed_shot(page, path, width):
         clip={"x": 0, "y": 0, "width": width + 32, "height": int(box["height"] + 0.999) + 32},
         animations="disabled",
     )
+    shrink_png(path)
 
 
 def mount(context, shot):
