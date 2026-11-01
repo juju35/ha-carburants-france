@@ -412,6 +412,7 @@ test('the map popup marks the best price only on the cheapest of several station
 // per station found in that HTML (a fresh one each render, as innerHTML would), recording focus().
 const listCard = () => {
   const focused = [];
+  const focusOptions = [];
   const list = {
     html: '',
     set innerHTML(html) { this.html = html; },
@@ -422,7 +423,7 @@ const listCard = () => {
         this.nodesOf = this.html;
         this.nodes = [...this.html.matchAll(/<div class="station" data-id="([^"]*)">/g)].map((m) => {
           const item = { getAttribute: (name) => (name === 'data-id' ? m[1] : null) };
-          const row = { focus: () => focused.push(m[1]), closest: (c) => (c === '.station' ? item : null) };
+          const row = { focus: (opts) => { focused.push(m[1]); focusOptions.push(opts); }, closest: (c) => (c === '.station' ? item : null) };
           item.querySelector = (s) => (s === '.row' ? row : null);
           return item;
         });
@@ -438,7 +439,7 @@ const listCard = () => {
   const state = { state: '2', attributes: { config_entry_id: 'x', fuels: fuels.map((f) => ({ ...f, name: f.key })), stations: [station(1, 1.8, 1.7), station(2, 1.75, 1.72)] } };
   card.setConfig({ entity: 'sensor.x', language: 'en', show_logo: false });
   card.hass = { language: 'en', states: { 'sensor.x': state } };
-  return { card, list, focused };
+  return { card, list, focused, focusOptions };
 };
 // A key press on a station row, as the list's keydown listener receives it.
 const keyOnRow = (list, id, key) => {
@@ -482,6 +483,22 @@ test('the focused list station row keeps the focus when the list is redrawn', ()
   card._expandedId = null;
   card._render();
   assert.deepEqual(focused, ['2']);
+});
+
+test('giving the focus back to the redrawn row does not scroll the page', () => {
+  const { card, list, focused, focusOptions } = listCard();
+  const k = keyOnRow(list, '2', 'Enter');
+  card._root.activeElement = k.row;
+  card._onListKey(k.ev);
+  assert.deepEqual(focused, ['2']);
+  assert.deepEqual({ ...focusOptions[0] }, { preventScroll: true });
+});
+
+test('no focus() call in the cards may scroll the page', () => {
+  // Every focus() the cards make (row given back after a redraw, search field after clearing it) keeps the scroll.
+  const calls = [...source.matchAll(/\.focus\(([^)]*)\)/g)].map((m) => m[1]);
+  assert.ok(calls.length >= 2);
+  for (const args of calls) assert.equal(args.replace(/\s+/g, ' '), '{ preventScroll: true }');
 });
 
 test('the focused row of a station that is gone after a redraw does not fail', () => {
@@ -706,8 +723,13 @@ test('narrow card: the title keeps a few letters and the header buttons wrap rat
   assert.match(list, /\.header \{[^}]*flex-wrap: wrap/);
   assert.match(list, /\.title \{[^}]*flex: 1 1 0[^}]*\}/);
   assert.doesNotMatch(list, /\.title \{[^}]*min-width: 0/);
-  assert.match(list, /\.titles \{[^}]*flex: 1 1 auto; min-width: 5ch; contain: inline-size/);
+  // Basis 0, not auto: a long title must not take the room of the refresh button or wrap it needlessly.
+  assert.match(list, /\.titles \{[^}]*flex: 1 1 0; min-width: 5ch; contain: inline-size/);
+  assert.doesNotMatch(list, /\.titles \{[^}]*flex: 1 1 auto/);
   assert.match(list, /\.refresh-btn \{ flex: none;/);
+  // The subtitle (station count, "Data unavailable") wraps rather than being cut: "Podaci nisu dostupni" at 234 px.
+  assert.match(list, /\.hsub \{[^}]*white-space: normal/);
+  assert.doesNotMatch(list, /\.hsub \{[^}]*(nowrap|ellipsis)/);
   // Map card: same for the title, the radius and "locate me" tools stay whole.
   assert.match(map, /\.header \{[^}]*flex-wrap: wrap/);
   assert.match(map, /\.hname \{[^}]*flex: 1 1 0; min-width: 5ch/);
@@ -725,8 +747,52 @@ test('narrow list card: the fuel tiles, opening status and details reflow instea
   assert.match(narrow, /\.details \{ margin-left: 0; \}/);
   assert.match(narrow, /\.opening \{ white-space: normal; \}/);
   assert.match(narrow, /\.line1 \{ flex-flow: column nowrap; align-items: stretch; gap: 0; \}/);
+  // The tiles flow freely there: an empty slot (fuel not sold) would leave a hole in the grid.
+  assert.match(narrow, /\.fuel\.empty \{ display: none; \}/);
   // List card: at least 9 of 12 columns (~240 px), where the station names stay readable; the map card (header
   // tools wrapping) still fits half a section.
   assert.equal(CarburantsFranceCard.prototype.getGridOptions().min_columns, 9);
   assert.equal(CarburantsFranceMapCard.prototype.getGridOptions().min_columns, 6);
+});
+
+test('the list card keeps a usable width in a container sized by its content (layout-card, grid column auto)', () => {
+  // ha-card is an inline-size container, so it has no width of its own: without a minimum on the host, an
+  // inline-block or `auto` grid column would shrink the card to its padding.
+  const list = styles(CarburantsFranceCard);
+  assert.match(list, /ha-card \{[^}]*container: carb-card \/ inline-size/);
+  const host = list.match(/:host \{ display: block;([^}]*)\}/)?.[1] ?? '';
+  const min = Number(host.match(/min-width: (\d+)px/)?.[1]);
+  // Below the narrowest width the Sections view gives it (9 of 12 columns on a 320 px phone section: 234 px).
+  assert.ok(min >= 200 && min <= 234, `min-width ${min}`);
+});
+
+test('auto-detection finds an unavailable stations sensor from the entity registry (no attributes then)', () => {
+  const hass = {
+    states: {
+      'sensor.other': { state: '3', attributes: {} },
+      'sensor.carburants_stations': { state: 'unavailable', attributes: { friendly_name: 'Stations' } },
+    },
+    entities: {
+      'sensor.other': { entity_id: 'sensor.other', platform: 'other', translation_key: 'stations' },
+      'sensor.carburants_gazole_best': { entity_id: 'sensor.carburants_gazole_best', platform: 'carburants_france', translation_key: 'best_price' },
+      'sensor.carburants_stations': { entity_id: 'sensor.carburants_stations', platform: 'carburants_france', translation_key: 'stations' },
+    },
+  };
+  assert.equal(CarburantsFranceCard._findEntity(hass), 'sensor.carburants_stations');
+  assert.equal(CarburantsFranceCard.getStubConfig(hass).entity, 'sensor.carburants_stations');
+  // An available sensor with its attributes still wins, and an old HA without hass.entities finds nothing more.
+  const live = { state: '2', attributes: { stations: [], fuels: [], config_entry_id: 'x' } };
+  assert.equal(CarburantsFranceCard._findEntity({ ...hass, states: { ...hass.states, 'sensor.live': live } }), 'sensor.live');
+  assert.equal(CarburantsFranceCard._findEntity({ states: hass.states }), null);
+  // Registry entry without a state (entity removed): not picked.
+  assert.equal(CarburantsFranceCard._findEntity({ states: {}, entities: hass.entities }), null);
+  // The list card then says the data is unavailable instead of "sensor not found".
+  const node = () => ({ innerHTML: '', hidden: false, querySelector: () => null, querySelectorAll: () => [] });
+  const parts = { '.header': node(), '.list': node(), '.footer': node() };
+  const card = Object.assign(Object.create(CarburantsFranceCard.prototype), {
+    _root: { querySelector: (sel) => parts[sel] ?? null, activeElement: null },
+  });
+  card.setConfig({ language: 'en', show_logo: false });
+  card.hass = { language: 'en', ...hass };
+  assert.match(parts['.header'].innerHTML, /<div class="hsub">Data unavailable<\/div>/);
 });
