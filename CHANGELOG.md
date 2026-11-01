@@ -12,12 +12,12 @@
 - List and map cards without `entity`: an unavailable Stations sensor is still found (through the entity registry), so the cards say the data is unavailable instead of "Stations sensor not found".
 - List card: the header subtitle wraps instead of being cut ("Data unavailable" in Serbian or Polish on a phone).
 - List card on a narrow card: a fuel the station does not sell no longer leaves a hole among the fuel tiles.
-- List card: the title gives up its room to the refresh button first, and the card keeps a usable width (220 px) in a container sized by its content (layout-card, a grid column set to `auto`) instead of shrinking to nothing.
+- List card: the title gives up its room to the refresh button first, and the card takes a usable width (220 px) in a container sized by its content (layout-card, a grid column set to `auto`) instead of shrinking to nothing, while still fitting its half of a two-column grid (layout-card, grid card, horizontal stack) instead of overflowing it.
 - List and map cards: giving the focus back to a station row after a refresh, or to the search field after clearing it, no longer scrolls the page.
 
 ### Maintenance
 - Screenshots are saved as 256-colour PNGs (about a third of the size), so refreshing them adds much less to the repository.
-- The screenshot script only rewrites a screenshot (PNG or GIF) whose pixels changed.
+- The screenshot script only rewrites a screenshot (PNG or GIF) whose pixels changed, comparing every colour channel.
 
 ## 1.9.5 (2026-11-01)
 

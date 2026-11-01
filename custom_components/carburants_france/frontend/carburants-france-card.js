@@ -1248,8 +1248,12 @@ class CarburantsFranceCard extends HTMLElement {
   static _styles() {
     return [
       // ha-card is an inline-size container (no width of its own): in a container sized by its content (layout-card,
-      // grid column `auto`) the card keeps 220 px, under the 234 px of its narrowest Sections view size.
-      ':host { display: block; min-width: 220px; }',
+      // inline-block, grid column `auto`) the card takes 220 px, under the 234 px of its narrowest Sections view size.
+      // That width comes from an empty grid whose only track is minmax(0, 220px): 220 px as max-content, 0 as
+      // min-content, so in a `1fr 1fr` grid (wrapped in a div or not) the card still shrinks to its track. A min-width
+      // or contain-intrinsic-* on the host would be a minimum and overflow there.
+      ':host { display: block; }',
+      ':host::before { content: ""; display: grid; grid-template-columns: minmax(0, 220px); height: 0; }',
       // Status texts: the state colour mixed with the text colour, so that they reach 4.5:1 on the card in light
       // and dark themes (the plain colours stay on borders, pins and dots).
       ':host { --carb-success-text: color-mix(in srgb, var(--success-color, #43a047) 55%, var(--primary-text-color, #212121)); --carb-info-text: color-mix(in srgb, var(--info-color, #039be5) 55%, var(--primary-text-color, #212121)); --carb-error-text: color-mix(in srgb, var(--error-color, #db4437) 55%, var(--primary-text-color, #212121)); --carb-warning-text: color-mix(in srgb, var(--warning-color, #ffa600) 50%, var(--primary-text-color, #212121)); }',

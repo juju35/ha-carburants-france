@@ -651,8 +651,10 @@ def same_pixels(a, b):
         frames_b = [frame.convert("RGBA") for frame in ImageSequence.Iterator(image_b)]
     if len(frames_a) != len(frames_b):
         return False
+    # alpha_only=False: on an RGBA image getbbox() only looks at the alpha channel by default, so two opaque
+    # screenshots of different colours would count as the same.
     return all(
-        x.size == y.size and ImageChops.difference(x, y).getbbox() is None
+        x.size == y.size and ImageChops.difference(x, y).getbbox(alpha_only=False) is None
         for x, y in zip(frames_a, frames_b, strict=True)
     )
 
