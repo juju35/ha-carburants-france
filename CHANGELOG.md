@@ -13,6 +13,7 @@
 - List card: the header subtitle wraps instead of being cut ("Data unavailable" in Serbian or Polish on a phone).
 - List card on a narrow card: a fuel the station does not sell no longer leaves a hole among the fuel tiles.
 - List card: the title gives up its room to the refresh button first, and the card takes a usable width (220 px) in a container sized by its content (layout-card, a grid column set to `auto`) instead of shrinking to nothing, while still fitting its half of a two-column grid (layout-card, grid card, horizontal stack) instead of overflowing it.
+- Map card: it no longer overflows its half of a two-column grid set to `1fr 1fr` (layout-card, custom grids) on a phone or a narrow dashboard, and it keeps a usable width (280 px) in a container sized by its content even without title or search bar.
 - List and map cards: giving the focus back to a station row after a refresh, or to the search field after clearing it, no longer scrolls the page.
 
 ### Maintenance

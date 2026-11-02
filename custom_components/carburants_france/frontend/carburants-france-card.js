@@ -3012,6 +3012,10 @@ class CarburantsFranceMapCard extends HTMLElement {
   static _styles() {
     return [
       ':host { display: block; }',
+      // Natural width (inline-block, `auto` grid column) when the header and search bar give none: an empty grid
+      // track minmax(0, 280px) has a max-content width of 280 px and a min-content width of 0, so the card still
+      // shrinks in a `1fr 1fr` grid, wrapped in a div or not.
+      ':host::before { content: ""; display: grid; grid-template-columns: minmax(0, 280px); height: 0; }',
       // Status texts: the state colour mixed with the text colour, so that they reach 4.5:1 on the card in light
       // and dark themes (the plain colours stay on borders, pins and dots).
       ':host { --carb-success-text: color-mix(in srgb, var(--success-color, #43a047) 55%, var(--primary-text-color, #212121)); --carb-info-text: color-mix(in srgb, var(--info-color, #039be5) 55%, var(--primary-text-color, #212121)); --carb-error-text: color-mix(in srgb, var(--error-color, #db4437) 55%, var(--primary-text-color, #212121)); --carb-warning-text: color-mix(in srgb, var(--warning-color, #ffa600) 50%, var(--primary-text-color, #212121)); }',
@@ -3096,7 +3100,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.search { display: flex; align-items: center; gap: 6px; padding: 0 10px; height: 34px; border-radius: 10px; background: var(--secondary-background-color, rgba(127,127,127,.08)); color: var(--secondary-text-color); cursor: text; }',
       '.search:focus-within { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: -2px; }',
       '.search .svg { width: 16px; height: 16px; flex: none; }',
-      '.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 13px; color: var(--primary-text-color); }',
+      '.search input { width: 0; flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 13px; color: var(--primary-text-color); }',
       '.search input::placeholder { color: var(--secondary-text-color); }',
       '.search input::-webkit-search-cancel-button { display: none; }',
       '.search .clear { flex: none; width: 24px; height: 24px; margin-right: -4px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: var(--secondary-text-color); }',
