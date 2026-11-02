@@ -776,6 +776,25 @@ test('the list card keeps a usable width in a container sized by its content, an
   assert.ok(natural >= 200 && natural <= 234, `natural width ${natural}`);
 });
 
+test('the map card keeps a usable width in a container sized by its content, and still shrinks in a 1fr 1fr grid', () => {
+  // The search field had no width: its intrinsic width (~20 characters) set the card's min-content width
+  // (277 px), so in a `1fr 1fr` grid (layout-card, custom grids) the card overflowed its track by 62-242 px.
+  // `flex: 1; min-width: 0` does not lower that min-content contribution, `width: 0` does.
+  const map = styles(CarburantsFranceMapCard);
+  assert.match(map, /\.search input \{[^}]*width: 0;[^}]*flex: 1 1 auto;[^}]*min-width: 0;/);
+  const hostRules = [...map.matchAll(/:host \{([^}]*)\}/g)].map((m) => m[1]).join(';');
+  assert.doesNotMatch(hostRules, /min-width: *[1-9]\d*px/);
+  assert.doesNotMatch(map, /contain-intrinsic-/);
+  // With no intrinsic width left, the natural width (inline-block, `auto` column) comes from an empty grid
+  // pseudo-element: max-content N px, min-content 0, no height.
+  const before = map.match(/:host::before \{([^}]*)\}/)?.[1] ?? '';
+  assert.match(before, /content: "";/);
+  assert.match(before, /display: grid;/);
+  assert.match(before, /height: 0;/);
+  const natural = Number(before.match(/grid-template-columns: minmax\(0, (\d+)px\)/)?.[1]);
+  assert.ok(natural >= 240 && natural <= 320, `natural width ${natural}`);
+});
+
 test('auto-detection finds an unavailable stations sensor from the entity registry (no attributes then)', () => {
   const hass = {
     states: {
