@@ -6,7 +6,10 @@ showing exactly the same state, and every README image is one the script produce
 
 import ast
 import re
+import shutil
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ast.parse((ROOT / "scripts/screenshots.py").read_text())
@@ -91,3 +94,164 @@ def test_readme_rows_pair_light_with_its_dark_twin():
     for light, dark in rows:
         stem, ext = light.rsplit(".", 1)
         assert dark == f"{stem}-dark.{ext}", f"{light} is paired with {dark}"
+
+
+def _function(name):
+    """A top-level function of the script, compiled alone (the script itself needs Playwright)."""
+    node = next(n for n in SCRIPT.body if isinstance(n, ast.FunctionDef) and n.name == name)
+    namespace = {}
+    exec(compile(ast.Module(body=[node], type_ignores=[]), "screenshots.py", "exec"), namespace)  # noqa: S102
+    return node, namespace[name]
+
+
+def test_every_png_shot_is_shrunk_to_a_palette(tmp_path):
+    """framed_shot (list and map stills) rewrites each PNG as a 256-colour palette, much smaller, the same each time."""
+    framed, _ = _function("framed_shot")
+    calls = [n.func.id for n in ast.walk(framed) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)]
+    assert "shrink_png" in calls
+    image_module = pytest.importorskip("PIL.Image")
+    _, shrink_png = _function("shrink_png")
+    # A card-like picture with gradients (many colours), as Chromium saves it.
+    source = image_module.new("RGB", (300, 200))
+    source.putdata([(x % 256, (x * y) % 256, y % 256) for y in range(200) for x in range(300)])
+    first, second = tmp_path / "a.png", tmp_path / "b.png"
+    source.save(first)
+    source.save(second)
+    before = first.stat().st_size
+    shrink_png(first)
+    shrink_png(second)
+    with image_module.open(first) as shrunk:
+        assert shrunk.mode == "P"
+        assert shrunk.size == (300, 200)
+    assert first.stat().st_size < before
+    assert first.read_bytes() == second.read_bytes()
+
+
+def test_same_pixels_compares_every_colour_channel(tmp_path):
+    """replace_if_changed keeps a screenshot only when its decoded pixels are the same: two opaque images that
+    differ in colour must not count as the same (comparing RGBA with getbbox() only looks at the alpha channel)."""
+    image_module = pytest.importorskip("PIL.Image")
+    node = next(n for n in SCRIPT.body if isinstance(n, ast.FunctionDef) and n.name == "same_pixels")
+    namespace = {"Path": Path}
+    exec(compile(ast.Module(body=[node], type_ignores=[]), "screenshots.py", "exec"), namespace)  # noqa: S102
+    same_pixels = namespace["same_pixels"]
+    white = image_module.new("RGB", (40, 30), (255, 255, 255))
+    tinted = white.copy()
+    tinted.putpixel((10, 10), (254, 255, 255))
+    white.save(tmp_path / "white.png")
+    tinted.save(tmp_path / "tinted.png")
+    # The same pixels in another encoding (palette PNG): the same image.
+    white.quantize(colors=4).save(tmp_path / "white-palette.png")
+    assert same_pixels(tmp_path / "white.png", tmp_path / "white-palette.png")
+    assert not same_pixels(tmp_path / "white.png", tmp_path / "tinted.png")
+    assert not same_pixels(tmp_path / "white.png", tmp_path / "missing.png")
+    # GIF: one frame of colour changed among two.
+    black = image_module.new("RGB", (40, 30), (0, 0, 0))
+    white.save(tmp_path / "a.gif", save_all=True, append_images=[black])
+    white.save(tmp_path / "b.gif", save_all=True, append_images=[black])
+    white.save(tmp_path / "c.gif", save_all=True, append_images=[image_module.new("RGB", (40, 30), (0, 0, 128))])
+    assert same_pixels(tmp_path / "a.gif", tmp_path / "b.gif")
+    assert not same_pixels(tmp_path / "a.gif", tmp_path / "c.gif")
+
+
+def _script_functions(*names):
+    """Some top-level definitions of scripts/screenshots.py, run on their own (no Playwright import needed)."""
+    nodes = [
+        n
+        for n in SCRIPT.body
+        if (isinstance(n, ast.FunctionDef) and n.name in names)
+        or (isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id in names for t in n.targets))
+    ]
+    import subprocess  # noqa: PLC0415
+
+    namespace = {"Path": Path, "subprocess": subprocess}
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), "screenshots.py", "exec"), namespace)  # noqa: S102
+    return namespace
+
+
+def test_gif_frames_step_every_animation_of_the_shadow_roots():
+    """The spinner and the pulse run in the cards' shadow roots, which document.getAnimations() does not see: left
+    running, each render caught them at another point and the GIFs changed on every CI run. The stepping must
+    freeze them (two screenshots at the same t are the same pixels) and fail loudly when nothing is animated."""
+    sync_api = pytest.importorskip("playwright.sync_api")
+    step_animations = _script_functions("STEP_ANIMATIONS", "step_animations")["step_animations"]
+    html = """<!doctype html><style>body{margin:0}</style><div id="host"></div><script>
+      const root = document.getElementById("host").attachShadow({mode: "open"});
+      root.innerHTML = `<style>@keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 50% { opacity: .3; } }
+        .s { width: 60px; height: 20px; background: #c00; animation: spin 1s linear infinite; }
+        .p { width: 60px; height: 20px; background: #00c; animation: pulse 1s ease-in-out infinite; }
+        .t { width: 60px; height: 20px; background: #0c0; transition: opacity 5s; }</style>
+        <div class="s"></div><div class="p"></div><div class="t"></div>`;
+      </script>"""
+    with sync_api.sync_playwright() as p:
+        try:
+            browser = p.chromium.launch()
+        except Exception as err:  # noqa: BLE001
+            pytest.skip(f"no Chromium: {err}")
+        page = browser.new_page(viewport={"width": 100, "height": 80})
+        page.set_content(html)
+        page.evaluate("""() => { const t = document.getElementById("host").shadowRoot.querySelector(".t");
+                                 t.getBoundingClientRect(); t.style.opacity = "0.2"; }""")
+        clip = {"x": 0, "y": 0, "width": 100, "height": 80}
+        assert step_animations(page, 250) == 2
+        first = page.screenshot(clip=clip)
+        page.wait_for_timeout(400)
+        assert step_animations(page, 250) == 2
+        again = page.screenshot(clip=clip)
+        states = page.evaluate(
+            """() => document.getElementById("host").shadowRoot.getAnimations().map((a) => a.playState)"""
+        )
+        page.set_content("<p>still</p>")
+        assert step_animations(page, 0) == 0
+        browser.close()
+    assert states == ["paused", "paused"]  # the transition was finished (and dropped), the loops paused
+    assert first == again
+
+
+def test_gif_encoding_is_deterministic(tmp_path):
+    """The same frames always give the same GIF file: palette computed from the frames, ordered (Bayer) dithering,
+    one thread (no error diffusion, no random dithering, no timestamps)."""
+    image_module = pytest.importorskip("PIL.Image")
+    if not shutil.which("ffmpeg"):
+        pytest.skip("no ffmpeg")
+    encode_gif = _script_functions("encode_gif")["encode_gif"]
+    for i in range(4):
+        frame = image_module.radial_gradient("L").resize((80, 60)).convert("RGB")
+        frame.putpixel((i, i), (255, 0, 0))
+        frame.save(tmp_path / f"f{i:03d}.png")
+    encode_gif(tmp_path, 20, 80, tmp_path / "a.gif")
+    encode_gif(tmp_path, 20, 80, tmp_path / "b.gif")
+    assert (tmp_path / "a.gif").read_bytes() == (tmp_path / "b.gif").read_bytes()
+    source = ast.unparse(next(n for n in SCRIPT.body if isinstance(n, ast.FunctionDef) and n.name == "encode_gif"))
+    assert "dither=bayer" in source
+    assert not re.search(r"dither=(sierra|floyd|heckbert)", source)
+
+
+def test_each_map_gif_gets_its_own_context():
+    """animate() freezes the clock of a map GIF once its tiles settled, and a Playwright clock belongs to the whole
+    context: a second map in that context would never fade its tiles in (the dark locate GIF timed out on CI).
+    Each map GIF is therefore made in a context created for it, in the loop that makes it."""
+    main = next(n for n in SCRIPT.body if isinstance(n, ast.FunctionDef) and n.name == "main")
+    map_loops = [
+        loop
+        for loop in ast.walk(main)
+        if isinstance(loop, ast.For)
+        and any(
+            isinstance(c, ast.Call) and getattr(c.func, "id", None) == "animate" and "'map'" in ast.unparse(c)
+            for c in ast.walk(loop)
+        )
+    ]
+    assert map_loops, "no map GIF loop in main()"
+    for loop in map_loops:
+        call = next(c for c in ast.walk(loop) if isinstance(c, ast.Call) and getattr(c.func, "id", None) == "animate")
+        name = call.args[0].id
+        created = {
+            t.id
+            for a in loop.body
+            if isinstance(a, ast.Assign)
+            and isinstance(a.value, ast.Call)
+            and getattr(a.value.func, "id", None) == "map_context"
+            for t in a.targets
+        }
+        assert name in created, f"the map GIF uses {name}, not a context created in its loop"

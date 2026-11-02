@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.9.6 (2026-11-01)
+
+### Fixes
+- List card: when the Stations sensor is unavailable or unknown (feed unreachable at startup, integration reloading), the header says "Data unavailable" in the card language instead of "unavailable stations", and the list explains that the prices are unavailable for now instead of "No station to show". The map card shows the same message above the map.
+- List card: the station count agrees with its number in every language: "1 station" in English and French, "1 Tankstelle", "1 estación", and in Serbian "2 станице" / "2 stanice" for 2-4, 22-24…
+- List and map cards: the status texts (Open, Closed, 24/7 automat, Out of stock, best price, and the coloured prices and labels on the map) are now readable in light and dark themes (contrast of at least 4.5:1); borders and map pins keep their state colour. Out of stock fuel tiles are no longer faded.
+- List card on a narrow card: the fuel tiles wrap under the station instead of overflowing, the opening status goes under the station name, and the opening hours stay inside the card. In a Sections view the card now takes at least 9 of the 12 columns (about 240 px), where the station names stay readable.
+- List and map cards on a narrow card: the title keeps a few letters visible; the refresh button, the radius list and the "locate me" button go to a second line instead of leaving the card.
+- Map card: the map attribution is small print again (11 px) instead of the card's text size.
+- List and map cards without `entity`: an unavailable Stations sensor is still found (through the entity registry), so the cards say the data is unavailable instead of "Stations sensor not found".
+- List card: the header subtitle wraps instead of being cut ("Data unavailable" in Serbian or Polish on a phone).
+- List card on a narrow card: a fuel the station does not sell no longer leaves a hole among the fuel tiles.
+- List card: the title gives up its room to the refresh button first, and the card takes a usable width (220 px) in a container sized by its content (layout-card, a grid column set to `auto`) instead of shrinking to nothing, while still fitting its half of a two-column grid (layout-card, grid card, horizontal stack) instead of overflowing it.
+- Map card: it no longer overflows its half of a two-column grid set to `1fr 1fr` (layout-card, custom grids) on a phone or a narrow dashboard, and it keeps a usable width (280 px) in a container sized by its content even without title or search bar.
+- List and map cards: giving the focus back to a station row after a refresh, or to the search field after clearing it, no longer scrolls the page.
+
+### Maintenance
+- Screenshots are saved as 256-colour PNGs (about a third of the size), so refreshing them adds much less to the repository.
+- The screenshot script only rewrites a screenshot (PNG or GIF) whose pixels changed, comparing every colour channel.
+
 ## 1.9.5 (2026-11-01)
 
 ### Changes

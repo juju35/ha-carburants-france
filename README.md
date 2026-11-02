@@ -129,6 +129,8 @@ Click a station to see its weekly opening hours, its services and a directions b
 
 Stations where **every fuel shown is out of stock** are hidden: the **Show the out of stock stations** button at the bottom of the card brings them back.
 
+When the Stations sensor is unavailable (feed unreachable at startup, integration reloading), with or without `entity` set, the card says **Data unavailable** instead of a station count, and the map card says so above the map; the prices come back with the next refresh. In a Sections view the list card takes at least 9 of the 12 columns, so the station names stay readable; on a narrow card the fuel tiles wrap under the station.
+
 ### Map card
 
 Add the **Carburants France — carte** card from the card picker. In YAML:

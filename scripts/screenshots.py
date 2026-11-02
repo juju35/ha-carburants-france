@@ -12,6 +12,7 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -629,14 +630,57 @@ def page_html(theme, width=WIDTH):
 </style></head><body><div id="root"></div></body></html>"""
 
 
+def shrink_png(path):
+    """Rewrite a screenshot as a 256-colour palette PNG: about a quarter of the size, no visible loss on a card,
+    so each refresh of the screenshots adds little to the repository history. Deterministic (same image, same file)."""
+    from PIL import Image
+
+    with Image.open(path) as image:
+        small = image.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+    small.save(path, optimize=True)
+
+
+def same_pixels(a, b):
+    """True when two images (every frame of a GIF) decode to the same pixels, whatever their bytes."""
+    from PIL import Image, ImageChops, ImageSequence
+
+    if not Path(a).exists() or not Path(b).exists():
+        return False
+    with Image.open(a) as image_a, Image.open(b) as image_b:
+        frames_a = [frame.convert("RGBA") for frame in ImageSequence.Iterator(image_a)]
+        frames_b = [frame.convert("RGBA") for frame in ImageSequence.Iterator(image_b)]
+    if len(frames_a) != len(frames_b):
+        return False
+    # alpha_only=False: on an RGBA image getbbox() only looks at the alpha channel by default, so two opaque
+    # screenshots of different colours would count as the same.
+    return all(
+        x.size == y.size and ImageChops.difference(x, y).getbbox(alpha_only=False) is None
+        for x, y in zip(frames_a, frames_b, strict=True)
+    )
+
+
+def replace_if_changed(new, path):
+    """Move a fresh render over the committed screenshot only when its pixels differ: an unchanged screenshot keeps
+    its file (no commit of new bytes for the same image)."""
+    new, path = Path(new), Path(path)
+    if same_pixels(new, path):
+        new.unlink()
+        return False
+    shutil.move(new, path)
+    return True
+
+
 def framed_shot(page, path, width):
     """The card with 16 px of theme background around it."""
     box = page.locator("#root").bounding_box()
+    fresh = Path(tempfile.mkdtemp()) / Path(path).name
     page.screenshot(
-        path=str(path),
+        path=str(fresh),
         clip={"x": 0, "y": 0, "width": width + 32, "height": int(box["height"] + 0.999) + 32},
         animations="disabled",
     )
+    shrink_png(fresh)
+    replace_if_changed(fresh, path)
 
 
 def mount(context, shot):
@@ -665,13 +709,71 @@ def mount(context, shot):
     return page
 
 
+# Every animation of the page, in the document and in every shadow root (document.getAnimations() does not see the
+# cards' shadow roots, where the spinner and the pulse run): a finite one (a CSS transition) is finished, a looping
+# one is paused at t ms. Returns how many looping animations were stepped.
+STEP_ANIMATIONS = """(t) => {
+  const all = [];
+  const walk = (root) => {
+    all.push(...root.getAnimations());
+    for (const el of root.querySelectorAll("*")) if (el.shadowRoot) walk(el.shadowRoot);
+  };
+  walk(document);
+  let looping = 0;
+  for (const a of all) {
+    if (a.effect?.getComputedTiming().iterations !== Infinity) { a.finish(); continue; }
+    a.pause();
+    a.currentTime = t;
+    looping += 1;
+  }
+  return looping;
+}"""
+
+
+def step_animations(page, t):
+    """Freeze every animation of the page (shadow roots included) at t ms; returns the looping ones stepped."""
+    return page.evaluate(STEP_ANIMATIONS, t)
+
+
+def encode_gif(frame_dir, fps, width, out):
+    """The frames f000.png… of frame_dir as a looping GIF. Deterministic: the palette is computed from the frames
+    alone and the dithering is ordered (Bayer), never error diffusion or random, on one thread, so the same
+    frames always give the same file."""
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-filter_threads",
+            "1",
+            "-framerate",
+            str(fps),
+            "-i",
+            f"{frame_dir}/f%03d.png",
+            "-vf",
+            f"scale={width}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer:bayer_scale=4",
+            "-threads",
+            "1",
+            "-bitexact",
+            "-loop",
+            "0",
+            str(out),
+        ],
+        check=True,
+    )
+
+
 def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;"):
     """Record a card animation as a looping screenshots/<file>.gif (needs ffmpeg). `prime` is the JS that puts the
-    card in its animated state. Every animation is paused and stepped frame by frame, so the GIF is identical
-    whatever the machine's speed."""
+    card in its animated state. The clock is frozen and every animation (shadow roots included) is paused and
+    stepped frame by frame, so the GIF is identical whatever the machine's speed and from one run to the next."""
     if shot.get("card") == "map":
         page = mount_map(context, shot)
         wait_tiles(page)
+        # Frozen only now: Leaflet needs a running clock to fade the tiles in. The clock is the whole context's, so
+        # the caller gives this GIF a context of its own (see main()).
+        page.clock.set_fixed_time(NOW)
         render = "el._renderHeader();"
     else:
         page = mount(context, shot)
@@ -684,32 +786,29 @@ def animate(context, shot, *, fps=20, seconds=2, prime="el._refreshing = true;")
     frames = round(fps * seconds)
     with tempfile.TemporaryDirectory() as frame_dir:
         for i in range(frames):
-            page.evaluate(
-                "(t) => { for (const a of document.getAnimations()) { a.pause(); a.currentTime = t; } }",
-                (i * 1000) / fps,
-            )
+            if not step_animations(page, (i * 1000) / fps):
+                raise SystemExit(f"{shot['file']}.gif: no animation to step")
             page.screenshot(path=f"{frame_dir}/f{i:03d}.png", clip=clip)
         page.close()
-        out = str(ROOT / "screenshots" / f"{shot['file']}.gif")
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-y",
-                "-loglevel",
-                "error",
-                "-framerate",
-                str(fps),
-                "-i",
-                f"{frame_dir}/f%03d.png",
-                "-vf",
-                f"scale={clip['width']}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer:bayer_scale=4",
-                "-loop",
-                "0",
-                out,
-            ],
-            check=True,
-        )
+        out = f"{frame_dir}/{shot['file']}.gif"
+        encode_gif(frame_dir, fps, clip["width"], out)
+        replace_if_changed(out, ROOT / "screenshots" / f"{shot['file']}.gif")
     print(f"screenshots/{shot['file']}.gif")
+
+
+def map_context(browser):
+    """A browser context for the map card: Leaflet and the tiles come from the made-up origin, the position from
+    the browser."""
+    context = browser.new_context(
+        device_scale_factor=2,
+        viewport={"width": 1000, "height": 1400},
+        locale="en-US",
+        timezone_id="Europe/Paris",
+        geolocation=HERE,
+        permissions=["geolocation"],
+    )
+    context.route(f"{ORIGIN}/**", serve)
+    return context
 
 
 def main():
@@ -742,15 +841,7 @@ def main():
             animate(context, {"file": file, "theme": theme, "config": SHOTS[0]["config"]})
 
         # The map card: Leaflet and the tiles come from the made-up origin, the position from the browser.
-        context = browser.new_context(
-            device_scale_factor=2,
-            viewport={"width": 1000, "height": 1400},
-            locale="en-US",
-            timezone_id="Europe/Paris",
-            geolocation=HERE,
-            permissions=["geolocation"],
-        )
-        context.route(f"{ORIGIN}/**", serve)
+        context = map_context(browser)
         HTTP["client"] = p.request.new_context()
         # No frozen clock here: Leaflet fades the tiles in with the current time, a fixed one
         # leaves them transparent. The map shows no time, the popups stay closed.
@@ -758,12 +849,16 @@ def main():
             for shot in MAP_SHOTS:
                 map_shot(context, shot, out_dir)
             # The "locate me" button pulsing while the map looks up the nearby stations (map card only), both themes.
+            # Each GIF in its own context: animate() freezes the clock once the tiles settled, and the clock belongs
+            # to the whole context (a frozen one would leave the next map's tiles transparent).
             for theme, file in (("light", "locate"), ("dark", "locate-dark")):
+                gif_context = map_context(browser)
                 animate(
-                    context,
+                    gif_context,
                     {"file": file, "theme": theme, "config": {}, "card": "map", "width": MAP_WIDTH},
                     prime="el._busy = 'near';",
                 )
+                gif_context.close()
         except Exception as err:
             raise SystemExit(
                 f"Map screenshots not made, OpenStreetMap tiles unreachable: {ERRORS[0] if ERRORS else err}"
