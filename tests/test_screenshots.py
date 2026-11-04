@@ -13,7 +13,8 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ast.parse((ROOT / "scripts/screenshots.py").read_text())
-README = (ROOT / "README.md").read_text()
+# <img> screenshots (sized for HACS) read as ![](url)
+README = re.sub(r'<img\b[^>]*\bsrc="([^"]+)"[^>]*>', r"![](\1)", (ROOT / "README.md").read_text())
 
 
 def _shots(name):
