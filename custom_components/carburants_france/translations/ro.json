@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Prețurile și disponibilitatea carburanților publicate de guvernul francez (data.economie.gouv.fr), fără cheie API.",
+        "data": { "name": "Nume", "fuels": "Carburanți urmăriți" }
+      },
+      "search": {
+        "title": "Caută stații",
+        "description": "Cod poștal, localitate, număr de departament sau ID-ul stației. Lăsați gol pentru a căuta în jurul casei, în raza aleasă.",
+        "data": { "query": "Căutare", "radius": "Rază în jurul casei" }
+      },
+      "stations": {
+        "title": "Alegeți stațiile",
+        "description": "Stații găsite: {count}, sortate după distanța față de casă. Bifați „Căutare nouă” pentru a adăuga stații din altă parte: selecția este păstrată. O căutare returnează cel mult {max} stații: restrângeți-o (cod poștal, rază mai mică) dacă lipsește stația dorită.",
+        "data": { "stations": "Stații", "search_again": "Căutare nouă" }
+      }
+    },
+    "error": {
+      "cannot_connect": "API-ul prețurilor carburanților nu poate fi accesat. Încercați din nou mai târziu.",
+      "no_results": "Nu a fost găsită nicio stație. Încercați un cod poștal, altă localitate sau o rază mai mare.",
+      "no_station": "Alegeți cel puțin o stație.",
+      "no_fuel": "Alegeți cel puțin un carburant.",
+      "unknown": "Eroare neașteptată, consultați jurnalul Home Assistant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opțiuni Carburants France",
+        "data": {
+          "fuels": "Carburanți urmăriți",
+          "stations": "Stații urmărite",
+          "add_stations": "Adaugă stații",
+          "rename_stations": "Redenumește stațiile",
+          "scan_interval": "Interval de actualizare"
+        },
+        "data_description": {
+          "stations": "Debifați o stație pentru a nu o mai urmări.",
+          "rename_stations": "Dați stațiilor propriile nume, în pasul următor.",
+          "scan_interval": "Fluxul guvernamental este actualizat la fiecare 10 minute."
+        }
+      },
+      "names": {
+        "title": "Redenumește stațiile",
+        "description": "Numele afișat pentru fiecare stație. Lăsați gol pentru a păstra numele automat (OpenStreetMap sau marca și localitatea), afișat înainte de cratimă."
+      },
+      "search": {
+        "title": "Caută stații",
+        "description": "Cod poștal, localitate, număr de departament sau ID-ul stației. Lăsați gol pentru a căuta în jurul casei, în raza aleasă.",
+        "data": { "query": "Căutare", "radius": "Rază în jurul casei" }
+      },
+      "stations": {
+        "title": "Alegeți stațiile",
+        "description": "Stații găsite: {count}, sortate după distanța față de casă. Bifați „Căutare nouă” pentru a adăuga stații din altă parte: selecția este păstrată. O căutare returnează cel mult {max} stații: restrângeți-o (cod poștal, rază mai mică) dacă lipsește stația dorită.",
+        "data": { "stations": "Stații", "search_again": "Căutare nouă" }
+      }
+    },
+    "error": {
+      "cannot_connect": "API-ul prețurilor carburanților nu poate fi accesat. Încercați din nou mai târziu.",
+      "no_results": "Nu a fost găsită nicio stație. Încercați un cod poștal, altă localitate sau o rază mai mare.",
+      "no_station": "Alegeți cel puțin o stație.",
+      "no_fuel": "Alegeți cel puțin un carburant.",
+      "unknown": "Eroare neașteptată, consultați jurnalul Home Assistant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Cel mai bun preț {fuel}" },
+      "stations": { "name": "Stații" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} disponibil" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Reîmprospătează",
+      "description": "Preia prețurile acum.",
+      "fields": {
+        "config_entry_id": { "name": "Intrare", "description": "Doar această intrare. Implicit, toate." }
+      }
+    }
+  }
+}

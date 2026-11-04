@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Francijas valdības publicētās degvielas cenas un pieejamība (data.economie.gouv.fr), bez API atslēgas.",
+        "data": { "name": "Nosaukums", "fuels": "Izsekojamās degvielas" }
+      },
+      "search": {
+        "title": "Meklēt stacijas",
+        "description": "Pasta indekss, pilsēta, departamenta numurs vai stacijas ID. Atstājiet tukšu, lai meklētu ap mājām izvēlētajā rādiusā.",
+        "data": { "query": "Meklēšana", "radius": "Rādiuss ap mājām" }
+      },
+      "stations": {
+        "title": "Izvēlieties stacijas",
+        "description": "Atrastās stacijas: {count}, sakārtotas pēc attāluma no mājām. Atzīmējiet \"Jauna meklēšana\", lai pievienotu stacijas citur: izvēle tiek saglabāta. Meklēšana atgriež ne vairāk kā {max} stacijas: sašauriniet to (pasta indekss, mazāks rādiuss), ja jūsējās trūkst.",
+        "data": { "stations": "Stacijas", "search_again": "Jauna meklēšana" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nevar sasniegt degvielas cenu API. Mēģiniet vēlāk vēlreiz.",
+      "no_results": "Neviena stacija nav atrasta. Mēģiniet pasta indeksu, citu pilsētu vai lielāku rādiusu.",
+      "no_station": "Izvēlieties vismaz vienu staciju.",
+      "no_fuel": "Izvēlieties vismaz vienu degvielu.",
+      "unknown": "Neparedzēta kļūda, skatiet Home Assistant žurnālu."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Carburants France opcijas",
+        "data": {
+          "fuels": "Izsekojamās degvielas",
+          "stations": "Izsekotās stacijas",
+          "add_stations": "Pievienot stacijas",
+          "rename_stations": "Pārdēvēt stacijas",
+          "scan_interval": "Atjaunināšanas intervāls"
+        },
+        "data_description": {
+          "stations": "Noņemiet atzīmi no stacijas, lai pārtrauktu tās izsekošanu.",
+          "rename_stations": "Nākamajā solī piešķiriet stacijām savus nosaukumus.",
+          "scan_interval": "Valdības datu plūsma tiek atjaunināta ik pēc 10 minūtēm."
+        }
+      },
+      "names": {
+        "title": "Pārdēvēt stacijas",
+        "description": "Katrai stacijai rādītais nosaukums. Atstājiet tukšu, lai paturētu automātisko nosaukumu (OpenStreetMap vai zīmols un pilsēta), kas redzams pirms domuzīmes."
+      },
+      "search": {
+        "title": "Meklēt stacijas",
+        "description": "Pasta indekss, pilsēta, departamenta numurs vai stacijas ID. Atstājiet tukšu, lai meklētu ap mājām izvēlētajā rādiusā.",
+        "data": { "query": "Meklēšana", "radius": "Rādiuss ap mājām" }
+      },
+      "stations": {
+        "title": "Izvēlieties stacijas",
+        "description": "Atrastās stacijas: {count}, sakārtotas pēc attāluma no mājām. Atzīmējiet \"Jauna meklēšana\", lai pievienotu stacijas citur: izvēle tiek saglabāta. Meklēšana atgriež ne vairāk kā {max} stacijas: sašauriniet to (pasta indekss, mazāks rādiuss), ja jūsējās trūkst.",
+        "data": { "stations": "Stacijas", "search_again": "Jauna meklēšana" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nevar sasniegt degvielas cenu API. Mēģiniet vēlāk vēlreiz.",
+      "no_results": "Neviena stacija nav atrasta. Mēģiniet pasta indeksu, citu pilsētu vai lielāku rādiusu.",
+      "no_station": "Izvēlieties vismaz vienu staciju.",
+      "no_fuel": "Izvēlieties vismaz vienu degvielu.",
+      "unknown": "Neparedzēta kļūda, skatiet Home Assistant žurnālu."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Labākā cena {fuel}" },
+      "stations": { "name": "Stacijas" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} pieejams" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Atsvaidzināt",
+      "description": "Ielādē cenas tūlīt.",
+      "fields": {
+        "config_entry_id": { "name": "Ieraksts", "description": "Tikai šis ieraksts. Pēc noklusējuma visi." }
+      }
+    }
+  }
+}
