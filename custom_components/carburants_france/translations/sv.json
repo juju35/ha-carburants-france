@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Bränslepriser och tillgänglighet publicerade av den franska regeringen (data.economie.gouv.fr), ingen API-nyckel behövs.",
+        "data": { "name": "Namn", "fuels": "Bränslen att följa" }
+      },
+      "search": {
+        "title": "Sök stationer",
+        "description": "Postnummer, ort, departementsnummer eller stations-id. Lämna tomt för att söka runt ditt hem inom radien.",
+        "data": { "query": "Sökning", "radius": "Radie runt hemmet" }
+      },
+      "stations": {
+        "title": "Välj stationer",
+        "description": "Hittade stationer: {count}, sorterade efter avstånd från hemmet. Markera ”Ny sökning” för att lägga till stationer på en annan plats: urvalet behålls. En sökning returnerar högst {max} stationer: begränsa den (postnummer, mindre radie) om din saknas.",
+        "data": { "stations": "Stationer", "search_again": "Ny sökning" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Det går inte att nå API:et för bränslepriser. Försök igen senare.",
+      "no_results": "Inga stationer hittades. Prova ett postnummer, en annan ort eller en större radie.",
+      "no_station": "Välj minst en station.",
+      "no_fuel": "Välj minst ett bränsle.",
+      "unknown": "Oväntat fel, se loggen i Home Assistant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Alternativ för Carburants France",
+        "data": {
+          "fuels": "Bränslen att följa",
+          "stations": "Följda stationer",
+          "add_stations": "Lägg till stationer",
+          "rename_stations": "Byt namn på stationer",
+          "scan_interval": "Uppdateringsintervall"
+        },
+        "data_description": {
+          "stations": "Avmarkera en station för att sluta följa den.",
+          "rename_stations": "Ge stationerna egna namn i nästa steg.",
+          "scan_interval": "Regeringens dataflöde uppdateras var 10:e minut."
+        }
+      },
+      "names": {
+        "title": "Byt namn på stationer",
+        "description": "Namn som visas för varje station. Lämna tomt för att behålla det automatiska namnet (OpenStreetMap, eller varumärke och ort), som visas före bindestrecket."
+      },
+      "search": {
+        "title": "Sök stationer",
+        "description": "Postnummer, ort, departementsnummer eller stations-id. Lämna tomt för att söka runt ditt hem inom radien.",
+        "data": { "query": "Sökning", "radius": "Radie runt hemmet" }
+      },
+      "stations": {
+        "title": "Välj stationer",
+        "description": "Hittade stationer: {count}, sorterade efter avstånd från hemmet. Markera ”Ny sökning” för att lägga till stationer på en annan plats: urvalet behålls. En sökning returnerar högst {max} stationer: begränsa den (postnummer, mindre radie) om din saknas.",
+        "data": { "stations": "Stationer", "search_again": "Ny sökning" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Det går inte att nå API:et för bränslepriser. Försök igen senare.",
+      "no_results": "Inga stationer hittades. Prova ett postnummer, en annan ort eller en större radie.",
+      "no_station": "Välj minst en station.",
+      "no_fuel": "Välj minst ett bränsle.",
+      "unknown": "Oväntat fel, se loggen i Home Assistant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Bästa pris {fuel}" },
+      "stations": { "name": "Stationer" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} i lager" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Uppdatera",
+      "description": "Hämtar priserna nu.",
+      "fields": {
+        "config_entry_id": { "name": "Post", "description": "Endast denna post. Som standard alla." }
+      }
+    }
+  }
+}

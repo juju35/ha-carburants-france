@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Prezzijiet u disponibbiltà tal-fjuwil ippubblikati mill-gvern Franċiż (data.economie.gouv.fr), mingħajr ċavetta tal-API.",
+        "data": { "name": "Isem", "fuels": "Fjuwils li għandhom jiġu segwiti" }
+      },
+      "search": {
+        "title": "Fittex stazzjonijiet",
+        "description": "Kodiċi postali, belt, numru tad-dipartiment jew ID tal-istazzjon. Ħallih vojt biex tfittex madwar id-dar tiegħek fir-raġġ magħżul.",
+        "data": { "query": "Tfittxija", "radius": "Raġġ madwar id-dar" }
+      },
+      "stations": {
+        "title": "Agħżel stazzjonijiet",
+        "description": "Stazzjonijiet misjuba: {count}, issortjati skont id-distanza mid-dar. Immarka \"Tfittxija ġdida\" biex iżżid stazzjonijiet f'post ieħor: l-għażla tinżamm. Tfittxija tagħti l-iżjed {max} stazzjon: naqqasha (kodiċi postali, raġġ iżgħar) jekk dak tiegħek nieqes.",
+        "data": { "stations": "Stazzjonijiet", "search_again": "Tfittxija ġdida" }
+      }
+    },
+    "error": {
+      "cannot_connect": "L-API tal-prezzijiet tal-fjuwil ma tistax tintlaħaq. Erġa' pprova aktar tard.",
+      "no_results": "Ma nstab l-ebda stazzjon. Ipprova kodiċi postali, belt oħra jew raġġ akbar.",
+      "no_station": "Agħżel mill-inqas stazzjon wieħed.",
+      "no_fuel": "Agħżel mill-inqas fjuwil wieħed.",
+      "unknown": "Żball mhux mistenni, ara r-reġistru ta' Home Assistant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Għażliet ta' Carburants France",
+        "data": {
+          "fuels": "Fjuwils li għandhom jiġu segwiti",
+          "stations": "Stazzjonijiet segwiti",
+          "add_stations": "Żid stazzjonijiet",
+          "rename_stations": "Semmi mill-ġdid l-istazzjonijiet",
+          "scan_interval": "Intervall tal-aġġornament"
+        },
+        "data_description": {
+          "stations": "Neħħi l-marka minn stazzjon biex tieqaf issegwih.",
+          "rename_stations": "Agħti lill-istazzjonijiet ismijiet tiegħek, fil-pass li jmiss.",
+          "scan_interval": "Il-fluss tad-data tal-gvern jiġi aġġornat kull 10 minuti."
+        }
+      },
+      "names": {
+        "title": "Semmi mill-ġdid l-istazzjonijiet",
+        "description": "L-isem muri għal kull stazzjon. Ħallih vojt biex iżżomm l-isem awtomatiku (OpenStreetMap, jew marka u belt), muri qabel is-sing."
+      },
+      "search": {
+        "title": "Fittex stazzjonijiet",
+        "description": "Kodiċi postali, belt, numru tad-dipartiment jew ID tal-istazzjon. Ħallih vojt biex tfittex madwar id-dar tiegħek fir-raġġ magħżul.",
+        "data": { "query": "Tfittxija", "radius": "Raġġ madwar id-dar" }
+      },
+      "stations": {
+        "title": "Agħżel stazzjonijiet",
+        "description": "Stazzjonijiet misjuba: {count}, issortjati skont id-distanza mid-dar. Immarka \"Tfittxija ġdida\" biex iżżid stazzjonijiet f'post ieħor: l-għażla tinżamm. Tfittxija tagħti l-iżjed {max} stazzjon: naqqasha (kodiċi postali, raġġ iżgħar) jekk dak tiegħek nieqes.",
+        "data": { "stations": "Stazzjonijiet", "search_again": "Tfittxija ġdida" }
+      }
+    },
+    "error": {
+      "cannot_connect": "L-API tal-prezzijiet tal-fjuwil ma tistax tintlaħaq. Erġa' pprova aktar tard.",
+      "no_results": "Ma nstab l-ebda stazzjon. Ipprova kodiċi postali, belt oħra jew raġġ akbar.",
+      "no_station": "Agħżel mill-inqas stazzjon wieħed.",
+      "no_fuel": "Agħżel mill-inqas fjuwil wieħed.",
+      "unknown": "Żball mhux mistenni, ara r-reġistru ta' Home Assistant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "L-aħjar prezz {fuel}" },
+      "stations": { "name": "Stazzjonijiet" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} disponibbli" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Aġġorna",
+      "description": "Iġib il-prezzijiet issa.",
+      "fields": {
+        "config_entry_id": { "name": "Daħla", "description": "Din id-daħla biss. B'mod predefinit, kollha." }
+      }
+    }
+  }
+}

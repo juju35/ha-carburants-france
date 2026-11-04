@@ -28,7 +28,9 @@ def _load(lang: str) -> dict[str, str]:
 
 
 def test_languages() -> None:
-    """English, French, German, Spanish, Italian, Dutch, Portuguese (pt, and pt-BR as a copy), Polish and Serbian (both scripts) are shipped."""
+    """English, French, German, Spanish, Italian, Dutch, Portuguese (pt, and pt-BR as a copy), Polish, Romanian, Danish, Swedish,
+    Bulgarian, Russian, Ukrainian, Hungarian, Irish, Slovak, Czech, Slovenian, Maltese, Latvian, Greek and Serbian (both scripts)
+    are shipped."""
     assert {p.stem for p in TRANSLATIONS.glob("*.json")} == {
         "en",
         "fr",
@@ -39,6 +41,20 @@ def test_languages() -> None:
         "pt",
         "pt-BR",
         "pl",
+        "ro",
+        "da",
+        "sv",
+        "bg",
+        "ru",
+        "uk",
+        "hu",
+        "ga",
+        "sk",
+        "cs",
+        "sl",
+        "mt",
+        "lv",
+        "el",
         "sr",
         "sr-Latn",
     }
@@ -78,3 +94,10 @@ def test_serbian_cyrillic_has_no_latin_word() -> None:
 def test_brazilian_portuguese_is_the_european_text() -> None:
     """pt-BR.json is an exact copy of pt.json: Home Assistant does not fall back from pt-BR to pt by itself."""
     assert (TRANSLATIONS / "pt-BR.json").read_bytes() == (TRANSLATIONS / "pt.json").read_bytes()
+
+
+@pytest.mark.parametrize("lang", ["bg", "ru", "uk", "el"])
+def test_cyrillic_and_greek_have_no_latin_word(lang: str) -> None:
+    """Bulgarian, Russian, Ukrainian and Greek keep only names and placeholders in the Latin script."""
+    for key, text in _load(lang).items():
+        assert not re.search(r"[A-Za-z]", _LATIN_NAMES.sub("", text)), f"{lang}: {key}"

@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "A francia kormány által közzétett üzemanyagárak és -elérhetőség (data.economie.gouv.fr), API-kulcs nélkül.",
+        "data": { "name": "Név", "fuels": "Követett üzemanyagok" }
+      },
+      "search": {
+        "title": "Töltőállomások keresése",
+        "description": "Irányítószám, település, megyeszám (département) vagy töltőállomás-azonosító. Hagyja üresen az otthona körüli kereséshez a megadott sugáron belül.",
+        "data": { "query": "Keresés", "radius": "Sugár az otthon körül" }
+      },
+      "stations": {
+        "title": "Töltőállomások kiválasztása",
+        "description": "Talált töltőállomások: {count}, az otthontól mért távolság szerint rendezve. Jelölje be az „Új keresés” lehetőséget, ha máshol is szeretne töltőállomást hozzáadni: a kiválasztás megmarad. Egy keresés legfeljebb {max} töltőállomást ad vissza: szűkítse (irányítószám, kisebb sugár), ha a keresett hiányzik.",
+        "data": { "stations": "Töltőállomások", "search_again": "Új keresés" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Az üzemanyagár-API nem érhető el. Próbálja újra később.",
+      "no_results": "Nem található töltőállomás. Próbáljon irányítószámot, másik települést vagy nagyobb sugarat.",
+      "no_station": "Válasszon legalább egy töltőállomást.",
+      "no_fuel": "Válasszon legalább egy üzemanyagot.",
+      "unknown": "Váratlan hiba, lásd a Home Assistant naplóját."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Carburants France beállításai",
+        "data": {
+          "fuels": "Követett üzemanyagok",
+          "stations": "Követett töltőállomások",
+          "add_stations": "Töltőállomások hozzáadása",
+          "rename_stations": "Töltőállomások átnevezése",
+          "scan_interval": "Frissítési időköz"
+        },
+        "data_description": {
+          "stations": "Törölje egy töltőállomás jelölését, ha nem szeretné tovább követni.",
+          "rename_stations": "Adjon saját nevet a töltőállomásoknak a következő lépésben.",
+          "scan_interval": "A kormányzati adatfolyam 10 percenként frissül."
+        }
+      },
+      "names": {
+        "title": "Töltőállomások átnevezése",
+        "description": "Az egyes töltőállomásokhoz megjelenített név. Hagyja üresen az automatikus név (OpenStreetMap, vagy márka és település) megtartásához, amely a kötőjel előtt látható."
+      },
+      "search": {
+        "title": "Töltőállomások keresése",
+        "description": "Irányítószám, település, megyeszám (département) vagy töltőállomás-azonosító. Hagyja üresen az otthona körüli kereséshez a megadott sugáron belül.",
+        "data": { "query": "Keresés", "radius": "Sugár az otthon körül" }
+      },
+      "stations": {
+        "title": "Töltőállomások kiválasztása",
+        "description": "Talált töltőállomások: {count}, az otthontól mért távolság szerint rendezve. Jelölje be az „Új keresés” lehetőséget, ha máshol is szeretne töltőállomást hozzáadni: a kiválasztás megmarad. Egy keresés legfeljebb {max} töltőállomást ad vissza: szűkítse (irányítószám, kisebb sugár), ha a keresett hiányzik.",
+        "data": { "stations": "Töltőállomások", "search_again": "Új keresés" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Az üzemanyagár-API nem érhető el. Próbálja újra később.",
+      "no_results": "Nem található töltőállomás. Próbáljon irányítószámot, másik települést vagy nagyobb sugarat.",
+      "no_station": "Válasszon legalább egy töltőállomást.",
+      "no_fuel": "Válasszon legalább egy üzemanyagot.",
+      "unknown": "Váratlan hiba, lásd a Home Assistant naplóját."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Legjobb ár {fuel}" },
+      "stations": { "name": "Töltőállomások" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} kapható" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Frissítés",
+      "description": "Azonnal lekéri az árakat.",
+      "fields": {
+        "config_entry_id": { "name": "Bejegyzés", "description": "Csak ez a bejegyzés. Alapértelmezés szerint mind." }
+      }
+    }
+  }
+}

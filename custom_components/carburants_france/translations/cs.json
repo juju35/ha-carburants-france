@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Ceny a dostupnost paliv zveřejňované francouzskou vládou (data.economie.gouv.fr), bez klíče API.",
+        "data": { "name": "Název", "fuels": "Sledovaná paliva" }
+      },
+      "search": {
+        "title": "Hledat stanice",
+        "description": "PSČ, obec, číslo departementu nebo ID stanice. Ponechte prázdné pro hledání kolem domova ve zvoleném okruhu.",
+        "data": { "query": "Hledání", "radius": "Okruh kolem domova" }
+      },
+      "stations": {
+        "title": "Vyberte stanice",
+        "description": "Nalezené stanice: {count}, seřazené podle vzdálenosti od domova. Zaškrtněte „Nové hledání“ a přidejte stanice z jiného místa: výběr zůstane zachován. Hledání vrátí nejvýše {max} stanic: pokud ta vaše chybí, zužte ho (PSČ, menší okruh).",
+        "data": { "stations": "Stanice", "search_again": "Nové hledání" }
+      }
+    },
+    "error": {
+      "cannot_connect": "API cen paliv je nedostupné. Zkuste to znovu později.",
+      "no_results": "Nebyla nalezena žádná stanice. Zkuste PSČ, jinou obec nebo větší okruh.",
+      "no_station": "Vyberte alespoň jednu stanici.",
+      "no_fuel": "Vyberte alespoň jedno palivo.",
+      "unknown": "Neočekávaná chyba, viz protokol Home Assistant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti Carburants France",
+        "data": {
+          "fuels": "Sledovaná paliva",
+          "stations": "Sledované stanice",
+          "add_stations": "Přidat stanice",
+          "rename_stations": "Přejmenovat stanice",
+          "scan_interval": "Interval aktualizace"
+        },
+        "data_description": {
+          "stations": "Zrušte zaškrtnutí stanice, pokud ji už nechcete sledovat.",
+          "rename_stations": "V dalším kroku dejte stanicím vlastní názvy.",
+          "scan_interval": "Vládní zdroj dat se aktualizuje každých 10 minut."
+        }
+      },
+      "names": {
+        "title": "Přejmenovat stanice",
+        "description": "Název zobrazený pro každou stanici. Ponechte prázdné pro zachování automatického názvu (OpenStreetMap, nebo značka a obec) zobrazeného před pomlčkou."
+      },
+      "search": {
+        "title": "Hledat stanice",
+        "description": "PSČ, obec, číslo departementu nebo ID stanice. Ponechte prázdné pro hledání kolem domova ve zvoleném okruhu.",
+        "data": { "query": "Hledání", "radius": "Okruh kolem domova" }
+      },
+      "stations": {
+        "title": "Vyberte stanice",
+        "description": "Nalezené stanice: {count}, seřazené podle vzdálenosti od domova. Zaškrtněte „Nové hledání“ a přidejte stanice z jiného místa: výběr zůstane zachován. Hledání vrátí nejvýše {max} stanic: pokud ta vaše chybí, zužte ho (PSČ, menší okruh).",
+        "data": { "stations": "Stanice", "search_again": "Nové hledání" }
+      }
+    },
+    "error": {
+      "cannot_connect": "API cen paliv je nedostupné. Zkuste to znovu později.",
+      "no_results": "Nebyla nalezena žádná stanice. Zkuste PSČ, jinou obec nebo větší okruh.",
+      "no_station": "Vyberte alespoň jednu stanici.",
+      "no_fuel": "Vyberte alespoň jedno palivo.",
+      "unknown": "Neočekávaná chyba, viz protokol Home Assistant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Nejlepší cena {fuel}" },
+      "stations": { "name": "Stanice" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} k dispozici" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Obnovit",
+      "description": "Ihned načte ceny.",
+      "fields": {
+        "config_entry_id": { "name": "Položka", "description": "Pouze tato položka. Ve výchozím nastavení všechny." }
+      }
+    }
+  }
+}

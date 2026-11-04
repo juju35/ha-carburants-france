@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Cene in razpoložljivost goriv, ki jih objavlja francoska vlada (data.economie.gouv.fr), brez ključa API.",
+        "data": { "name": "Ime", "fuels": "Spremljana goriva" }
+      },
+      "search": {
+        "title": "Iskanje postaj",
+        "description": "Poštna številka, kraj, številka departmaja ali ID postaje. Pustite prazno za iskanje okoli doma v izbranem polmeru.",
+        "data": { "query": "Iskanje", "radius": "Polmer okoli doma" }
+      },
+      "stations": {
+        "title": "Izberite postaje",
+        "description": "Najdene postaje: {count}, razvrščene po razdalji od doma. Označite »Novo iskanje«, če želite dodati postaje drugje: izbira se ohrani. Iskanje vrne največ {max} postaj: zožite ga (poštna številka, manjši polmer), če vaše ni.",
+        "data": { "stations": "Postaje", "search_again": "Novo iskanje" }
+      }
+    },
+    "error": {
+      "cannot_connect": "API za cene goriv ni dosegljiv. Poskusite znova pozneje.",
+      "no_results": "Ni najdenih postaj. Poskusite s poštno številko, drugim krajem ali večjim polmerom.",
+      "no_station": "Izberite vsaj eno postajo.",
+      "no_fuel": "Izberite vsaj eno gorivo.",
+      "unknown": "Nepričakovana napaka, glejte dnevnik Home Assistant."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti Carburants France",
+        "data": {
+          "fuels": "Spremljana goriva",
+          "stations": "Spremljane postaje",
+          "add_stations": "Dodaj postaje",
+          "rename_stations": "Preimenuj postaje",
+          "scan_interval": "Interval posodabljanja"
+        },
+        "data_description": {
+          "stations": "Odznačite postajo, če je ne želite več spremljati.",
+          "rename_stations": "V naslednjem koraku postajam dajte svoja imena.",
+          "scan_interval": "Vladni vir podatkov se posodablja vsakih 10 minut."
+        }
+      },
+      "names": {
+        "title": "Preimenuj postaje",
+        "description": "Ime, prikazano za vsako postajo. Pustite prazno, da ohranite samodejno ime (OpenStreetMap ali blagovna znamka in kraj), prikazano pred pomišljajem."
+      },
+      "search": {
+        "title": "Iskanje postaj",
+        "description": "Poštna številka, kraj, številka departmaja ali ID postaje. Pustite prazno za iskanje okoli doma v izbranem polmeru.",
+        "data": { "query": "Iskanje", "radius": "Polmer okoli doma" }
+      },
+      "stations": {
+        "title": "Izberite postaje",
+        "description": "Najdene postaje: {count}, razvrščene po razdalji od doma. Označite »Novo iskanje«, če želite dodati postaje drugje: izbira se ohrani. Iskanje vrne največ {max} postaj: zožite ga (poštna številka, manjši polmer), če vaše ni.",
+        "data": { "stations": "Postaje", "search_again": "Novo iskanje" }
+      }
+    },
+    "error": {
+      "cannot_connect": "API za cene goriv ni dosegljiv. Poskusite znova pozneje.",
+      "no_results": "Ni najdenih postaj. Poskusite s poštno številko, drugim krajem ali večjim polmerom.",
+      "no_station": "Izberite vsaj eno postajo.",
+      "no_fuel": "Izberite vsaj eno gorivo.",
+      "unknown": "Nepričakovana napaka, glejte dnevnik Home Assistant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Najboljša cena {fuel}" },
+      "stations": { "name": "Postaje" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} na zalogi" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Osveži",
+      "description": "Takoj pridobi cene.",
+      "fields": {
+        "config_entry_id": { "name": "Vnos", "description": "Samo ta vnos. Privzeto vsi." }
+      }
+    }
+  }
+}

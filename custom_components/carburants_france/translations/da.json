@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Carburants France",
+        "description": "Brændstofpriser og -tilgængelighed offentliggjort af den franske regering (data.economie.gouv.fr), ingen API-nøgle nødvendig.",
+        "data": { "name": "Navn", "fuels": "Brændstoffer, der skal følges" }
+      },
+      "search": {
+        "title": "Søg efter tankstationer",
+        "description": "Postnummer, by, departementsnummer eller tankstationens id. Lad feltet stå tomt for at søge omkring dit hjem inden for radiussen.",
+        "data": { "query": "Søgning", "radius": "Radius omkring hjemmet" }
+      },
+      "stations": {
+        "title": "Vælg tankstationer",
+        "description": "Tankstationer fundet: {count}, sorteret efter afstand fra hjemmet. Markér \"Ny søgning\" for at tilføje tankstationer et andet sted: valget bevares. En søgning returnerer højst {max} tankstationer: indsnævr den (postnummer, mindre radius), hvis din mangler.",
+        "data": { "stations": "Tankstationer", "search_again": "Ny søgning" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan ikke nå API'et for brændstofpriser. Prøv igen senere.",
+      "no_results": "Ingen tankstationer fundet. Prøv et postnummer, en anden by eller en større radius.",
+      "no_station": "Vælg mindst én tankstation.",
+      "no_fuel": "Vælg mindst ét brændstof.",
+      "unknown": "Uventet fejl, se Home Assistant-loggen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Indstillinger for Carburants France",
+        "data": {
+          "fuels": "Brændstoffer, der skal følges",
+          "stations": "Fulgte tankstationer",
+          "add_stations": "Tilføj tankstationer",
+          "rename_stations": "Omdøb tankstationer",
+          "scan_interval": "Opdateringsinterval"
+        },
+        "data_description": {
+          "stations": "Fjern markeringen af en tankstation for at stoppe med at følge den.",
+          "rename_stations": "Giv tankstationerne dine egne navne i næste trin.",
+          "scan_interval": "Regeringens datafeed opdateres hvert 10. minut."
+        }
+      },
+      "names": {
+        "title": "Omdøb tankstationer",
+        "description": "Navn, der vises for hver tankstation. Lad feltet stå tomt for at beholde det automatiske navn (OpenStreetMap eller mærke og by), vist før bindestregen."
+      },
+      "search": {
+        "title": "Søg efter tankstationer",
+        "description": "Postnummer, by, departementsnummer eller tankstationens id. Lad feltet stå tomt for at søge omkring dit hjem inden for radiussen.",
+        "data": { "query": "Søgning", "radius": "Radius omkring hjemmet" }
+      },
+      "stations": {
+        "title": "Vælg tankstationer",
+        "description": "Tankstationer fundet: {count}, sorteret efter afstand fra hjemmet. Markér \"Ny søgning\" for at tilføje tankstationer et andet sted: valget bevares. En søgning returnerer højst {max} tankstationer: indsnævr den (postnummer, mindre radius), hvis din mangler.",
+        "data": { "stations": "Tankstationer", "search_again": "Ny søgning" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan ikke nå API'et for brændstofpriser. Prøv igen senere.",
+      "no_results": "Ingen tankstationer fundet. Prøv et postnummer, en anden by eller en større radius.",
+      "no_station": "Vælg mindst én tankstation.",
+      "no_fuel": "Vælg mindst ét brændstof.",
+      "unknown": "Uventet fejl, se Home Assistant-loggen."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "price": { "name": "{fuel}" },
+      "best_price": { "name": "Bedste pris {fuel}" },
+      "stations": { "name": "Tankstationer" }
+    },
+    "binary_sensor": {
+      "in_stock": { "name": "{fuel} på lager" }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Opdater",
+      "description": "Henter priserne nu.",
+      "fields": {
+        "config_entry_id": { "name": "Post", "description": "Kun denne post. Som standard alle." }
+      }
+    }
+  }
+}
