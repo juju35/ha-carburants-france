@@ -88,7 +88,9 @@ def test_readme_images_are_made_by_the_script():
 
 def test_readme_rows_pair_light_with_its_dark_twin():
     rows = re.findall(
-        r"^\| !\[[^\]]*\]\(screenshots/([\w.-]+)\) \| !\[[^\]]*\]\(screenshots/([\w.-]+)\) \|$", README, re.MULTILINE
+        r"^\| !\[[^\]]*\]\((?:[^)\s]*/)?screenshots/([\w.-]+)\) \| !\[[^\]]*\]\((?:[^)\s]*/)?screenshots/([\w.-]+)\) \|$",
+        README,
+        re.MULTILINE,
     )
     assert rows
     for light, dark in rows:
