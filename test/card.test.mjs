@@ -24,7 +24,7 @@ const runTimers = () => {
 vm.createContext(context);
 vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbPlural, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
 const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, CarburantsFranceCard, CarburantsFranceMapCard } = context.carb;
-const NEW_LANGS = ['ro', 'da', 'sv', 'bg', 'ru', 'uk', 'hu', 'ga', 'sk', 'cs', 'sl', 'mt', 'lv', 'el'];
+const NEW_LANGS = ['ro', 'da', 'sv', 'bg', 'ru', 'uk', 'hu', 'sk', 'cs', 'sl', 'lv', 'el'];
 
 const fuels = [{ key: 'gazole' }, { key: 'e10' }];
 const station = (id, gazole, e10) => ({
@@ -352,7 +352,7 @@ test('with language: auto, the map card labels follow a Home Assistant language 
 });
 
 // Keys a language adds when its grammar needs them; the others fall back to `stations`, `opens_at` and `since`.
-const OPTIONAL_KEYS = ['stations_one', 'stations_two', 'stations_few', 'stations_many', 'stations_other', 'opens_on', 'out_since'];
+const OPTIONAL_KEYS = ['stations_one', 'stations_two', 'stations_few', 'stations_many', 'opens_on', 'out_since'];
 const withoutOptional = (dict) => Object.fromEntries(Object.entries(dict).filter(([key]) => !OPTIONAL_KEYS.includes(key)));
 
 test('every card language has exactly the keys of English', () => {
@@ -827,9 +827,9 @@ test('auto-detection finds an unavailable stations sensor from the entity regist
   assert.match(parts['.header'].innerHTML, /<div class="hsub">Data unavailable<\/div>/);
 });
 
-// ── Romanian, Danish, Swedish, Bulgarian, Russian, Ukrainian, Hungarian, Irish, Slovak, Czech, Slovenian, Maltese, Latvian, Greek ──
+// ── Romanian, Danish, Swedish, Bulgarian, Russian, Ukrainian, Hungarian, Slovak, Czech, Slovenian, Latvian, Greek ──
 
-test('carbLang: the 14 new languages, with their regional variants', () => {
+test('carbLang: the 12 new languages, with their regional variants', () => {
   const lang = (code) => carbLang({ locale: { language: code } });
   for (const code of NEW_LANGS) {
     assert.equal(lang(code), code);
@@ -841,19 +841,19 @@ test('carbLang: the 14 new languages, with their regional variants', () => {
   assert.equal(lang('el-CY'), 'el');
 });
 
-test('the editors offer the 14 new languages, each in its own name, after Polish', () => {
+test('the editors offer the 12 new languages, each in its own name, after Polish', () => {
   const options = carbLanguageOptions('auto');
   const labels = Object.fromEntries(options.map((o) => [o.value, o.label]));
   const expected = {
     ro: 'Română', da: 'Dansk', sv: 'Svenska', bg: 'Български', ru: 'Русский', uk: 'Українська', hu: 'Magyar',
-    ga: 'Gaeilge', sk: 'Slovenčina', cs: 'Čeština', sl: 'Slovenščina', mt: 'Malti', lv: 'Latviešu', el: 'Ελληνικά',
+    sk: 'Slovenčina', cs: 'Čeština', sl: 'Slovenščina', lv: 'Latviešu', el: 'Ελληνικά',
   };
   for (const [code, label] of Object.entries(expected)) assert.equal(labels[code], label, code);
   const values = options.map((o) => o.value);
   assert.deepEqual([...values.slice(values.indexOf('pl') + 1, values.indexOf('sr'))], NEW_LANGS);
 });
 
-test('the station count agrees with its number in the 14 new languages', () => {
+test('the station count agrees with its number in the 12 new languages', () => {
   const plural = (lang, n) => context.carbPlural(context.CarburantsI18n[lang], 'stations', String(n), lang);
   const expected = {
     ro: { 1: 'stație', 2: 'stații', 19: 'stații', 20: 'de stații', 101: 'stații' },
@@ -863,11 +863,9 @@ test('the station count agrees with its number in the 14 new languages', () => {
     ru: { 1: 'АЗС', 5: 'АЗС' },
     uk: { 1: 'АЗС', 5: 'АЗС' },
     hu: { 1: 'töltőállomás', 5: 'töltőállomás' },
-    ga: { 1: 'stáisiún', 5: 'stáisiún' },
     sk: { 1: 'stanica', 2: 'stanice', 4: 'stanice', 5: 'staníc' },
     cs: { 1: 'stanice', 2: 'stanice', 4: 'stanice', 5: 'stanic' },
     sl: { 1: 'postaja', 2: 'postaji', 3: 'postaje', 5: 'postaj', 101: 'postaja', 102: 'postaji' },
-    mt: { 1: 'stazzjon', 2: 'stazzjonijiet', 10: 'stazzjonijiet', 11: 'stazzjon', 20: 'stazzjon' },
     lv: { 1: 'stacija', 2: 'stacijas', 21: 'stacija', 22: 'stacijas' },
     el: { 1: 'πρατήριο', 2: 'πρατήρια' },
   };
@@ -876,7 +874,7 @@ test('the station count agrees with its number in the 14 new languages', () => {
   }
 });
 
-test('the 14 new languages name the next opening day inside the sentence', () => {
+test('the 12 new languages name the next opening day inside the sentence', () => {
   const monday = { hours: week({ 1: [['06:00', '20:00']] }) };
   const thu = at('2026-10-29T12:00:00');
   for (const lang of NEW_LANGS) {

@@ -29,7 +29,7 @@ def _load(lang: str) -> dict[str, str]:
 
 def test_languages() -> None:
     """English, French, German, Spanish, Italian, Dutch, Portuguese (pt, and pt-BR as a copy), Polish, Romanian, Danish, Swedish,
-    Bulgarian, Russian, Ukrainian, Hungarian, Irish, Slovak, Czech, Slovenian, Maltese, Latvian, Greek and Serbian (both scripts)
+    Bulgarian, Russian, Ukrainian, Hungarian, Slovak, Czech, Slovenian, Latvian, Greek and Serbian (both scripts)
     are shipped."""
     assert {p.stem for p in TRANSLATIONS.glob("*.json")} == {
         "en",
@@ -48,11 +48,9 @@ def test_languages() -> None:
         "ru",
         "uk",
         "hu",
-        "ga",
         "sk",
         "cs",
         "sl",
-        "mt",
         "lv",
         "el",
         "sr",

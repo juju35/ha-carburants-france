@@ -3,7 +3,7 @@
 ## 1.9.7 (2026-11-04)
 
 ### Changes
-- Added Romanian, Danish, Swedish, Bulgarian, Russian, Ukrainian, Hungarian, Irish, Slovak, Czech, Slovenian, Maltese, Latvian and Greek translations: configuration and options forms, entity names, the refresh action, and both cards (list and map, with their visual editors). The `language` option offers `ro`, `da`, `sv`, `bg`, `ru`, `uk`, `hu`, `ga`, `sk`, `cs`, `sl`, `mt`, `lv` and `el`. In the list card, the station count agrees with its number where the language needs it (Romanian, Slovak, Czech, Slovenian dual, Maltese, Latvian).
+- Added Romanian, Danish, Swedish, Bulgarian, Russian, Ukrainian, Hungarian, Slovak, Czech, Slovenian, Latvian and Greek translations: configuration and options forms, entity names, the refresh action, and both cards (list and map, with their visual editors). The `language` option offers `ro`, `da`, `sv`, `bg`, `ru`, `uk`, `hu`, `sk`, `cs`, `sl`, `lv` and `el`. In the list card, the station count agrees with its number where the language needs it (Romanian, Slovak, Czech, Slovenian dual, Latvian).
 
 ## 1.9.6 (2026-11-01)
 

@@ -25,7 +25,7 @@ Home Assistant integration for [fuel prices in France](https://data.economie.gou
 - `custom:carburants-france-card` card, **shipped with the integration** and loaded automatically: logos, prices, shortages, best price in green, live opening status, opening hours, services and directions on click
 - `custom:carburants-france-map-card` map card: your stations on a map, with the logo and the price of a fuel on each marker, your home, and the station details on click; **Locate me** button to see the stations around you (radius picked in the title) and **search by town**, without adding them to the integration
 - Add or remove stations and fuels at any time from the options
-- English, French, German, Spanish, Italian, Dutch, Portuguese (European), Polish, Romanian, Danish, Swedish, Bulgarian, Russian, Ukrainian, Hungarian, Irish, Slovak, Czech, Slovenian, Maltese, Latvian, Greek and Serbian (Cyrillic and Latin)
+- English, French, German, Spanish, Italian, Dutch, Portuguese (European), Polish, Romanian, Danish, Swedish, Bulgarian, Russian, Ukrainian, Hungarian, Slovak, Czech, Slovenian, Latvian, Greek and Serbian (Cyrillic and Latin)
 
 ## Prerequisites
 
@@ -109,7 +109,7 @@ type: custom:carburants-france-card
 |---|---|---|
 | `entity` | detected | Stations sensor to show (useful with several entries) |
 | `title` | `Fuel` | Card title |
-| `language` | `auto` | Card language: `auto` (Home Assistant's), `en`, `fr`, `de`, `es`, `it`, `nl`, `pt` (European Portuguese), `pl`, `ro`, `da`, `sv`, `bg`, `ru`, `uk`, `hu`, `ga`, `sk`, `cs`, `sl`, `mt`, `lv`, `el`, `sr` (Serbian, Cyrillic) or `sr-Latn` (Serbian, Latin) |
+| `language` | `auto` | Card language: `auto` (Home Assistant's), `en`, `fr`, `de`, `es`, `it`, `nl`, `pt` (European Portuguese), `pl`, `ro`, `da`, `sv`, `bg`, `ru`, `uk`, `hu`, `sk`, `cs`, `sl`, `lv`, `el`, `sr` (Serbian, Cyrillic) or `sr-Latn` (Serbian, Latin) |
 | `fuels` | all | Fuels shown, for example `[gazole, e10]` |
 | `sort` | `price` | `price`, `distance`, `name` or `config` (configuration order) |
 | `sort_fuel` | first fuel | Fuel used to sort by price |
@@ -144,7 +144,7 @@ type: custom:carburants-france-map-card
 |---|---|---|
 | `entity` | detected | Stations sensor to show (useful with several entries) |
 | `title` | `Stations map` | Card title, `""` to hide it |
-| `language` | `auto` | Card language: `auto` (Home Assistant's), `en`, `fr`, `de`, `es`, `it`, `nl`, `pt` (European Portuguese), `pl`, `ro`, `da`, `sv`, `bg`, `ru`, `uk`, `hu`, `ga`, `sk`, `cs`, `sl`, `mt`, `lv`, `el`, `sr` (Serbian, Cyrillic) or `sr-Latn` (Serbian, Latin) |
+| `language` | `auto` | Card language: `auto` (Home Assistant's), `en`, `fr`, `de`, `es`, `it`, `nl`, `pt` (European Portuguese), `pl`, `ro`, `da`, `sv`, `bg`, `ru`, `uk`, `hu`, `sk`, `cs`, `sl`, `lv`, `el`, `sr` (Serbian, Cyrillic) or `sr-Latn` (Serbian, Latin) |
 | `show_icon` | `true` | Icon next to the title, opening the data page on data.economie.gouv.fr |
 | `show_fullscreen` | `true` | Full screen button, under the zoom buttons |
 | `fuel` | cheapest | Fuel shown on the markers. Without a value, each marker shows the cheapest available fuel of the station, with its name ("E10 1,990 €") |
@@ -323,11 +323,9 @@ The integration and the cards follow the language of Home Assistant; each card c
 | Русский | `ru` |
 | Українська | `uk` |
 | Magyar | `hu` |
-| Gaeilge | `ga` |
 | Slovenčina | `sk` |
 | Čeština | `cs` |
 | Slovenščina | `sl` |
-| Malti | `mt` |
 | Latviešu | `lv` |
 | Ελληνικά | `el` |
 | Српски (Serbian, Cyrillic) | `sr` |
