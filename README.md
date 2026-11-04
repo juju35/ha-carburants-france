@@ -225,37 +225,37 @@ While prices refresh, the card animates: the refresh button spins until the upda
 
 | Light | Dark |
 |---|---|
-| ![refresh animation](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/refreshing.gif) | ![refresh animation, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/refreshing-dark.gif) |
+| <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/refreshing.gif" alt="refresh animation" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/refreshing-dark.gif" alt="refresh animation, dark" width="400"> |
 
 While it looks up the stations around you, the "locate me" button pulses until the nearby list is ready. It settles to a still card once done (and honours `prefers-reduced-motion`).
 
 | Light | Dark |
 |---|---|
-| ![locate animation](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/locate.gif) | ![locate animation, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/locate-dark.gif) |
+| <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/locate.gif" alt="locate animation" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/locate-dark.gif" alt="locate animation, dark" width="400"> |
 
 | Light | Dark |
 |---|---|
-| ![card](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card.png) | ![card dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-dark.png) |
+| <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card.png" alt="card" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-dark.png" alt="card dark" width="400"> |
 
 | Station expanded, sorted by distance | Station expanded, sorted by distance, dark |
 |---|---|
-| ![card with a station expanded](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-expanded.png) | ![card with a station expanded, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-expanded-dark.png) |
+| <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-expanded.png" alt="card with a station expanded" width="298"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-expanded-dark.png" alt="card with a station expanded, dark" width="298"> |
 
 | All fuels | All fuels, dark |
 |---|---|
-| ![card with every fuel](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-all-fuels.png) | ![card with every fuel, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-all-fuels-dark.png) |
+| <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-all-fuels.png" alt="card with every fuel" width="383"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-all-fuels-dark.png" alt="card with every fuel, dark" width="383"> |
 
 | Map | Map, dark |
 |---|---|
-| ![map card](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map.png) | ![map card, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-dark.png) |
+| <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map.png" alt="map card" width="618"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-dark.png" alt="map card, dark" width="618"> |
 
 | Locate me (2 km) | Locate me (2 km), dark |
 |---|---|
-| ![stations around me](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-nearby.png) | ![stations around me, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-nearby-dark.png) |
+| <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-nearby.png" alt="stations around me" width="618"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-nearby-dark.png" alt="stations around me, dark" width="618"> |
 
 | Search by town | Search by town, dark |
 |---|---|
-| ![stations of a town](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-search.png) | ![stations of a town, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-search-dark.png) |
+| <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-search.png" alt="stations of a town" width="618"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-search-dark.png" alt="stations of a town, dark" width="618"> |
 
 Screenshots are in English; station names, addresses and fuel names at the pump stay French, like the feed. Station services ("Boutique alimentaire", "Lavage automatique"…) also come as is from the feed: the cards show them in French whatever the language (the screenshots use translated sample data).
 
