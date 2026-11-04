@@ -5,7 +5,7 @@
 [![Validate](https://github.com/juju35/ha-carburants-france/actions/workflows/validate.yml/badge.svg)](https://github.com/juju35/ha-carburants-france/actions/workflows/validate.yml)
 [![Lint](https://github.com/juju35/ha-carburants-france/actions/workflows/lint.yml/badge.svg)](https://github.com/juju35/ha-carburants-france/actions/workflows/lint.yml)
 [![Release](https://img.shields.io/github/v/release/juju35/ha-carburants-france)](https://github.com/juju35/ha-carburants-france/releases/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/juju35/ha-carburants-france/blob/main/LICENSE)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/julienstep9)
 
 Home Assistant integration for [fuel prices in France](https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/): follow the prices and availability of fuels at your stations, with a Lovelace card included that shows the brand logos.
@@ -225,37 +225,37 @@ While prices refresh, the card animates: the refresh button spins until the upda
 
 | Light | Dark |
 |---|---|
-| ![refresh animation](screenshots/refreshing.gif) | ![refresh animation, dark](screenshots/refreshing-dark.gif) |
+| ![refresh animation](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/refreshing.gif) | ![refresh animation, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/refreshing-dark.gif) |
 
 While it looks up the stations around you, the "locate me" button pulses until the nearby list is ready. It settles to a still card once done (and honours `prefers-reduced-motion`).
 
 | Light | Dark |
 |---|---|
-| ![locate animation](screenshots/locate.gif) | ![locate animation, dark](screenshots/locate-dark.gif) |
+| ![locate animation](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/locate.gif) | ![locate animation, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/locate-dark.gif) |
 
 | Light | Dark |
 |---|---|
-| ![card](screenshots/card.png) | ![card dark](screenshots/card-dark.png) |
+| ![card](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card.png) | ![card dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-dark.png) |
 
 | Station expanded, sorted by distance | Station expanded, sorted by distance, dark |
 |---|---|
-| ![card with a station expanded](screenshots/card-expanded.png) | ![card with a station expanded, dark](screenshots/card-expanded-dark.png) |
+| ![card with a station expanded](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-expanded.png) | ![card with a station expanded, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-expanded-dark.png) |
 
 | All fuels | All fuels, dark |
 |---|---|
-| ![card with every fuel](screenshots/card-all-fuels.png) | ![card with every fuel, dark](screenshots/card-all-fuels-dark.png) |
+| ![card with every fuel](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-all-fuels.png) | ![card with every fuel, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-all-fuels-dark.png) |
 
 | Map | Map, dark |
 |---|---|
-| ![map card](screenshots/map.png) | ![map card, dark](screenshots/map-dark.png) |
+| ![map card](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map.png) | ![map card, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-dark.png) |
 
 | Locate me (2 km) | Locate me (2 km), dark |
 |---|---|
-| ![stations around me](screenshots/map-nearby.png) | ![stations around me, dark](screenshots/map-nearby-dark.png) |
+| ![stations around me](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-nearby.png) | ![stations around me, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-nearby-dark.png) |
 
 | Search by town | Search by town, dark |
 |---|---|
-| ![stations of a town](screenshots/map-search.png) | ![stations of a town, dark](screenshots/map-search-dark.png) |
+| ![stations of a town](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-search.png) | ![stations of a town, dark](https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-search-dark.png) |
 
 Screenshots are in English; station names, addresses and fuel names at the pump stay French, like the feed. Station services ("Boutique alimentaire", "Lavage automatique"…) also come as is from the feed: the cards show them in French whatever the language (the screenshots use translated sample data).
 
@@ -300,7 +300,7 @@ python scripts/screenshots.py   # renders the list card, the map card, and the r
 ### Releasing
 
 1. Bump the version in `custom_components/carburants_france/manifest.json`, `const.py` and `CARBURANTS_CARD_VERSION` in the card
-2. Add a `## <version>` section at the top of [CHANGELOG.md](CHANGELOG.md)
+2. Add a `## <version>` section at the top of [CHANGELOG.md](https://github.com/juju35/ha-carburants-france/blob/main/CHANGELOG.md)
 3. Push to `main`: the **Release** workflow creates the tag and the GitHub release with the changelog section as notes
 
 ## Translations
@@ -336,7 +336,7 @@ Contributions for additional languages are welcome!
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/juju35/ha-carburants-france/blob/main/LICENSE)
 
 ## Support
 
