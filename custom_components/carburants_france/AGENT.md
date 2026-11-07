@@ -18,11 +18,12 @@ custom_components/carburants_france/
 ├── binary_sensor.py   # In stock per station+fuel, Low price per fuel (best price <= coordinator.targets[fuel])
 ├── number.py          # Target price per fuel (RestoreNumber, coordinator.targets, update_listeners on change)
 ├── registry_compat.py # Device registry calls for HA before / since 2026.8 (single config entry per device)
+├── diagnostics.py     # Config entry diagnostics: options + coordinator data, addresses/GPS/distance/query/keys redacted
 ├── websocket.py       # carburants_france/search: nearby / town search for the map card, nothing stored
 ├── config_flow.py     # user (name, fuels) → search → stations; options: fuels, stations, add, scan_interval
 ├── const.py           # Constants, fuel keys
 ├── icons.json / services.yaml / translations/{en,fr,de,es,it,nl,pt,pt-BR,pl,ro,da,sv,bg,ru,uk,hu,sk,cs,sl,lv,el,sr,sr-Latn}.json
-├── frontend/carburants-france-card.js   # Both cards (list + map), vanilla JS
+├── frontend/carburants-france-card.js   # The cards (list, mini, map), vanilla JS
 ├── frontend/brands/                     # Brand logos (PNG) shipped with the cards
 ├── frontend/leaflet/                    # Leaflet 1.9.4 (BSD-2), loaded by the map card
 └── frontend/maplibre/                   # MapLibre GL 6.14.0 + maplibre-gl-leaflet 0.1.4, for map_style: ha
@@ -52,6 +53,9 @@ custom_components/carburants_france/
 - Brand logos: `frontend/brands/*.png` (42, the aaos-carburants pack, same keys as its `brand_logos.json`) listed in `CARBURANTS_BRAND_LOGOS`; `carbLogo` tries the brand, then `station_name` (key = NFD, lower case, a-z0-9 only; whole key or prefix when ≥ 4 letters, longest first), before the stored Wikidata `logo`. `tile` (Total Access) = drawn as is (`.own`), `dark` (Roady) = dark tile. Served at `/carburants_france_static/brands/`; screenshots load them from the made-up origin.
 - Header icon (`show_icon`, both cards): `mdi:gas-station` in a round `.hbadge` tinted with `--primary-color`, linking to the data page.
 - Reads the Stations sensor (`stations`, `fuels`, `config_entry_id` attributes). Opening status is computed in the browser every minute. Logo `<img>` falls back to an initials badge on error.
+
+## Mini card
+- `carburants-france-mini-card` extends the list card: a second `ha-card.mini` in the same shadow root (the only size container of the compact view) shows the 40 px header badge, the cheapest price of `fuel` (else `sort_fuel`, else the first fuel, `carbCheapest`) and its station. `zoom` (default true) adds the detail button (`_zoomButton`, also in the full card header) that shows the full list card; a capture-phase document click outside (not in a dialog, `carbInDialog`) folds it back. `mini` host attribute set in setConfig. The editor is the list card's with `fuel` and `zoom` (`static get mini`).
 
 ## Map card
 - `carburants-france-map-card` lives in the same JS file and reuses the list card helpers. It loads `/carburants_france_static/leaflet/leaflet.js` once (global `L`, reused if another card already set it) and links `leaflet.css` inside its shadow root.

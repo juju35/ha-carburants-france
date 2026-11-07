@@ -60,6 +60,8 @@ COMMON = {
 
 # Material Design Icons used by the card (@mdi/js).
 ICONS = {
+    "arrow-collapse": "M19.5,3.09L15,7.59V4H13V11H20V9H16.41L20.91,4.5L19.5,3.09M4,13V15H7.59L3.09,19.5L4.5,20.91L9,16.41V20H11V13H4Z",
+    "arrow-expand": "M10,21V19H6.41L10.91,14.5L9.5,13.09L5,17.59V14H3V21H10M14.5,10.91L19,6.41V10H21V3H14V5H17.59L13.09,9.5L14.5,10.91Z",
     "clock-outline": "M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z",
     "chevron-down": "M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z",
     "chevron-up": "M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z",
@@ -346,6 +348,16 @@ SHOTS = [
         "config": {"title": "All fuels"},
         "expand": None,
         "states": ALL_FUEL_STATES,
+    },
+    # The mini card: cheapest Gazole and its station, at the width of half a Sections view.
+    {"file": "mini-card", "theme": "light", "config": {"fuel": "gazole"}, "expand": None, "card": "mini", "width": 280},
+    {
+        "file": "mini-card-dark",
+        "theme": "dark",
+        "config": {"fuel": "gazole"},
+        "expand": None,
+        "card": "mini",
+        "width": 280,
     },
 ]
 
@@ -689,13 +701,13 @@ def mount(context, shot):
     page = context.new_page()
     page.on("pageerror", lambda err: print(f"pageerror: {err}"))
     page.clock.set_fixed_time(NOW)
-    page.goto(f"{ORIGIN}/{shot['theme']}")
+    page.goto(f"{ORIGIN}/{shot['theme']}?width={shot.get('width', WIDTH)}")
     page.add_script_tag(content=HA_ELEMENTS)
     page.add_script_tag(content=CARD_JS)
     page.evaluate(
-        """({config, states, dark}) => {
-          const el = document.createElement("carburants-france-card");
-          el.setConfig({type: "custom:carburants-france-card", ...config});
+        """({config, states, dark, tag}) => {
+          const el = document.createElement(tag);
+          el.setConfig({type: `custom:${tag}`, ...config});
           el.hass = {states, language: "en", locale: {language: "en"}, themes: {darkMode: dark},
                      callService: () => Promise.resolve(), callWS: () => Promise.resolve({})};
           document.getElementById("root").appendChild(el);
@@ -704,6 +716,7 @@ def mount(context, shot):
             "config": shot["config"],
             "states": shot.get("states", STATES),
             "dark": shot["theme"] == "dark",
+            "tag": "carburants-france-mini-card" if shot.get("card") == "mini" else "carburants-france-card",
         },
     )
     return page
@@ -826,12 +839,12 @@ def main():
                 page.locator(f'.station[data-id="{shot["expand"]}"] .row').click()
             # Every logo loaded (lazy images: scrolled into view by the tall viewport).
             page.wait_for_function(
-                """() => [...document.querySelector("carburants-france-card").shadowRoot.querySelectorAll("img")]
+                """() => [...document.getElementById("root").firstElementChild.shadowRoot.querySelectorAll("img")]
                   .every((img) => img.complete)"""
             )
             page.wait_for_timeout(600)
             name = f"{shot['file']}.png"
-            framed_shot(page, out_dir / name, WIDTH)
+            framed_shot(page, out_dir / name, shot.get("width", WIDTH))
             page.close()
             print(f"screenshots/{name}")
 
