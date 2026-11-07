@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
-from .const import FUELS
+from .const import DOMAIN, FUELS
 from .coordinator import CarburantsConfigEntry, CarburantsCoordinator
 from .entity import StationFuelEntity, async_track_station_entities, entry_device
 
@@ -17,6 +20,34 @@ if TYPE_CHECKING:
     from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 PRICE_UNIT = "€/L"
+TREND_DAYS = 30
+TREND_REFRESH = timedelta(hours=6)
+
+
+async def async_trend(hass: HomeAssistant, entity_id: str | None) -> dict[str, float | None]:
+    """Average, lowest and highest best price of the last 30 days, from the recorder's daily statistics."""
+    if not entity_id or "recorder" not in hass.config.components:
+        return {}
+    from homeassistant.components.recorder import get_instance  # noqa: PLC0415 - optional dependency
+    from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
+
+    start = dt_util.utcnow() - timedelta(days=TREND_DAYS)
+    try:
+        stats = await get_instance(hass).async_add_executor_job(
+            statistics_during_period, hass, start, None, {entity_id}, "day", None, {"mean", "min", "max"}
+        )
+    except Exception:  # noqa: BLE001 - the trend is a nicety, never an error
+        return {}
+    rows = [r for r in stats.get(entity_id, []) if r.get("mean") is not None]
+    if not rows:
+        return {}
+    lows = [r["min"] for r in rows if r.get("min") is not None] or [r["mean"] for r in rows]
+    highs = [r["max"] for r in rows if r.get("max") is not None] or [r["mean"] for r in rows]
+    return {
+        "average_30d": round(sum(r["mean"] for r in rows) / len(rows), 3),
+        "lowest_30d": round(min(lows), 3),
+        "highest_30d": round(max(highs), 3),
+    }
 
 
 async def async_setup_entry(
@@ -101,6 +132,19 @@ class BestPriceSensor(CoordinatorEntity[CarburantsCoordinator], SensorEntity):
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{fuel}_best"
         self._attr_translation_placeholders = {"fuel": FUELS[fuel]}
         self._attr_device_info = entry_device(coordinator)
+        self._trend: dict[str, float | None] = {}
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        # The 30-day figures come from the recorder's daily statistics of this sensor: read now, then every 6 hours.
+        self.async_on_remove(async_track_time_interval(self.hass, self._async_read_trend, TREND_REFRESH))
+        self.hass.async_create_background_task(self._async_read_trend(), f"{DOMAIN}_trend_{self.fuel}")
+
+    async def _async_read_trend(self, _now: datetime | None = None) -> None:
+        trend = await async_trend(self.hass, self.entity_id)
+        if trend != self._trend:
+            self._trend = trend
+            self.async_write_ha_state()
 
     @property
     def native_value(self) -> float | None:
@@ -110,9 +154,19 @@ class BestPriceSensor(CoordinatorEntity[CarburantsCoordinator], SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         best = self.coordinator.best(self.fuel)
+        trend = dict(self._trend)
+        price = best["fuels"][self.fuel]["price"] if best else None
+        if price is not None and trend.get("average_30d") is not None:
+            # Today's best price against the month: negative = cheaper than usual.
+            trend["change_30d"] = round(price - trend["average_30d"], 3)
         if not best:
-            return {"fuel": FUELS[self.fuel]}
-        return {"fuel": FUELS[self.fuel], "updated": best["fuels"][self.fuel]["updated"], **_station_attributes(best)}
+            return {"fuel": FUELS[self.fuel], **trend}
+        return {
+            "fuel": FUELS[self.fuel],
+            "updated": best["fuels"][self.fuel]["updated"],
+            **_station_attributes(best),
+            **trend,
+        }
 
 
 class StationsSensor(CoordinatorEntity[CarburantsCoordinator], SensorEntity):

@@ -72,7 +72,11 @@
       "stations": { "name": "Töltőállomások" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} kapható" }
+      "in_stock": { "name": "{fuel} kapható" },
+      "low_price": { "name": "Alacsony ár {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Célár {fuel}" }
     }
   },
   "services": {

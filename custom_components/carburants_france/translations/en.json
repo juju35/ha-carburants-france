@@ -72,7 +72,11 @@
       "stations": { "name": "Stations" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} in stock" }
+      "in_stock": { "name": "{fuel} in stock" },
+      "low_price": { "name": "Low price {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Target price {fuel}" }
     }
   },
   "services": {

@@ -72,7 +72,11 @@
       "stations": { "name": "Stații" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} disponibil" }
+      "in_stock": { "name": "{fuel} disponibil" },
+      "low_price": { "name": "Preț scăzut {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Preț țintă {fuel}" }
     }
   },
   "services": {

@@ -14,8 +14,9 @@ custom_components/carburants_france/
 ├── brands.py          # Brand (OpenStreetMap Overpass) and logo (Wikidata P154) lookup, best effort
 ├── coordinator.py     # DataUpdateCoordinator: every followed station in one request
 ├── entity.py          # Station device / base entity
-├── sensor.py          # Price per station+fuel, best price per fuel, Stations (card data)
-├── binary_sensor.py   # In stock per station+fuel
+├── sensor.py          # Price per station+fuel, best price per fuel (+ 30-day trend from daily statistics, every 6 h), Stations (card data)
+├── binary_sensor.py   # In stock per station+fuel, Low price per fuel (best price <= coordinator.targets[fuel])
+├── number.py          # Target price per fuel (RestoreNumber, coordinator.targets, update_listeners on change)
 ├── registry_compat.py # Device registry calls for HA before / since 2026.8 (single config entry per device)
 ├── websocket.py       # carburants_france/search: nearby / town search for the map card, nothing stored
 ├── config_flow.py     # user (name, fuels) → search → stations; options: fuels, stations, add, scan_interval

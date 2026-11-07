@@ -72,7 +72,11 @@
       "stations": { "name": "АЗС" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} в наявності" }
+      "in_stock": { "name": "{fuel} в наявності" },
+      "low_price": { "name": "Низька ціна {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Цільова ціна {fuel}" }
     }
   },
   "services": {

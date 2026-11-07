@@ -56,7 +56,7 @@ from .websocket import async_register_websocket
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.NUMBER]
 CARD_PATH = Path(__file__).parent / "frontend" / CARD_FILENAME
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 CARD_REMOVED = f"{DOMAIN}_card_removed"
