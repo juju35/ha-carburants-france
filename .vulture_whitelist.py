@@ -8,6 +8,7 @@ async_unload_entry  # unused function (custom_components/carburants_france/__ini
 async_setup_entry  # unused function (custom_components/carburants_france/binary_sensor.py:18)
 _.is_on  # unused property (custom_components/carburants_france/binary_sensor.py:33)
 _.extra_state_attributes  # unused property (custom_components/carburants_france/binary_sensor.py:42)
+async_get_config_entry_diagnostics  # unused function (custom_components/carburants_france/diagnostics.py:28)
 CarburantsConfigFlow  # unused class (custom_components/carburants_france/config_flow.py:211)
 MINOR_VERSION  # unused variable (custom_components/carburants_france/config_flow.py:216)
 _.async_step_user  # unused method (custom_components/carburants_france/config_flow.py:222)

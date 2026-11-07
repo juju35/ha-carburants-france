@@ -22,8 +22,8 @@ const runTimers = () => {
   for (const fn of timers.splice(0)) fn?.();
 };
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbPlural, CarburantsFranceCard, CarburantsFranceMapCard };`, context);
-const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, CarburantsFranceCard, CarburantsFranceMapCard } = context.carb;
+vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbPlural, carbCheapest, CarburantsFranceCard, CarburantsFranceMapCard, CarburantsFranceMiniCard, CarburantsFranceCardEditor, CarburantsFranceMiniCardEditor };`, context);
+const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbCheapest, CarburantsFranceCard, CarburantsFranceMapCard, CarburantsFranceMiniCard, CarburantsFranceCardEditor, CarburantsFranceMiniCardEditor } = context.carb;
 const NEW_LANGS = ['ro', 'da', 'sv', 'bg', 'ru', 'uk', 'hu', 'sk', 'cs', 'sl', 'lv', 'el'];
 
 const fuels = [{ key: 'gazole' }, { key: 'e10' }];
@@ -892,4 +892,97 @@ test('the Cyrillic and Greek languages have no Latin word left, except names, un
       for (const text of strings(i18n[lang])) assert.doesNotMatch(text.replace(allowed, ''), /[A-Za-z]/, `${lang}: ${text}`);
     }
   }
+});
+
+test('carbCheapest: the lowest price in stock, the nearest on a tie, none when the fuel is out everywhere', () => {
+  const near = { ...station(5, 1.75, 1.9), distance: 1 };
+  const far = { ...station(2, 1.75, null), distance: 4 };
+  assert.equal(carbCheapest([far, near, station(1, 1.8, 1.7)], 'gazole').station_id, 5);
+  assert.equal(carbCheapest(stations, 'e10').station_id, 1);
+  assert.equal(carbCheapest([station(3, null, null)], 'gazole'), null);
+});
+
+// The mini card, compact view: `this` only needs what _miniHtml reads.
+const miniHtml = (config, state) => CarburantsFranceMiniCard.prototype._miniHtml.call({
+  _config: { show_icon: true, show_distance: true, zoom: true, ...config },
+  _lastState: state,
+  _zoomed: false,
+  _t: () => en(),
+  _locale: () => 'en',
+  _price: CarburantsFranceCard.prototype._price,
+  _miniFuel: CarburantsFranceMiniCard.prototype._miniFuel,
+  _zoomButton: CarburantsFranceMiniCard.prototype._zoomButton,
+});
+const miniState = {
+  state: '2',
+  attributes: {
+    fuels: [{ key: 'gazole', name: 'Gazole' }, { key: 'e10', name: 'E10' }],
+    stations: [
+      { ...station(1, 1.8, 1.7), station_name: 'Total Rennes', distance: 2.25 },
+      { ...station(2, 1.75, null), station_name: 'Leclerc Cesson', distance: 4 },
+    ],
+  },
+};
+
+test('mini card: the cheapest station and price of the chosen fuel, with its 40 px badge and detail button', () => {
+  let html = miniHtml({}, miniState);
+  assert.match(html, /1\.750 €/);
+  assert.match(html, /Leclerc Cesson · 4 km/);
+  assert.match(html, /class="icon hbadge"/);
+  assert.match(html, /class="zoom"[^>]*title="Show the full card"/);
+  html = miniHtml({ fuel: 'e10' }, miniState);
+  assert.match(html, /1\.700 €/);
+  assert.match(html, /Total Rennes · 2\.3 km/);
+  // The sort fuel when no fuel is set; no button with zoom: false.
+  html = miniHtml({ sort_fuel: 'e10', zoom: false, show_distance: false }, miniState);
+  assert.match(html, /Total Rennes</);
+  assert.doesNotMatch(html, /class="zoom"/);
+});
+
+test('mini card: out of stock everywhere, unavailable sensor, no sensor', () => {
+  const out = { ...miniState, attributes: { ...miniState.attributes, stations: [station(3, null, null)] } };
+  assert.match(miniHtml({}, out), /class="fprice out">Out of stock/);
+  assert.match(miniHtml({}, { state: 'unavailable', attributes: {} }), /Data unavailable/);
+  assert.match(miniHtml({}, null), /Stations sensor not found/);
+});
+
+test('mini card: compact grid size, the full card\'s once zoomed', () => {
+  const compact = CarburantsFranceMiniCard.prototype.getGridOptions.call({ _zoomed: false });
+  assert.equal(compact.rows, 'auto');
+  assert.equal(compact.columns, 6);
+  const zoomed = CarburantsFranceMiniCard.prototype.getGridOptions.call({ _zoomed: true });
+  assert.equal(zoomed.min_columns, 9);
+  const label = CarburantsFranceMiniCard.prototype._zoomButton.call({ _config: {}, _zoomed: true, _t: () => en() });
+  assert.match(label, /Back to the compact view/);
+  assert.match(label, /arrow-collapse/);
+});
+
+test('mini card: a click outside folds the full view back, not one inside the card or in a dialog', () => {
+  const listeners = [];
+  context.document.addEventListener = (type, fn, capture) => listeners.push({ type, fn, capture });
+  const card = Object.create(CarburantsFranceMiniCard.prototype);
+  let folded = 0;
+  card._setZoom = (zoomed) => { if (!zoomed) folded += 1; };
+  context.setInterval = () => 0;
+  card.connectedCallback.call(Object.assign(card, { _render() {} }));
+  context.document.addEventListener = () => {};
+  delete context.setInterval;
+  const outside = listeners.find((l) => l.fn === card._onOutsideZoom);
+  assert.equal(outside.capture, true);
+  card._zoomed = true;
+  outside.fn({ composedPath: () => [card] });
+  outside.fn({ composedPath: () => [{ localName: 'ha-more-info-dialog' }] });
+  assert.equal(folded, 0);
+  outside.fn({ composedPath: () => [{ localName: 'div' }] });
+  assert.equal(folded, 1);
+});
+
+test('the mini card editor adds the fuel and detail button options, the list card editor does not', () => {
+  const names = (Editor) => {
+    const editor = Object.assign(Object.create(Editor.prototype), { _config: {}, _hass: { states: {} } });
+    return JSON.stringify(editor._schema());
+  };
+  assert.match(names(CarburantsFranceMiniCardEditor), /"name":"fuel"/);
+  assert.match(names(CarburantsFranceMiniCardEditor), /"name":"zoom"/);
+  assert.doesNotMatch(names(CarburantsFranceCardEditor), /"name":"(fuel|zoom)"/);
 });

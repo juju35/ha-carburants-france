@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.11.0 (2026-11-07)
+
+### Changes
+- **Mini card** (`custom:carburants-france-mini-card`): the cheapest price of one fuel (`fuel` option) and the station selling it on one line; its detail button shows the full list card, and a click outside brings the compact view back. In the card picker and the visual editor, translated in every language of the cards.
+- **Diagnostics**: the integration's diagnostics download gives the options and the last data of the feed, with station addresses, positions and distances, any search text and any key redacted.
+
 ## 1.10.0 (2026-11-07)
 
 ### Changes

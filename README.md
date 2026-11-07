@@ -25,8 +25,10 @@ Home Assistant integration for [fuel prices in France](https://data.economie.gou
 - **Brand and logo** of each station: 42 French networks' logos built in, the others found automatically through OpenStreetMap and Wikidata
 - `carburants_france.refresh` action to force an update
 - `custom:carburants-france-card` card, **shipped with the integration** and loaded automatically: logos, prices, shortages, best price in green, live opening status, opening hours, services and directions on click
+- `custom:carburants-france-mini-card` mini card: the cheapest price of one fuel and the station selling it on one line, with a button that shows the full list card
 - `custom:carburants-france-map-card` map card: your stations on a map, with the logo and the price of a fuel on each marker, your home, and the station details on click; **Locate me** button to see the stations around you (radius picked in the title) and **search by town**, without adding them to the integration
 - Add or remove stations and fuels at any time from the options
+- **Diagnostics** download (Settings > Devices & services), with positions and addresses redacted
 - English, French, German, Spanish, Italian, Dutch, Portuguese (European), Polish, Romanian, Danish, Swedish, Bulgarian, Russian, Ukrainian, Hungarian, Slovak, Czech, Slovenian, Latvian, Greek and Serbian (Cyrillic and Latin)
 
 ## Prerequisites
@@ -135,6 +137,24 @@ Click a station to see its weekly opening hours, its services and a directions b
 Stations where **every fuel shown is out of stock** are hidden: the **Show the out of stock stations** button at the bottom of the card brings them back.
 
 When the Stations sensor is unavailable (feed unreachable at startup, integration reloading), with or without `entity` set, the card says **Data unavailable** instead of a station count, and the map card says so above the map; the prices come back with the next refresh. In a Sections view the list card takes at least 9 of the 12 columns, so the station names stay readable; on a narrow card the fuel tiles wrap under the station.
+
+### Mini card
+
+The **Carburants France Mini** card shows, on one line, the cheapest price of one fuel among your stations and the station selling it (with its distance). The detail button at the top right switches it to the full list card, with the same options; the button or a click outside the card brings the compact view back.
+
+```yaml
+type: custom:carburants-france-mini-card
+fuel: gazole
+```
+
+It takes every option of the list card (they apply to the full view), plus:
+
+| Option | Default | Description |
+|---|---|---|
+| `fuel` | `sort_fuel`, else the first fuel | Fuel whose cheapest price is shown |
+| `zoom` | `true` | Detail button at the top right, which shows the full card |
+
+When the fuel is out of stock at every station, the card says so instead of a price.
 
 ### Map card
 
@@ -263,6 +283,10 @@ While it looks up the stations around you, the "locate me" button pulses until t
 |---|---|
 | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-all-fuels.png" alt="card with every fuel" width="383"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/card-all-fuels-dark.png" alt="card with every fuel, dark" width="383"> |
 
+| Mini card | Mini card, dark |
+|---|---|
+| <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/mini-card.png" alt="mini card" width="312"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/mini-card-dark.png" alt="mini card, dark" width="312"> |
+
 | Map | Map, dark |
 |---|---|
 | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map.png" alt="map card" width="618"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-dark.png" alt="map card, dark" width="618"> |
@@ -312,7 +336,7 @@ The map card uses [Leaflet](https://leafletjs.com) and, for the `ha` base map, [
 ```bash
 pip install -r requirements_test.txt && pytest
 pip install playwright && playwright install chromium
-python scripts/screenshots.py   # renders the list card, the map card, and the refreshing/locate GIFs (needs ffmpeg)
+python scripts/screenshots.py   # renders the list card, the mini card, the map card, and the refreshing/locate GIFs (needs ffmpeg)
 ```
 
 ### Releasing

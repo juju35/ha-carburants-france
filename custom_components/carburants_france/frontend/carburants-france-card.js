@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.10.0';
+var CARBURANTS_CARD_VERSION = '1.11.0';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -35,6 +35,8 @@ var CarburantsI18n = {
     hide_out: 'Masquer les stations en rupture',
     all_out: 'Tous les carburants suivis sont en rupture dans ces stations.',
     highway: 'Autoroute',
+    zoom_in: 'Afficher la carte complète',
+    zoom_out: 'Revenir à la vue compacte',
     days: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'],
     editor: {
       entity: 'Capteur Stations',
@@ -56,6 +58,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Masquer les stations en rupture',
       language: 'Langue',
       language_auto: 'Selon Home Assistant',
+      fuel: 'Carburant',
+      zoom: 'Bouton détail',
     },
     sort_options: { price: 'Prix', distance: 'Distance', name: 'Nom', config: 'Ordre de configuration' },
   },
@@ -89,6 +93,8 @@ var CarburantsI18n = {
     hide_out: 'Hide out of stock stations',
     all_out: 'Every followed fuel is out of stock at these stations.',
     highway: 'Motorway',
+    zoom_in: 'Show the full card',
+    zoom_out: 'Back to the compact view',
     days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     editor: {
       entity: 'Stations sensor',
@@ -110,6 +116,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Hide out of stock stations',
       language: 'Language',
       language_auto: 'Home Assistant language',
+      fuel: 'Fuel',
+      zoom: 'Detail button',
     },
     sort_options: { price: 'Price', distance: 'Distance', name: 'Name', config: 'Configuration order' },
   },
@@ -143,6 +151,8 @@ var CarburantsI18n = {
     hide_out: 'Nicht verfügbare Tankstellen ausblenden',
     all_out: 'Alle beobachteten Kraftstoffe sind an diesen Tankstellen nicht verfügbar.',
     highway: 'Autobahn',
+    zoom_in: 'Vollständige Karte anzeigen',
+    zoom_out: 'Zurück zur kompakten Ansicht',
     days: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'],
     editor: {
       entity: 'Sensor Tankstellen',
@@ -164,6 +174,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Nicht verfügbare Tankstellen ausblenden',
       language: 'Sprache',
       language_auto: 'Wie Home Assistant',
+      fuel: 'Kraftstoff',
+      zoom: 'Detail-Schaltfläche',
     },
     sort_options: { price: 'Preis', distance: 'Entfernung', name: 'Name', config: 'Reihenfolge der Konfiguration' },
   },
@@ -197,6 +209,8 @@ var CarburantsI18n = {
     hide_out: 'Ocultar las estaciones agotadas',
     all_out: 'Todos los carburantes seguidos están agotados en estas estaciones.',
     highway: 'Autopista',
+    zoom_in: 'Mostrar la tarjeta completa',
+    zoom_out: 'Volver a la vista compacta',
     days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
     editor: {
       entity: 'Sensor Estaciones',
@@ -218,6 +232,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Ocultar las estaciones agotadas',
       language: 'Idioma',
       language_auto: 'Según Home Assistant',
+      fuel: 'Carburante',
+      zoom: 'Botón de detalle',
     },
     sort_options: { price: 'Precio', distance: 'Distancia', name: 'Nombre', config: 'Orden de configuración' },
   },
@@ -253,6 +269,8 @@ var CarburantsI18n = {
     hide_out: 'Nascondi le stazioni esaurite',
     all_out: 'Tutti i carburanti seguiti sono esauriti in queste stazioni.',
     highway: 'Autostrada',
+    zoom_in: 'Mostra la scheda completa',
+    zoom_out: 'Torna alla vista compatta',
     days: ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'],
     editor: {
       entity: 'Sensore Stazioni',
@@ -274,6 +292,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Nascondi le stazioni esaurite',
       language: 'Lingua',
       language_auto: 'Lingua di Home Assistant',
+      fuel: 'Carburante',
+      zoom: 'Pulsante dettagli',
     },
     sort_options: { price: 'Prezzo', distance: 'Distanza', name: 'Nome', config: 'Ordine di configurazione' },
   },
@@ -309,6 +329,8 @@ var CarburantsI18n = {
     hide_out: 'Uitverkochte tankstations verbergen',
     all_out: 'Alle gevolgde brandstoffen zijn uitverkocht bij deze tankstations.',
     highway: 'Snelweg',
+    zoom_in: 'Volledige kaart tonen',
+    zoom_out: 'Terug naar de compacte weergave',
     days: ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'],
     editor: {
       entity: 'Sensor Tankstations',
@@ -330,6 +352,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Uitverkochte tankstations verbergen',
       language: 'Taal',
       language_auto: 'Taal van Home Assistant',
+      fuel: 'Brandstof',
+      zoom: 'Detailknop',
     },
     sort_options: { price: 'Prijs', distance: 'Afstand', name: 'Naam', config: 'Volgorde van configuratie' },
   },
@@ -364,6 +388,8 @@ var CarburantsI18n = {
     hide_out: 'Ocultar os postos esgotados',
     all_out: 'Todos os combustíveis seguidos estão esgotados nestes postos.',
     highway: 'Autoestrada',
+    zoom_in: 'Mostrar o cartão completo',
+    zoom_out: 'Voltar à vista compacta',
     days: ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'],
     editor: {
       entity: 'Sensor Postos',
@@ -385,6 +411,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Ocultar os postos esgotados',
       language: 'Idioma',
       language_auto: 'Idioma do Home Assistant',
+      fuel: 'Combustível',
+      zoom: 'Botão de detalhe',
     },
     sort_options: { price: 'Preço', distance: 'Distância', name: 'Nome', config: 'Ordem da configuração' },
   },
@@ -421,6 +449,8 @@ var CarburantsI18n = {
     hide_out: 'Ukryj stacje bez paliwa',
     all_out: 'Na tych stacjach brakuje wszystkich obserwowanych paliw.',
     highway: 'Autostrada',
+    zoom_in: 'Pokaż pełną kartę',
+    zoom_out: 'Wróć do widoku kompaktowego',
     days: ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'],
     editor: {
       entity: 'Czujnik Stacje',
@@ -442,6 +472,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Ukryj stacje bez paliwa',
       language: 'Język',
       language_auto: 'Język Home Assistant',
+      fuel: 'Paliwo',
+      zoom: 'Przycisk szczegółów',
     },
     sort_options: { price: 'Cena', distance: 'Odległość', name: 'Nazwa', config: 'Kolejność z konfiguracji' },
   },
@@ -478,6 +510,8 @@ var CarburantsI18n = {
     hide_out: 'Ascunde stațiile fără carburant',
     all_out: 'Toți carburanții urmăriți sunt epuizați la aceste stații.',
     highway: 'Autostradă',
+    zoom_in: 'Afișează cardul complet',
+    zoom_out: 'Înapoi la vizualizarea compactă',
     days: ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'],
     editor: {
       entity: 'Senzor Stații',
@@ -499,6 +533,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Ascunde stațiile fără carburant',
       language: 'Limbă',
       language_auto: 'Limba Home Assistant',
+      fuel: 'Carburant',
+      zoom: 'Buton de detalii',
     },
     sort_options: { price: 'Preț', distance: 'Distanță', name: 'Nume', config: 'Ordinea din configurare' },
   },
@@ -534,6 +570,8 @@ var CarburantsI18n = {
     hide_out: 'Skjul stationer uden brændstof',
     all_out: 'Alle fulgte brændstoffer er udsolgt på disse tankstationer.',
     highway: 'Motorvej',
+    zoom_in: 'Vis hele kortet',
+    zoom_out: 'Tilbage til kompakt visning',
     days: ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'],
     editor: {
       entity: 'Sensoren Tankstationer',
@@ -555,6 +593,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Skjul tankstationer uden brændstof',
       language: 'Sprog',
       language_auto: 'Home Assistant-sprog',
+      fuel: 'Brændstof',
+      zoom: 'Detaljeknap',
     },
     sort_options: { price: 'Pris', distance: 'Afstand', name: 'Navn', config: 'Konfigurationsrækkefølge' },
   },
@@ -590,6 +630,8 @@ var CarburantsI18n = {
     hide_out: 'Dölj stationer utan bränsle',
     all_out: 'Alla följda bränslen är slut på dessa stationer.',
     highway: 'Motorväg',
+    zoom_in: 'Visa hela kortet',
+    zoom_out: 'Tillbaka till kompakt vy',
     days: ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'],
     editor: {
       entity: 'Sensorn Stationer',
@@ -611,6 +653,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Dölj stationer utan bränsle',
       language: 'Språk',
       language_auto: 'Home Assistants språk',
+      fuel: 'Drivmedel',
+      zoom: 'Detaljknapp',
     },
     sort_options: { price: 'Pris', distance: 'Avstånd', name: 'Namn', config: 'Konfigurationsordning' },
   },
@@ -646,6 +690,8 @@ var CarburantsI18n = {
     hide_out: 'Скрий станциите без гориво',
     all_out: 'Всички следени горива са изчерпани в тези бензиностанции.',
     highway: 'Магистрала',
+    zoom_in: 'Покажи цялата карта',
+    zoom_out: 'Обратно към компактния изглед',
     days: ['Понеделник', 'Вторник', 'Сряда', 'Четвъртък', 'Петък', 'Събота', 'Неделя'],
     editor: {
       entity: 'Сензор „Бензиностанции“',
@@ -667,6 +713,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Скрий бензиностанциите без гориво',
       language: 'Език',
       language_auto: 'Езикът на Home Assistant',
+      fuel: 'Гориво',
+      zoom: 'Бутон за подробности',
     },
     sort_options: { price: 'Цена', distance: 'Разстояние', name: 'Име', config: 'Ред от конфигурацията' },
   },
@@ -701,6 +749,8 @@ var CarburantsI18n = {
     hide_out: 'Скрыть АЗС без топлива',
     all_out: 'На этих АЗС нет ни одного из отслеживаемых видов топлива.',
     highway: 'Автомагистраль',
+    zoom_in: 'Показать полную карточку',
+    zoom_out: 'Вернуться к компактному виду',
     days: ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'],
     editor: {
       entity: 'Датчик «АЗС»',
@@ -722,6 +772,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Скрыть АЗС без топлива',
       language: 'Язык',
       language_auto: 'Язык Home Assistant',
+      fuel: 'Топливо',
+      zoom: 'Кнопка подробностей',
     },
     sort_options: { price: 'Цена', distance: 'Расстояние', name: 'Название', config: 'Порядок из настроек' },
   },
@@ -756,6 +808,8 @@ var CarburantsI18n = {
     hide_out: 'Приховати АЗС без пального',
     all_out: 'На цих АЗС немає жодного з відстежуваних видів пального.',
     highway: 'Автомагістраль',
+    zoom_in: 'Показати повну картку',
+    zoom_out: 'Повернутися до компактного вигляду',
     days: ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П’ятниця', 'Субота', 'Неділя'],
     editor: {
       entity: 'Датчик «АЗС»',
@@ -777,6 +831,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Приховати АЗС без пального',
       language: 'Мова',
       language_auto: 'Мова Home Assistant',
+      fuel: 'Пальне',
+      zoom: 'Кнопка деталей',
     },
     sort_options: { price: 'Ціна', distance: 'Відстань', name: 'Назва', config: 'Порядок із налаштувань' },
   },
@@ -811,6 +867,8 @@ var CarburantsI18n = {
     hide_out: 'Kifogyott állomások elrejtése',
     all_out: 'Ezeken a töltőállomásokon minden követett üzemanyag kifogyott.',
     highway: 'Autópálya',
+    zoom_in: 'Teljes kártya megjelenítése',
+    zoom_out: 'Vissza a kompakt nézethez',
     days: ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap'],
     editor: {
       entity: 'Töltőállomások érzékelő',
@@ -832,6 +890,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Kifogyott töltőállomások elrejtése',
       language: 'Nyelv',
       language_auto: 'Home Assistant nyelve',
+      fuel: 'Üzemanyag',
+      zoom: 'Részletek gomb',
     },
     sort_options: { price: 'Ár', distance: 'Távolság', name: 'Név', config: 'Konfigurációs sorrend' },
   },
@@ -868,6 +928,8 @@ var CarburantsI18n = {
     hide_out: 'Skryť stanice bez paliva',
     all_out: 'Na týchto staniciach sú všetky sledované palivá vypredané.',
     highway: 'Diaľnica',
+    zoom_in: 'Zobraziť celú kartu',
+    zoom_out: 'Späť na kompaktné zobrazenie',
     days: ['Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota', 'Nedeľa'],
     editor: {
       entity: 'Senzor Stanice',
@@ -889,6 +951,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Skryť stanice bez paliva',
       language: 'Jazyk',
       language_auto: 'Jazyk Home Assistant',
+      fuel: 'Palivo',
+      zoom: 'Tlačidlo podrobností',
     },
     sort_options: { price: 'Cena', distance: 'Vzdialenosť', name: 'Názov', config: 'Poradie z konfigurácie' },
   },
@@ -925,6 +989,8 @@ var CarburantsI18n = {
     hide_out: 'Skrýt stanice bez paliva',
     all_out: 'Na těchto stanicích jsou všechna sledovaná paliva vyprodána.',
     highway: 'Dálnice',
+    zoom_in: 'Zobrazit celou kartu',
+    zoom_out: 'Zpět na kompaktní zobrazení',
     days: ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'],
     editor: {
       entity: 'Senzor Stanice',
@@ -946,6 +1012,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Skrýt stanice bez paliva',
       language: 'Jazyk',
       language_auto: 'Jazyk Home Assistant',
+      fuel: 'Palivo',
+      zoom: 'Tlačítko podrobností',
     },
     sort_options: { price: 'Cena', distance: 'Vzdálenost', name: 'Název', config: 'Pořadí z konfigurace' },
   },
@@ -983,6 +1051,8 @@ var CarburantsI18n = {
     hide_out: 'Skrij postaje brez goriva',
     all_out: 'Na teh postajah ni nobenega od spremljanih goriv.',
     highway: 'Avtocesta',
+    zoom_in: 'Prikaži celotno kartico',
+    zoom_out: 'Nazaj na kompaktni pogled',
     days: ['Ponedeljek', 'Torek', 'Sreda', 'Četrtek', 'Petek', 'Sobota', 'Nedelja'],
     editor: {
       entity: 'Senzor Postaje',
@@ -1004,6 +1074,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Skrij postaje brez goriva',
       language: 'Jezik',
       language_auto: 'Jezik sistema Home Assistant',
+      fuel: 'Gorivo',
+      zoom: 'Gumb za podrobnosti',
     },
     sort_options: { price: 'Cena', distance: 'Razdalja', name: 'Ime', config: 'Vrstni red iz nastavitev' },
   },
@@ -1039,6 +1111,8 @@ var CarburantsI18n = {
     hide_out: 'Paslēpt stacijas bez degvielas',
     all_out: 'Šajās stacijās nav pieejams neviens no izsekotajiem degvielas veidiem.',
     highway: 'Automaģistrāle',
+    zoom_in: 'Rādīt pilno karti',
+    zoom_out: 'Atpakaļ uz kompakto skatu',
     days: ['Pirmdiena', 'Otrdiena', 'Trešdiena', 'Ceturtdiena', 'Piektdiena', 'Sestdiena', 'Svētdiena'],
     editor: {
       entity: 'Sensors "Stacijas"',
@@ -1060,6 +1134,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Paslēpt stacijas bez degvielas',
       language: 'Valoda',
       language_auto: 'Home Assistant valoda',
+      fuel: 'Degviela',
+      zoom: 'Detaļu poga',
     },
     sort_options: { price: 'Cena', distance: 'Attālums', name: 'Nosaukums', config: 'Konfigurācijas secība' },
   },
@@ -1095,6 +1171,8 @@ var CarburantsI18n = {
     hide_out: 'Απόκρυψη πρατηρίων χωρίς καύσιμα',
     all_out: 'Όλα τα παρακολουθούμενα καύσιμα έχουν εξαντληθεί σε αυτά τα πρατήρια.',
     highway: 'Αυτοκινητόδρομος',
+    zoom_in: 'Εμφάνιση πλήρους κάρτας',
+    zoom_out: 'Επιστροφή στη συμπαγή προβολή',
     days: ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή'],
     editor: {
       entity: 'Αισθητήρας «Πρατήρια»',
@@ -1116,6 +1194,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Απόκρυψη πρατηρίων χωρίς καύσιμα',
       language: 'Γλώσσα',
       language_auto: 'Γλώσσα του Home Assistant',
+      fuel: 'Καύσιμο',
+      zoom: 'Κουμπί λεπτομερειών',
     },
     sort_options: { price: 'Τιμή', distance: 'Απόσταση', name: 'Όνομα', config: 'Σειρά ρύθμισης' },
   },
@@ -1150,6 +1230,8 @@ var CarburantsI18n = {
     hide_out: 'Сакриј станице са несташицом',
     all_out: 'На овим станицама има несташице свих праћених горива.',
     highway: 'Аутопут',
+    zoom_in: 'Прикажи целу картицу',
+    zoom_out: 'Назад на компактни приказ',
     days: ['Понедељак', 'Уторак', 'Среда', 'Четвртак', 'Петак', 'Субота', 'Недеља'],
     editor: {
       entity: 'Сензор „Станице“',
@@ -1171,6 +1253,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Сакриј станице са несташицом',
       language: 'Језик',
       language_auto: 'Аутоматски',
+      fuel: 'Гориво',
+      zoom: 'Дугме за детаље',
     },
     sort_options: { price: 'Цена', distance: 'Удаљеност', name: 'Назив', config: 'Редослед из подешавања' },
   },
@@ -1205,6 +1289,8 @@ var CarburantsI18n = {
     hide_out: 'Sakrij stanice sa nestašicom',
     all_out: 'Na ovim stanicama ima nestašice svih praćenih goriva.',
     highway: 'Autoput',
+    zoom_in: 'Prikaži celu karticu',
+    zoom_out: 'Nazad na kompaktni prikaz',
     days: ['Ponedeljak', 'Utorak', 'Sreda', 'Četvrtak', 'Petak', 'Subota', 'Nedelja'],
     editor: {
       entity: 'Senzor „Stanice“',
@@ -1226,6 +1312,8 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Sakrij stanice sa nestašicom',
       language: 'Jezik',
       language_auto: 'Automatski',
+      fuel: 'Gorivo',
+      zoom: 'Dugme za detalje',
     },
     sort_options: { price: 'Cena', distance: 'Udaljenost', name: 'Naziv', config: 'Redosled iz podešavanja' },
   },
@@ -1247,6 +1335,8 @@ var CARBURANTS_DEFAULTS = {
   hide_out_of_stock_stations: true,
   show_refresh: true,
 };
+// Options of the mini card only: `fuel` (the fuel it shows, else the sort fuel, else the first one) has no default.
+var CARBURANTS_MINI_DEFAULTS = { zoom: true };
 
 // The sensor has no value (source unreachable at startup, integration reloading): never shown as a count.
 function carbUnavailable(st) {
@@ -1327,6 +1417,19 @@ function carbBestPrices(stations, fuels) {
       var fuel = s.fuels?.[f.key];
       if (fuel?.available && (best[f.key] == null || fuel.price < best[f.key])) best[f.key] = fuel.price;
     });
+  });
+  return best;
+}
+
+// The station selling the fuel cheapest (in stock), the nearest on a price tie (unknown distance last), or null.
+function carbCheapest(stations, key) {
+  var best = null;
+  var far = (s) => (s.distance == null ? Infinity : s.distance);
+  stations.forEach((s) => {
+    var fuel = s.fuels?.[key];
+    if (!fuel?.available || fuel.price == null) return;
+    var price = best?.fuels[key].price;
+    if (!best || fuel.price < price || (fuel.price === price && far(s) < far(best))) best = s;
   });
   return best;
 }
@@ -1687,7 +1790,7 @@ class CarburantsFranceCard extends HTMLElement {
     if (!st) {
       this._headerHtml = null;
       this._listHtml = null;
-      header.innerHTML = `<div class="title">${icon}<div class="titles"><div class="hname">${carbEsc(title)}</div></div></div>`;
+      header.innerHTML = `<div class="title">${icon}<div class="titles"><div class="hname">${carbEsc(title)}</div></div></div>${this._zoomButton()}`;
       list.innerHTML = `<div class="empty">${carbEsc(t.no_entity)}</div>`;
       this._root.querySelector('.footer').hidden = true;
       return;
@@ -1715,7 +1818,8 @@ class CarburantsFranceCard extends HTMLElement {
       (this._config.show_refresh
         ? '<ha-icon-button class="refresh-btn' + (this._refreshing ? ' spinning' : '') + '" label="' + carbEsc(t.refresh) +
           '" title="' + carbEsc(refreshTitle) + '"><ha-icon icon="mdi:refresh"></ha-icon></ha-icon-button>'
-        : '');
+        : '') +
+      this._zoomButton();
     if (headerHtml !== this._headerHtml) {
       this._headerHtml = headerHtml;
       header.innerHTML = headerHtml;
@@ -1750,6 +1854,11 @@ class CarburantsFranceCard extends HTMLElement {
         img.replaceWith(badge);
       });
     });
+  }
+
+  // Hook for the mini card: its detail button at the right of the header.
+  _zoomButton() {
+    return '';
   }
 
   _sorted(stations, fuels) {
@@ -2015,6 +2124,15 @@ class CarburantsFranceCard extends HTMLElement {
 
 // ── carburants-france-card-editor ─────────────────────────────────────────────
 class CarburantsFranceCardEditor extends HTMLElement {
+  // The mini card's editor adds its fuel and detail button options.
+  static get mini() {
+    return false;
+  }
+
+  _defaults() {
+    return Object.assign({}, CARBURANTS_DEFAULTS, this.constructor.mini ? CARBURANTS_MINI_DEFAULTS : {});
+  }
+
   setConfig(config) {
     this._config = Object.assign({}, config);
     this._render();
@@ -2050,6 +2168,7 @@ class CarburantsFranceCardEditor extends HTMLElement {
       { name: 'entity', selector: { entity: { domain: 'sensor', integration: 'carburants_france' } } },
       { name: 'title', selector: { text: {} } },
       { name: 'language', selector: { select: { mode: 'dropdown', options: carbLanguageOptions(t.editor.language_auto) } } },
+      ...(this.constructor.mini ? [{ name: 'fuel', selector: { select: { mode: 'dropdown', options: fuels } } }] : []),
       { name: 'fuels', selector: { select: { multiple: true, mode: 'list', options: fuels } } },
       {
         type: 'grid',
@@ -2075,6 +2194,7 @@ class CarburantsFranceCardEditor extends HTMLElement {
           { name: 'highlight_best', selector: { boolean: {} } },
           { name: 'show_refresh', selector: { boolean: {} } },
           { name: 'hide_out_of_stock_stations', selector: { boolean: {} } },
+          ...(this.constructor.mini ? [{ name: 'zoom', selector: { boolean: {} } }] : []),
         ],
       },
     ];
@@ -2092,16 +2212,17 @@ class CarburantsFranceCardEditor extends HTMLElement {
     this._form.hass = this._hass;
     this._setSchema();
     // Show the defaults as set, so the toggles match what the card does.
-    this._form.data = Object.assign({}, CARBURANTS_DEFAULTS, this._config);
+    this._form.data = Object.assign(this._defaults(), this._config);
   }
 
   _valueChanged(ev) {
     var value = Object.assign({}, ev.detail.value);
     // Keep the YAML short: drop options left at their default.
-    Object.keys(CARBURANTS_DEFAULTS).forEach((key) => {
-      if (value[key] === CARBURANTS_DEFAULTS[key]) delete value[key];
+    var defaults = this._defaults();
+    Object.keys(defaults).forEach((key) => {
+      if (value[key] === defaults[key]) delete value[key];
     });
-    ['title', 'entity', 'sort_fuel'].forEach((key) => { if (!value[key]) delete value[key]; });
+    ['title', 'entity', 'sort_fuel', 'fuel'].forEach((key) => { if (!value[key]) delete value[key]; });
     if (Array.isArray(value.fuels) && !value.fuels.length) delete value.fuels;
     var rebuild = value.entity !== this._config.entity || value.language !== this._config.language;
     this._config = value;
@@ -2125,6 +2246,175 @@ if (!customElements.get('carburants-france-card')) {
     documentationURL: 'https://github.com/juju35/ha-carburants-france',
   });
   console.info(`%c CARBURANTS-FRANCE-CARD %c v${CARBURANTS_CARD_VERSION} `, 'color:#fff;background:#0e7c66;font-weight:700', 'color:#0e7c66;background:#fff');
+}
+
+// ── carburants-france-mini-card ───────────────────────────────────────────────
+// Styles of the mini card in both views. Only the compact view's ha-card is a size container; the empty grid before
+// the host gives it up to 240 px in a parent sized by its content, and no minimum.
+var CARBURANTS_MINI_STYLE = [
+  ':host([mini])::before { grid-template-columns: minmax(0, 240px); }',
+  'ha-card.mini { padding: 12px; container: carb-mini / inline-size; }',
+  '.mrow { display: flex; align-items: center; gap: 10px; min-width: 0; }',
+  '.mrow .titles { min-width: 4ch; }',
+  '.mrow .hsub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+  '.mprice { display: flex; align-items: center; gap: 6px; min-width: 0; }',
+  '.mprice .fprice { font-size: 16px; }',
+  '.mprice .out { color: var(--carb-warning-text); }',
+  // Detail button: a bare icon at the top right, never a filled button.
+  '.zoom { all: unset; flex: none; cursor: pointer; width: 24px; height: 24px; margin: -4px -4px -4px 0; border-radius: 50%; align-self: flex-start; display: grid; place-items: center; color: var(--secondary-text-color); }',
+  '.zoom ha-icon { color: inherit; --mdc-icon-size: 16px; }',
+  '.zoom:hover { background: color-mix(in srgb, var(--secondary-text-color) 14%, transparent); color: var(--primary-text-color); }',
+  '.zoom:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 1px; }',
+  '.header .zoom { margin: -4px -4px -4px 0; }',
+  // Very narrow (6 columns of a phone section): tighter gaps, 4 px taken from the padding, a 14 px price.
+  // Tighter still (4 columns): the price alone, the fuel badge would be cut.
+  '@container carb-mini (max-width: 180px) { .mrow { gap: 6px; margin: 0 -4px; } .mprice .fprice { font-size: 14px; } }',
+  '@container carb-mini (max-width: 150px) { .mprice .fbadge { display: none; } }',
+].join('\n');
+
+// A click in a dialog opened from the page (a more-info, say) is not a click outside the card.
+function carbInDialog(ev) {
+  return ev.composedPath().some((n) => ['ha-more-info-dialog', 'ha-dialog', 'dialog'].includes(n.localName));
+}
+
+// The mini card extends the list card: one row with the header badge, the cheapest price of one fuel and the station
+// selling it. Its detail button (top right, `zoom: false` removes it) switches it to the full list card, same
+// configuration; the button or a click anywhere outside the card brings it back.
+class CarburantsFranceMiniCard extends CarburantsFranceCard {
+  static getConfigElement() {
+    return document.createElement('carburants-france-mini-card-editor');
+  }
+
+  setConfig(config) {
+    // The host attribute behind the mini card's styles; never set in the constructor (not allowed there).
+    this.setAttribute?.('mini', '');
+    this._zoomed = !!this._zoomed;
+    super.setConfig(Object.assign({}, CARBURANTS_MINI_DEFAULTS, config || {}));
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this._onOutsideZoom = this._onOutsideZoom || ((ev) => {
+      if (this._zoomed && !ev.composedPath().includes(this) && !carbInDialog(ev)) this._setZoom(false);
+    });
+    document.addEventListener('click', this._onOutsideZoom, true);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    document.removeEventListener('click', this._onOutsideZoom, true);
+  }
+
+  getCardSize() {
+    return this._zoomed ? super.getCardSize() : 1;
+  }
+
+  getGridOptions() {
+    return this._zoomed ? super.getGridOptions() : { columns: 6, min_columns: 6, rows: 'auto' };
+  }
+
+  // The fuel shown: the `fuel` option, else the sort fuel, else the first fuel of the sensor.
+  _miniFuel() {
+    var all = this._lastState?.attributes?.fuels || [];
+    var wanted = this._config.fuel || this._config.sort_fuel;
+    return all.find((f) => f.key === wanted) || all[0] || null;
+  }
+
+  _ensureShell() {
+    if (this._root) return;
+    super._ensureShell();
+    var style = document.createElement('style');
+    style.textContent = CARBURANTS_MINI_STYLE;
+    this._root.appendChild(style);
+    var mini = document.createElement('ha-card');
+    mini.className = 'mini';
+    this._root.appendChild(mini);
+    this._root.addEventListener('click', (ev) => {
+      if (!ev.target.closest?.('.zoom')) return;
+      ev.stopPropagation();
+      // A keyboard activation of a button is a click without a click count.
+      this._setZoom(!this._zoomed, ev.detail === 0);
+    });
+  }
+
+  _zoomButton() {
+    if (this._config?.zoom === false) return '';
+    var label = carbEsc(this._t()[this._zoomed ? 'zoom_out' : 'zoom_in']);
+    return `<button type="button" class="zoom" title="${label}" aria-label="${label}"><ha-icon icon="mdi:${this._zoomed ? 'arrow-collapse' : 'arrow-expand'}"></ha-icon></button>`;
+  }
+
+  // keyboard: activated with Enter / Space, the focus goes to the button of the new view, without scrolling.
+  _setZoom(zoomed, keyboard) {
+    this._zoomed = zoomed;
+    this._render();
+    // Home Assistant lays the card out again (grid options, size).
+    this.dispatchEvent(new Event('card-resized', { bubbles: true, composed: true }));
+    if (keyboard) {
+      var view = this._root.querySelector(zoomed ? 'ha-card:not(.mini)' : 'ha-card.mini');
+      view?.querySelector('.zoom')?.focus({ preventScroll: true });
+    }
+  }
+
+  _render() {
+    if (!this._config || !this._hass) return;
+    this._ensureShell();
+    var full = this._root.querySelector('ha-card:not(.mini)');
+    var mini = this._root.querySelector('ha-card.mini');
+    full.style.display = this._zoomed ? '' : 'none';
+    mini.style.display = this._zoomed ? 'none' : '';
+    if (this._zoomed) {
+      super._render();
+      return;
+    }
+    mini.innerHTML = this._miniHtml();
+  }
+
+  _miniHtml() {
+    var t = this._t();
+    var st = this._lastState;
+    var title = this._config.title || t.default_title;
+    var fuel = st && !carbUnavailable(st) ? this._miniFuel() : null;
+    var station = fuel ? carbCheapest(st.attributes.stations || [], fuel.key) : null;
+    var line1 = carbEsc(title);
+    var sub = !st ? t.no_entity : carbUnavailable(st) ? t.unavailable : !fuel ? t.empty : '';
+    if (fuel) {
+      var price = station
+        ? `<span class="fprice">${this._price(station.fuels[fuel.key].price)}</span>`
+        : `<span class="fprice out">${carbEsc(t.out_of_stock)}</span>`;
+      line1 = `<span class="mprice">${price}${carbFuelBadge(fuel.key, fuel.name)}</span>`;
+      sub = station ? station.station_name : title;
+      if (station && this._config.show_distance && station.distance != null) {
+        sub += ` · ${new Intl.NumberFormat(this._locale(), { maximumFractionDigits: 1 }).format(station.distance)} km`;
+      }
+    }
+    var icon = this._config.show_icon ? '<span class="icon hbadge"><ha-icon icon="mdi:gas-station"></ha-icon></span>' : '';
+    return '<div class="mrow">' + icon +
+      '<div class="titles"><div class="hname">' + line1 + '</div>' +
+      (sub ? `<div class="hsub" title="${carbEsc(sub)}">${carbEsc(sub)}</div>` : '') + '</div>' +
+      this._zoomButton() + '</div>';
+  }
+}
+
+class CarburantsFranceMiniCardEditor extends CarburantsFranceCardEditor {
+  static get mini() {
+    return true;
+  }
+}
+
+if (!customElements.get('carburants-france-mini-card-editor')) {
+  customElements.define('carburants-france-mini-card-editor', CarburantsFranceMiniCardEditor);
+}
+
+if (!customElements.get('carburants-france-mini-card')) {
+  customElements.define('carburants-france-mini-card', CarburantsFranceMiniCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: 'carburants-france-mini-card',
+    name: 'Carburants France Mini',
+    description: 'Compact: the cheapest price of one fuel and its station, with a button to show the full card.',
+    preview: true,
+    documentationURL: 'https://github.com/juju35/ha-carburants-france',
+  });
 }
 
 // ── carburants-france-map-card ────────────────────────────────────────────────
