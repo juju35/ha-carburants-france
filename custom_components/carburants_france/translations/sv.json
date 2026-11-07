@@ -72,7 +72,11 @@
       "stations": { "name": "Stationer" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} i lager" }
+      "in_stock": { "name": "{fuel} i lager" },
+      "low_price": { "name": "Lågt pris {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Målpris {fuel}" }
     }
   },
   "services": {

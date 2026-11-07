@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.10.0 (2026-11-07)
+
+### Changes
+- **Target price** per fuel (`number` entity, €/L, kept across restarts) and **Low price** binary sensor, on while the best price is at or below the target — a ready-made trigger for a "cheap fuel" notification, with the price and the station as attributes.
+- **30-day trend** on the Best price sensors: `average_30d`, `lowest_30d`, `highest_30d` from the recorder's daily statistics (read at start and every 6 hours), and `change_30d`, today's best price against that average.
+- Translated in every language of the integration.
+
 ## 1.9.8 (2026-11-04)
 
 ### Documentation

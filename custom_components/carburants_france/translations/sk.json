@@ -72,7 +72,11 @@
       "stations": { "name": "Stanice" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} k dispozícii" }
+      "in_stock": { "name": "{fuel} k dispozícii" },
+      "low_price": { "name": "Nízka cena {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Cieľová cena {fuel}" }
     }
   },
   "services": {

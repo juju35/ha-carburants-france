@@ -6,7 +6,11 @@
       "stations": { "default": "mdi:map-marker-multiple" }
     },
     "binary_sensor": {
-      "in_stock": { "default": "mdi:gas-station", "state": { "off": "mdi:gas-station-off" } }
+      "in_stock": { "default": "mdi:gas-station", "state": { "off": "mdi:gas-station-off" } },
+      "low_price": { "default": "mdi:tag-outline", "state": { "on": "mdi:tag-check" } }
+    },
+    "number": {
+      "target_price": { "default": "mdi:target" }
     }
   },
   "services": {

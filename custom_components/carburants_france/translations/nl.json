@@ -72,7 +72,11 @@
       "stations": { "name": "Tankstations" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} beschikbaar" }
+      "in_stock": { "name": "{fuel} beschikbaar" },
+      "low_price": { "name": "Lage prijs {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Doelprijs {fuel}" }
     }
   },
   "services": {

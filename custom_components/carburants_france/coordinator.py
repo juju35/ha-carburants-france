@@ -136,6 +136,8 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
         # Community station names, {id: {name, brand}} (names.py).
         self.names = names or {}
         self.fuels: list[str] = list(entry.options.get(CONF_FUELS, DEFAULT_FUELS))
+        # Target price per fuel (the Target price number entities): the Low price binary sensors compare to it.
+        self.targets: dict[str, float | None] = {}
         self.stations: dict[int, dict[str, Any]] = {int(s[ST_ID]): s for s in entry.options.get(CONF_STATIONS, [])}
         # (station id, fuel) pairs sold at some point: those with an entity, plus those seen since.
         # A fuel can briefly have neither price nor shortage in the feed (shortage just lifted,

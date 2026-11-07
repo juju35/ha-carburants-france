@@ -72,7 +72,11 @@
       "stations": { "name": "Бензиностанции" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} в наличност" }
+      "in_stock": { "name": "{fuel} в наличност" },
+      "low_price": { "name": "Ниска цена {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Целева цена {fuel}" }
     }
   },
   "services": {

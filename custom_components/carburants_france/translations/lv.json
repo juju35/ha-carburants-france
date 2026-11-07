@@ -72,7 +72,11 @@
       "stations": { "name": "Stacijas" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} pieejams" }
+      "in_stock": { "name": "{fuel} pieejams" },
+      "low_price": { "name": "Zema cena {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Mērķa cena {fuel}" }
     }
   },
   "services": {

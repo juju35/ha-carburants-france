@@ -72,7 +72,11 @@
       "stations": { "name": "Postaje" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} na zalogi" }
+      "in_stock": { "name": "{fuel} na zalogi" },
+      "low_price": { "name": "Nizka cena {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Ciljna cena {fuel}" }
     }
   },
   "services": {

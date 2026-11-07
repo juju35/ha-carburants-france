@@ -30,3 +30,4 @@ _._attr_unique_id  # unused attribute (custom_components/carburants_france/senso
 _._attr_device_info  # unused attribute (custom_components/carburants_france/sensor.py:129)
 _.native_value  # unused property (custom_components/carburants_france/sensor.py:132)
 _.extra_state_attributes  # unused property (custom_components/carburants_france/sensor.py:136)
+_.async_set_native_value  # unused method (custom_components/carburants_france/number.py:59)

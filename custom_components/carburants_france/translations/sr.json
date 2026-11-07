@@ -72,7 +72,11 @@
       "stations": { "name": "Станице" }
     },
     "binary_sensor": {
-      "in_stock": { "name": "{fuel} на стању" }
+      "in_stock": { "name": "{fuel} на стању" },
+      "low_price": { "name": "Ниска цена {fuel}" }
+    },
+    "number": {
+      "target_price": { "name": "Циљна цена {fuel}" }
     }
   },
   "services": {

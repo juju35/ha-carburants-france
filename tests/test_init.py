@@ -1236,3 +1236,42 @@ async def test_entry_rename_renames_device(hass, aioclient_mock, entry):
     assert device.name == "Maison"
     assert hass.states.get("sensor.carburants_stations").attributes["friendly_name"] == "Maison Stations"
     assert len(aioclient_mock.mock_calls) == calls
+
+
+async def test_target_price_and_low_price(hass, aioclient_mock, entry):
+    """The Low price sensor turns on once the best price is at or below the target set on its number."""
+    await _setup(hass, aioclient_mock, entry)
+    low = "binary_sensor.carburants_low_price_gazole"
+    target = "number.carburants_target_price_gazole"
+    assert hass.states.get(low).state == "off"
+    assert hass.states.get(target).state == "unknown"
+
+    await hass.services.async_call("number", "set_value", {"entity_id": target, "value": 2.2}, blocking=True)
+    await hass.async_block_till_done()
+    assert hass.states.get(low).state == "off"
+    assert hass.states.get(low).attributes["target"] == 2.2
+
+    await hass.services.async_call("number", "set_value", {"entity_id": target, "value": 2.25}, blocking=True)
+    await hass.async_block_till_done()
+    state = hass.states.get(low)
+    assert state.state == "on"
+    assert state.attributes["price"] == 2.25
+    assert state.attributes["station_name"] == "Leclerc Rennes"
+
+
+async def test_trend_from_daily_statistics(hass):
+    from unittest.mock import patch as _patch
+
+    from custom_components.carburants_france.sensor import async_trend
+
+    assert await async_trend(hass, "sensor.x") == {}
+    hass.config.components.add("recorder")
+    rows = [{"mean": 2.30, "min": 2.25, "max": 2.35}, {"mean": 2.20, "min": None, "max": 2.21}, {"mean": None}]
+
+    class _Recorder:
+        async def async_add_executor_job(self, func, *args):
+            return {"sensor.x": rows}
+
+    with _patch("homeassistant.components.recorder.get_instance", return_value=_Recorder()):
+        trend = await async_trend(hass, "sensor.x")
+    assert trend == {"average_30d": 2.25, "lowest_30d": 2.25, "highest_30d": 2.35}
