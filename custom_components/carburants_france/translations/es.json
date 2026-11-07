@@ -34,12 +34,14 @@
           "stations": "Estaciones seguidas",
           "add_stations": "Añadir estaciones",
           "rename_stations": "Renombrar estaciones",
-          "scan_interval": "Intervalo de actualización"
+          "scan_interval": "Intervalo de actualización",
+          "max_price_age": "Antigüedad máxima del precio"
         },
         "data_description": {
           "stations": "Desmarca una estación para dejar de seguirla.",
           "rename_stations": "Pon tus propios nombres a las estaciones en el siguiente paso.",
-          "scan_interval": "Los datos del Gobierno se actualizan cada 10 minutos."
+          "scan_interval": "Los datos del Gobierno se actualizan cada 10 minutos.",
+          "max_price_age": "Los precios no actualizados desde hace más días que este valor se excluyen del mejor precio, del sensor de precio bajo y de la tendencia de 30 días."
         }
       },
       "names": {

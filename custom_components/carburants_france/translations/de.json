@@ -34,12 +34,14 @@
           "stations": "Beobachtete Tankstellen",
           "add_stations": "Tankstellen hinzufügen",
           "rename_stations": "Tankstellen umbenennen",
-          "scan_interval": "Aktualisierungsintervall"
+          "scan_interval": "Aktualisierungsintervall",
+          "max_price_age": "Maximales Preisalter"
         },
         "data_description": {
           "stations": "Deaktiviere eine Tankstelle, um sie nicht mehr zu beobachten.",
           "rename_stations": "Gib den Tankstellen im nächsten Schritt eigene Namen.",
-          "scan_interval": "Der Datenfeed der Regierung wird alle 10 Minuten aktualisiert."
+          "scan_interval": "Der Datenfeed der Regierung wird alle 10 Minuten aktualisiert.",
+          "max_price_age": "Preise, die länger als so viele Tage nicht aktualisiert wurden, zählen nicht für den besten Preis, den Niedrigpreis-Sensor und den 30-Tage-Trend."
         }
       },
       "names": {

@@ -34,12 +34,14 @@
           "stations": "Gevolgde tankstations",
           "add_stations": "Tankstations toevoegen",
           "rename_stations": "Tankstations hernoemen",
-          "scan_interval": "Update-interval"
+          "scan_interval": "Update-interval",
+          "max_price_age": "Maximale prijsleeftijd"
         },
         "data_description": {
           "stations": "Vink een tankstation uit om het niet meer te volgen.",
           "rename_stations": "Geef de tankstations je eigen namen, in de volgende stap.",
-          "scan_interval": "De overheidsfeed wordt elke 10 minuten bijgewerkt."
+          "scan_interval": "De overheidsfeed wordt elke 10 minuten bijgewerkt.",
+          "max_price_age": "Prijzen die langer dan dit aantal dagen niet zijn bijgewerkt, tellen niet mee voor de beste prijs, de lage-prijssensor en de trend over 30 dagen."
         }
       },
       "names": {

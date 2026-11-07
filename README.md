@@ -83,6 +83,7 @@ Options (**Configure** button):
 | Add stations | — | Runs the search again to add stations |
 | Rename stations | — | Next step: one name per station, empty to keep the automatic name |
 | Update interval | 15 min | Minimum 5 min: the government feed is updated every 10 minutes |
+| Maximum price age | 7 days | Prices the station has not updated for more days than this are left out of the best price, the low price sensor and the 30-day trend (1 to 90 days) |
 
 Several entries are possible, for example one around your home and one along your commute.
 
@@ -92,9 +93,9 @@ Each station is a device, named after its brand and town (can be renamed in Home
 
 | Entity | Example | Description |
 |---|---|---|
-| Price | `sensor.leclerc_rennes_gazole` | Price in €/L. Unknown during a shortage. Attributes: update date, shortage, address, distance |
+| Price | `sensor.leclerc_rennes_gazole` | Price in €/L. Unknown during a shortage. Attributes: update date, `age_days` (whole days since that update), `stale` (older than the maximum price age), shortage, address, distance |
 | In stock | `binary_sensor.leclerc_rennes_gazole_in_stock` (`binary_sensor.leclerc_rennes_gazole_disponible`) | On when the fuel is available. Attributes: shortage type (`temporaire`, `definitive`) and start date |
-| Best price | `sensor.carburants_best_price_gazole` (`sensor.carburants_meilleur_prix_gazole`) | Lowest price across the stations where the fuel is available, with the station as attributes, and from the recorder's daily statistics of the last 30 days: `average_30d`, `lowest_30d`, `highest_30d` and `change_30d` (today's best price minus the average: negative when cheaper than usual) |
+| Best price | `sensor.carburants_best_price_gazole` (`sensor.carburants_meilleur_prix_gazole`) | Lowest price across the stations where the fuel is available and its price is not older than the maximum price age, with the station and `age_days` as attributes, and from the recorder's daily statistics of the last 30 days: `average_30d`, `lowest_30d`, `highest_30d` and `change_30d` (today's best price minus the average: negative when cheaper than usual) |
 | Target price | `number.carburants_target_price_gazole` (`number.carburants_prix_cible_gazole`) | The price (€/L) under which the fuel counts as cheap. Unknown until you set it, kept across restarts |
 | Low price | `binary_sensor.carburants_low_price_gazole` (`binary_sensor.carburants_prix_bas_gazole`) | On while the best price is at or below the target price (off without a target). Attributes: `target`, `price`, `station_name`, `station_id` |
 | Stations | `sensor.carburants_stations` | Number of followed stations, all the data as attributes (used by the cards) |
@@ -125,7 +126,7 @@ type: custom:carburants-france-card
 | `show_brand` | `true` | Brand in full, before the address ("Total Access", "TotalEnergies"…) |
 | `show_address` | `true` | Address and town |
 | `show_distance` | `true` | Distance from home |
-| `show_hours` | `true` | Open, closed, 24/7 or 24/7 automatic pump, with the closing or opening time |
+| `show_hours` | `true` | Open, closed, 24/7 or 24/7 automatic pump, with the closing or opening time, in the station's local time (mainland France, or the overseas department's time zone) |
 | `show_updated` | `true` | Age of each price |
 | `show_out_of_stock` | `true` | Show fuels in temporary shortage |
 | `highlight_best` | `true` | Best price of each fuel in green with a star |

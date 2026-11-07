@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.11.0';
+var CARBURANTS_CARD_VERSION = '1.12.0';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -1588,20 +1588,61 @@ function carbMinutes(hhmm) {
   return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10);
 }
 
-// Short weekday name in the card's locale ("lun.", "Mon", "Mo", "lun").
+// Short weekday name in the card's locale ("lun.", "Mon", "Mo", "lun"), of a date given as UTC noon.
 function carbWeekday(date, locale) {
   try {
-    return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date);
+    return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(date);
   } catch (_e) {
-    return new Intl.DateTimeFormat('en', { weekday: 'short' }).format(date);
+    return new Intl.DateTimeFormat('en', { weekday: 'short', timeZone: 'UTC' }).format(date);
   }
+}
+
+// Opening hours are the station's local time: overseas departments by postcode, else mainland France
+// (Corsica included), whatever the browser's time zone.
+var CARBURANTS_OVERSEAS_ZONES = {
+  971: 'America/Guadeloupe',
+  972: 'America/Martinique',
+  973: 'America/Cayenne',
+  974: 'Indian/Reunion',
+  975: 'America/Miquelon',
+  976: 'Indian/Mayotte',
+};
+var CARBURANTS_WEEKDAYS = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+
+function carbStationZone(station) {
+  return CARBURANTS_OVERSEAS_ZONES[String(station?.postcode || '').slice(0, 3)] || 'Europe/Paris';
+}
+
+// Day of the week (Monday = 1), minutes since midnight and date of `now` in the station's time zone.
+function carbStationTime(station, now) {
+  var p = {};
+  try {
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: carbStationZone(station),
+      hourCycle: 'h23',
+      weekday: 'short',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+    }).formatToParts(now).forEach((part) => { p[part.type] = part.value; });
+  } catch (_e) {
+    p = {};
+  }
+  if (!CARBURANTS_WEEKDAYS[p.weekday]) {
+    // No time zone data: the browser's clock.
+    return { day: now.getDay() === 0 ? 7 : now.getDay(), minutes: now.getHours() * 60 + now.getMinutes(), y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() };
+  }
+  return { day: CARBURANTS_WEEKDAYS[p.weekday], minutes: (parseInt(p.hour, 10) % 24) * 60 + parseInt(p.minute, 10), y: +p.year, m: +p.month, d: +p.day };
 }
 
 // Opening status from the feed's weekly hours: { key: open|closed|always|automate, text }.
 function carbOpening(station, t, now, locale) {
   var hours = station.hours || [];
-  var day = now.getDay() === 0 ? 7 : now.getDay();
-  var minutes = now.getHours() * 60 + now.getMinutes();
+  var local = carbStationTime(station, now);
+  var day = local.day;
+  var minutes = local.minutes;
   var always = hours.length === 7 && hours.every((d) => !d.closed && d.ranges.some((r) => r[0] === '00:00' && carbMinutes(r[1]) >= 23 * 60 + 59));
   if (always) return { key: 'always', text: t.always_open };
   var today = hours.filter((d) => d.day === day)[0];
@@ -1636,7 +1677,7 @@ function carbOpening(station, t, now, locale) {
     if (d && !d.closed && d.ranges.length) {
       var start = d.ranges[0][0];
       if (k === 1) return { key: 'closed', text: `${t.closed} · ${t.opens_at} ${start}` };
-      var dayName = carbWeekday(new Date(now.getFullYear(), now.getMonth(), now.getDate() + k), locale);
+      var dayName = carbWeekday(new Date(Date.UTC(local.y, local.m - 1, local.d + k, 12)), locale);
       var opens = t.opens_on ? t.opens_on.replace('{d}', dayName).replace('{t}', start) : `${t.opens_at} ${dayName} ${start}`;
       return { key: 'closed', text: `${t.closed} · ${opens}` };
     }
@@ -1962,7 +2003,7 @@ class CarburantsFranceCard extends HTMLElement {
   }
 
   _renderDetails(s, t, now) {
-    var today = now.getDay() === 0 ? 7 : now.getDay();
+    var today = carbStationTime(s, now).day;
     var rows = (s.hours || []).map((d) => {
       var value = d.closed || !d.ranges.length
         ? t.closed

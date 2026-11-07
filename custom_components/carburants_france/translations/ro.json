@@ -34,12 +34,14 @@
           "stations": "Stații urmărite",
           "add_stations": "Adaugă stații",
           "rename_stations": "Redenumește stațiile",
-          "scan_interval": "Interval de actualizare"
+          "scan_interval": "Interval de actualizare",
+          "max_price_age": "Vechimea maximă a prețurilor"
         },
         "data_description": {
           "stations": "Debifați o stație pentru a nu o mai urmări.",
           "rename_stations": "Dați stațiilor propriile nume, în pasul următor.",
-          "scan_interval": "Fluxul guvernamental este actualizat la fiecare 10 minute."
+          "scan_interval": "Fluxul guvernamental este actualizat la fiecare 10 minute.",
+          "max_price_age": "Prețurile neactualizate de mai multe zile decât această valoare sunt excluse din cel mai bun preț, senzorul de preț scăzut și tendința pe 30 de zile."
         }
       },
       "names": {

@@ -34,12 +34,14 @@
           "stations": "Spremljane postaje",
           "add_stations": "Dodaj postaje",
           "rename_stations": "Preimenuj postaje",
-          "scan_interval": "Interval posodabljanja"
+          "scan_interval": "Interval posodabljanja",
+          "max_price_age": "Največja starost cen"
         },
         "data_description": {
           "stations": "Odznačite postajo, če je ne želite več spremljati.",
           "rename_stations": "V naslednjem koraku postajam dajte svoja imena.",
-          "scan_interval": "Vladni vir podatkov se posodablja vsakih 10 minut."
+          "scan_interval": "Vladni vir podatkov se posodablja vsakih 10 minut.",
+          "max_price_age": "Cene, ki niso bile posodobljene več dni od te vrednosti, niso upoštevane pri najboljši ceni, senzorju nizke cene in 30-dnevnem trendu."
         }
       },
       "names": {

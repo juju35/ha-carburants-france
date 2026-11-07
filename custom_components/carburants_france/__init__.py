@@ -248,6 +248,10 @@ def _async_drop_ai_options(hass: HomeAssistant, entry: CarburantsConfigEntry) ->
     hass.config_entries.async_update_entry(entry, options=options)
 
 
+# unique_id suffixes of the entry's own entities for one fuel ({entry_id}_{fuel}_{kind}).
+FUEL_ENTITY_KINDS = ("best", "low_price", "target")
+
+
 def _async_remove_orphans(hass: HomeAssistant, entry: CarburantsConfigEntry) -> None:
     """Drop the entities and devices of stations and fuels no longer followed."""
     entry_id = entry.entry_id
@@ -259,7 +263,12 @@ def _async_remove_orphans(hass: HomeAssistant, entry: CarburantsConfigEntry) -> 
         if parsed:
             orphan = parsed[0] not in stations or parsed[1] not in fuels
         else:
-            orphan = any(reg_entry.unique_id == f"{entry_id}_{fuel}_best" for fuel in set(FUELS) - fuels)
+            # Per-fuel entities of the entry: best price, low price, target price.
+            orphan = any(
+                reg_entry.unique_id == f"{entry_id}_{fuel}_{kind}"
+                for fuel in set(FUELS) - fuels
+                for kind in FUEL_ENTITY_KINDS
+            )
         if orphan:
             entity_registry.async_remove(reg_entry.entity_id)
     device_registry = dr.async_get(hass)
