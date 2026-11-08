@@ -1280,6 +1280,25 @@ async def test_target_price_and_low_price(hass, aioclient_mock, entry):
     assert state.attributes["station_name"] == "Leclerc Rennes"
 
 
+async def test_target_price_available_during_outage(hass, aioclient_mock, entry):
+    """The target price is a setting: it stays available and settable while the feed is down."""
+    await _setup(hass, aioclient_mock, entry)
+    target = "number.carburants_target_price_gazole"
+    await hass.services.async_call("number", "set_value", {"entity_id": target, "value": 2.2}, blocking=True)
+
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(API_RECORDS, status=500, text="boom")
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert not entry.runtime_data.last_update_success
+    assert hass.states.get("sensor.carburants_best_price_gazole").state == "unavailable"
+    assert hass.states.get(target).state == "2.2"
+
+    await hass.services.async_call("number", "set_value", {"entity_id": target, "value": 2.1}, blocking=True)
+    await hass.async_block_till_done()
+    assert hass.states.get(target).state == "2.1"
+
+
 async def test_trend_from_daily_statistics(hass):
     from unittest.mock import patch as _patch
 

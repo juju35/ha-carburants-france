@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.1 (2026-11-08)
+
+### Fixes
+- The Target price entities stay available and settable while the fuel price feed is down.
+- List and mini cards with `language: auto` follow a change of the Home Assistant language without a page reload.
+
 ## 1.12.0 (2026-11-07)
 
 ### Changes

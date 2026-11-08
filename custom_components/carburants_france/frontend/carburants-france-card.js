@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.12.0';
+var CARBURANTS_CARD_VERSION = '1.12.1';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -1731,6 +1731,7 @@ class CarburantsFranceCard extends HTMLElement {
     this._expandedId = this._expandedId || null;
     // Read the current state now: a config change must redraw at once, not at the next hass update.
     this._lastState = this._hass && this._entityId() ? this._hass.states[this._entityId()] || null : null;
+    this._renderedLocale = this._hass ? carbLocale(this._hass, this._config.language) : undefined;
     if (this._hass) this._render();
   }
 
@@ -1740,9 +1741,12 @@ class CarburantsFranceCard extends HTMLElement {
     var entityId = this._entityId();
     var st = entityId ? hass.states[entityId] : null;
     var dark = !!hass.themes?.darkMode;
-    if (first || st !== this._lastState || dark !== this._darkMode) {
+    // language: auto follows the Home Assistant language (and region, for numbers), which can change without a reload.
+    var locale = carbLocale(hass, this._config?.language);
+    if (first || st !== this._lastState || dark !== this._darkMode || locale !== this._renderedLocale) {
       this._lastState = st;
       this._darkMode = dark;
+      this._renderedLocale = locale;
       this._render();
     }
   }
