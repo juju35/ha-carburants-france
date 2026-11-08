@@ -34,12 +34,14 @@
           "stations": "Izsekotās stacijas",
           "add_stations": "Pievienot stacijas",
           "rename_stations": "Pārdēvēt stacijas",
-          "scan_interval": "Atjaunināšanas intervāls"
+          "scan_interval": "Atjaunināšanas intervāls",
+          "max_price_age": "Maksimālais cenu vecums"
         },
         "data_description": {
           "stations": "Noņemiet atzīmi no stacijas, lai pārtrauktu tās izsekošanu.",
           "rename_stations": "Nākamajā solī piešķiriet stacijām savus nosaukumus.",
-          "scan_interval": "Valdības datu plūsma tiek atjaunināta ik pēc 10 minūtēm."
+          "scan_interval": "Valdības datu plūsma tiek atjaunināta ik pēc 10 minūtēm.",
+          "max_price_age": "Cenas, kas nav atjauninātas ilgāk par šo dienu skaitu, netiek ņemtas vērā labākajā cenā, zemās cenas sensorā un 30 dienu tendencē."
         }
       },
       "names": {

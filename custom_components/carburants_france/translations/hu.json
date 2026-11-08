@@ -34,12 +34,14 @@
           "stations": "Követett töltőállomások",
           "add_stations": "Töltőállomások hozzáadása",
           "rename_stations": "Töltőállomások átnevezése",
-          "scan_interval": "Frissítési időköz"
+          "scan_interval": "Frissítési időköz",
+          "max_price_age": "Árak maximális kora"
         },
         "data_description": {
           "stations": "Törölje egy töltőállomás jelölését, ha nem szeretné tovább követni.",
           "rename_stations": "Adjon saját nevet a töltőállomásoknak a következő lépésben.",
-          "scan_interval": "A kormányzati adatfolyam 10 percenként frissül."
+          "scan_interval": "A kormányzati adatfolyam 10 percenként frissül.",
+          "max_price_age": "Az ennél több napja nem frissített árak kimaradnak a legjobb árból, az alacsony ár érzékelőből és a 30 napos trendből."
         }
       },
       "names": {

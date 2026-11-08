@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "carburants_france"
-VERSION: Final = "1.11.0"
+VERSION: Final = "1.12.0"
 USER_AGENT: Final = f"ha-carburants-france/{VERSION} (+https://github.com/juju35/ha-carburants-france)"
 
 API_RECORDS: Final = (
@@ -47,6 +47,12 @@ MAX_RESULTS: Final = 50
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 DEFAULT_SCAN_INTERVAL: Final = 15
 MIN_SCAN_INTERVAL: Final = 5
+
+# Prices not updated for more days than this are left out of the best price (and so of the
+# low price sensor and the 30-day trend): a station that stopped reporting is not the cheapest.
+CONF_MAX_PRICE_AGE: Final = "max_price_age"
+DEFAULT_MAX_PRICE_AGE: Final = 7
+MAX_MAX_PRICE_AGE: Final = 90
 
 # Keys of a stored station (entry options).
 ST_ID: Final = "id"

@@ -28,6 +28,7 @@ from .brands import BrandLookupError, async_enrich, async_lookup_logos
 from .const import (
     CONF_ADD_STATIONS,
     CONF_FUELS,
+    CONF_MAX_PRICE_AGE,
     CONF_QUERY,
     CONF_RADIUS,
     CONF_RENAME_STATIONS,
@@ -35,11 +36,13 @@ from .const import (
     CONF_SEARCH_AGAIN,
     CONF_STATIONS,
     DEFAULT_FUELS,
+    DEFAULT_MAX_PRICE_AGE,
     DEFAULT_RADIUS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     FUELS,
     LOGO_VERSION,
+    MAX_MAX_PRICE_AGE,
     MAX_RESULTS,
     MIN_SCAN_INTERVAL,
     ST_BRAND,
@@ -258,6 +261,7 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
     """Change fuels, remove, add or rename stations, polling interval."""
 
     _scan_interval: int = DEFAULT_SCAN_INTERVAL
+    _max_price_age: int = DEFAULT_MAX_PRICE_AGE
     _rename: bool = False
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -272,11 +276,13 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
             CONF_ADD_STATIONS: False,
             CONF_RENAME_STATIONS: False,
             CONF_SCAN_INTERVAL: options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+            CONF_MAX_PRICE_AGE: options.get(CONF_MAX_PRICE_AGE, DEFAULT_MAX_PRICE_AGE),
         }
         if user_input is not None:
             fuels = [f for f in user_input.get(CONF_FUELS, []) if f in FUELS]
             kept = {int(v) for v in user_input.get(CONF_STATIONS, [])}
             self._scan_interval = int(user_input[CONF_SCAN_INTERVAL])
+            self._max_price_age = int(user_input.get(CONF_MAX_PRICE_AGE, DEFAULT_MAX_PRICE_AGE))
             self._rename = bool(user_input.get(CONF_RENAME_STATIONS))
             self._init_picker(fuels, [s for s in current if int(s[ST_ID]) in kept])
             if not fuels:
@@ -293,6 +299,7 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
                 CONF_ADD_STATIONS: bool(user_input.get(CONF_ADD_STATIONS)),
                 CONF_RENAME_STATIONS: self._rename,
                 CONF_SCAN_INTERVAL: self._scan_interval,
+                CONF_MAX_PRICE_AGE: self._max_price_age,
             }
 
         self._init_picker(list(options.get(CONF_FUELS, DEFAULT_FUELS)), current)
@@ -308,6 +315,11 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
                 vol.Required(CONF_SCAN_INTERVAL, default=shown[CONF_SCAN_INTERVAL]): NumberSelector(
                     NumberSelectorConfig(
                         min=MIN_SCAN_INTERVAL, max=240, step=1, unit_of_measurement="min", mode=NumberSelectorMode.BOX
+                    )
+                ),
+                vol.Required(CONF_MAX_PRICE_AGE, default=shown[CONF_MAX_PRICE_AGE]): NumberSelector(
+                    NumberSelectorConfig(
+                        min=1, max=MAX_MAX_PRICE_AGE, step=1, unit_of_measurement="d", mode=NumberSelectorMode.BOX
                     )
                 ),
             }
@@ -349,5 +361,6 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
                 CONF_FUELS: self._fuels,
                 CONF_STATIONS: list(self._selected.values()),
                 CONF_SCAN_INTERVAL: self._scan_interval,
+                CONF_MAX_PRICE_AGE: self._max_price_age,
             }
         )

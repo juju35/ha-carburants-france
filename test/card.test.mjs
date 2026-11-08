@@ -69,7 +69,8 @@ test('getCardSize counts the stations shown, max_stations and the footer', () =>
 
 // Weekly hours, Monday = 1 … Sunday = 7; days not listed are closed.
 const week = (spec) => [1, 2, 3, 4, 5, 6, 7].map((day) => (spec[day] ? { day, closed: false, ranges: spec[day] } : { day, closed: true, ranges: [] }));
-const at = (iso) => new Date(iso); // local time; 2026-10-29 is a Thursday
+// Station local time in mainland France (UTC+1 in winter), whatever the test machine's zone; 2026-10-29 is a Thursday.
+const at = (iso) => new Date(`${iso}+01:00`);
 const en = () => context.CarburantsI18n.en;
 context.carbPlural = context.carb.carbPlural;
 
@@ -86,6 +87,20 @@ test('carbOpening: a range crossing midnight is open in the small hours of the n
   const sunNight = { hours: week({ 7: [['20:00', '00:00']], 1: [['06:00', '12:00']] }) };
   assert.equal(carbOpening(sunNight, en(), at('2026-11-01T21:00:00'), 'en').key, 'open');
   assert.equal(carbOpening(sunNight, en(), at('2026-11-02T00:30:00'), 'en').key, 'closed');
+});
+
+test('carbOpening uses the station time zone, not the browser clock', () => {
+  // Every day 07:00 → 08:00. 06:30 UTC on Thursday 2026-10-29 is 07:30 in Rennes, 10:30 in Réunion.
+  const hours = week({ 1: [['07:00', '08:00']], 2: [['07:00', '08:00']], 3: [['07:00', '08:00']], 4: [['07:00', '08:00']], 5: [['07:00', '08:00']] });
+  const utc = new Date('2026-10-29T06:30:00Z');
+  assert.equal(carbOpening({ hours, postcode: '35000' }, en(), utc, 'en').key, 'open');
+  assert.equal(carbOpening({ hours, postcode: '20000' }, en(), utc, 'en').key, 'open');
+  assert.equal(carbOpening({ hours, postcode: '97400' }, en(), utc, 'en').text, 'Closed · opens at 07:00');
+  // 03:00 UTC on Thursday is still Wednesday 23:00 in Guadeloupe: next opening is Thursday's, not Friday's.
+  const guadeloupe = { hours: week({ 4: [['07:00', '08:00']] }), postcode: '97110' };
+  assert.equal(carbOpening(guadeloupe, en(), new Date('2026-10-29T03:00:00Z'), 'en').text, 'Closed · opens at 07:00');
+  // Summer time in mainland France: 05:30 UTC on Friday 2026-07-03 is 07:30.
+  assert.equal(carbOpening({ hours, postcode: '75001' }, en(), new Date('2026-07-03T05:30:00Z'), 'en').key, 'open');
 });
 
 test('carbOpening names the next opening day in the card locale', () => {

@@ -34,12 +34,14 @@
           "stations": "Sledované stanice",
           "add_stations": "Pridať stanice",
           "rename_stations": "Premenovať stanice",
-          "scan_interval": "Interval aktualizácie"
+          "scan_interval": "Interval aktualizácie",
+          "max_price_age": "Maximálny vek cien"
         },
         "data_description": {
           "stations": "Zrušte označenie stanice, ak ju už nechcete sledovať.",
           "rename_stations": "V ďalšom kroku dajte staniciam vlastné názvy.",
-          "scan_interval": "Vládny zdroj údajov sa aktualizuje každých 10 minút."
+          "scan_interval": "Vládny zdroj údajov sa aktualizuje každých 10 minút.",
+          "max_price_age": "Ceny neaktualizované dlhšie ako tento počet dní sa nezapočítavajú do najlepšej ceny, senzora nízkej ceny ani 30-dňového trendu."
         }
       },
       "names": {

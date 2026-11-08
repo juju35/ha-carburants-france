@@ -34,12 +34,14 @@
           "stations": "Followed stations",
           "add_stations": "Add stations",
           "rename_stations": "Rename stations",
-          "scan_interval": "Update interval"
+          "scan_interval": "Update interval",
+          "max_price_age": "Maximum price age"
         },
         "data_description": {
           "stations": "Untick a station to stop following it.",
           "rename_stations": "Give the stations your own names, in the next step.",
-          "scan_interval": "The government feed is updated every 10 minutes."
+          "scan_interval": "The government feed is updated every 10 minutes.",
+          "max_price_age": "Prices not updated for more days than this are left out of the best price, the low price sensor and the 30-day trend."
         }
       },
       "names": {

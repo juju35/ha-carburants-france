@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -11,13 +11,16 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import CarburantsApi, CarburantsError, distance_km, empty_fuel, sold_fuels
 from .const import (
     CONF_FUELS,
+    CONF_MAX_PRICE_AGE,
     CONF_SCAN_INTERVAL,
     CONF_STATIONS,
     DEFAULT_FUELS,
+    DEFAULT_MAX_PRICE_AGE,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     FUELS,
@@ -50,6 +53,22 @@ def parse_station_unique_id(entry_id: str, unique_id: str | None) -> tuple[int, 
     if len(parts) == 3 and parts[0].isdigit() and parts[1] in FUELS:
         return int(parts[0]), parts[1], parts[2]
     return None
+
+
+def price_age_days(fuel: dict[str, Any], now: datetime | None = None) -> float | None:
+    """Days since the price was last updated by the station, or None when the feed gives no date."""
+    updated = dt_util.parse_datetime(fuel.get("updated") or "")
+    if updated is None:
+        return None
+    if updated.tzinfo is None:
+        updated = updated.replace(tzinfo=UTC)
+    return max(0.0, ((now or dt_util.utcnow()) - updated).total_seconds() / 86400)
+
+
+def is_stale(fuel: dict[str, Any], max_days: float, now: datetime | None = None) -> bool:
+    """The price was last updated more than max_days ago (a price without a date is not stale)."""
+    age = price_age_days(fuel, now)
+    return age is not None and age > max_days
 
 
 def pretty_city(city: str) -> str:
@@ -147,6 +166,11 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
         self.registered_fuels: set[tuple[int, str]] = self._registered_fuels()
         self.known_fuels: set[tuple[int, str]] = set(self.registered_fuels)
 
+    @property
+    def max_price_age(self) -> int:
+        """Read from the options each time: changing it applies without reloading the entry."""
+        return int(self.config_entry.options.get(CONF_MAX_PRICE_AGE, DEFAULT_MAX_PRICE_AGE))
+
     def _registered_fuels(self) -> set[tuple[int, str]]:
         known = set()
         entry_id = self.config_entry.entry_id
@@ -227,11 +251,14 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
         return data
 
     def best(self, fuel: str) -> dict[str, Any] | None:
-        """The followed station selling this fuel cheapest right now."""
+        """The followed station selling this fuel cheapest right now, among prices updated recently."""
+        now = dt_util.utcnow()
         offers = [
             (s["fuels"][fuel]["price"], s)
             for s in (self.data or {}).values()
-            if fuel in s["fuels"] and s["fuels"][fuel]["available"]
+            if fuel in s["fuels"]
+            and s["fuels"][fuel]["available"]
+            and not is_stale(s["fuels"][fuel], self.max_price_age, now)
         ]
         if not offers:
             return None

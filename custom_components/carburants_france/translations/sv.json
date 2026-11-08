@@ -34,12 +34,14 @@
           "stations": "Följda stationer",
           "add_stations": "Lägg till stationer",
           "rename_stations": "Byt namn på stationer",
-          "scan_interval": "Uppdateringsintervall"
+          "scan_interval": "Uppdateringsintervall",
+          "max_price_age": "Maximal prisålder"
         },
         "data_description": {
           "stations": "Avmarkera en station för att sluta följa den.",
           "rename_stations": "Ge stationerna egna namn i nästa steg.",
-          "scan_interval": "Regeringens dataflöde uppdateras var 10:e minut."
+          "scan_interval": "Regeringens dataflöde uppdateras var 10:e minut.",
+          "max_price_age": "Priser som inte uppdaterats på fler dagar än så räknas inte med i bästa pris, lågprissensorn och 30-dagarstrenden."
         }
       },
       "names": {

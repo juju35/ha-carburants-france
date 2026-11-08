@@ -34,12 +34,14 @@
           "stations": "Fulgte tankstationer",
           "add_stations": "Tilføj tankstationer",
           "rename_stations": "Omdøb tankstationer",
-          "scan_interval": "Opdateringsinterval"
+          "scan_interval": "Opdateringsinterval",
+          "max_price_age": "Maksimal prisalder"
         },
         "data_description": {
           "stations": "Fjern markeringen af en tankstation for at stoppe med at følge den.",
           "rename_stations": "Giv tankstationerne dine egne navne i næste trin.",
-          "scan_interval": "Regeringens datafeed opdateres hvert 10. minut."
+          "scan_interval": "Regeringens datafeed opdateres hvert 10. minut.",
+          "max_price_age": "Priser, der ikke er opdateret i flere dage end dette, tæller ikke med i bedste pris, lavpris-sensoren og 30-dages-tendensen."
         }
       },
       "names": {

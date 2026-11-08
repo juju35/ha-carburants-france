@@ -34,12 +34,14 @@
           "stations": "Praćene stanice",
           "add_stations": "Dodaj stanice",
           "rename_stations": "Preimenuj stanice",
-          "scan_interval": "Interval ažuriranja"
+          "scan_interval": "Interval ažuriranja",
+          "max_price_age": "Maksimalna starost cena"
         },
         "data_description": {
           "stations": "Uklonite oznaku sa stanice da biste prestali da je pratite.",
           "rename_stations": "Dajte stanicama sopstvene nazive u sledećem koraku.",
-          "scan_interval": "Državni izvor podataka se ažurira svakih 10 minuta."
+          "scan_interval": "Državni izvor podataka se ažurira svakih 10 minuta.",
+          "max_price_age": "Cene koje nisu ažurirane duže od ovog broja dana izostavljaju se iz najbolje cene, senzora niske cene i trenda za 30 dana."
         }
       },
       "names": {

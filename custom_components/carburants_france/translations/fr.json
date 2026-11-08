@@ -34,12 +34,14 @@
           "stations": "Stations suivies",
           "add_stations": "Ajouter des stations",
           "rename_stations": "Renommer les stations",
-          "scan_interval": "Intervalle de mise à jour"
+          "scan_interval": "Intervalle de mise à jour",
+          "max_price_age": "Âge maximal des prix"
         },
         "data_description": {
           "stations": "Décochez une station pour ne plus la suivre.",
           "rename_stations": "Donnez votre propre nom aux stations, à l'étape suivante.",
-          "scan_interval": "Les données sont mises à jour toutes les 10 minutes côté État."
+          "scan_interval": "Les données sont mises à jour toutes les 10 minutes côté État.",
+          "max_price_age": "Les prix non mis à jour depuis plus de jours que cela sont exclus du meilleur prix, du capteur prix bas et de la tendance sur 30 jours."
         }
       },
       "names": {

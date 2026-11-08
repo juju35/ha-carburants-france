@@ -12,7 +12,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN, FUELS
-from .coordinator import CarburantsConfigEntry, CarburantsCoordinator
+from .coordinator import CarburantsConfigEntry, CarburantsCoordinator, is_stale, price_age_days
 from .entity import StationFuelEntity, async_track_station_entities, entry_device
 
 if TYPE_CHECKING:
@@ -74,6 +74,12 @@ def _station_attributes(station: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _age_days(fuel: dict[str, Any]) -> int | None:
+    """Whole days since the price was last updated."""
+    age = price_age_days(fuel)
+    return None if age is None else int(age)
+
+
 def card_station(station: dict[str, Any], fuels: list[str]) -> dict[str, Any]:
     """A station as the cards read it (Stations sensor, nearby search)."""
     return {
@@ -109,6 +115,9 @@ class FuelPriceSensor(StationFuelEntity, SensorEntity):
         return {
             "fuel": FUELS[self.fuel],
             "updated": fuel.get("updated"),
+            "age_days": _age_days(fuel),
+            # Older than the "maximum price age" option: left out of the best price.
+            "stale": is_stale(fuel, self.coordinator.max_price_age),
             "in_stock": bool(fuel.get("available")),
             "rupture": fuel.get("rupture"),
             "rupture_since": fuel.get("rupture_since"),
@@ -164,6 +173,7 @@ class BestPriceSensor(CoordinatorEntity[CarburantsCoordinator], SensorEntity):
         return {
             "fuel": FUELS[self.fuel],
             "updated": best["fuels"][self.fuel]["updated"],
+            "age_days": _age_days(best["fuels"][self.fuel]),
             **_station_attributes(best),
             **trend,
         }

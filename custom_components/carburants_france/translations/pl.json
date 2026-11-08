@@ -34,12 +34,14 @@
           "stations": "Obserwowane stacje",
           "add_stations": "Dodaj stacje",
           "rename_stations": "Zmień nazwy stacji",
-          "scan_interval": "Interwał aktualizacji"
+          "scan_interval": "Interwał aktualizacji",
+          "max_price_age": "Maksymalny wiek ceny"
         },
         "data_description": {
           "stations": "Odznacz stację, aby przestać ją obserwować.",
           "rename_stations": "Nadaj stacjom własne nazwy w następnym kroku.",
-          "scan_interval": "Rządowe dane są aktualizowane co 10 minut."
+          "scan_interval": "Rządowe dane są aktualizowane co 10 minut.",
+          "max_price_age": "Ceny nieaktualizowane dłużej niż tyle dni są pomijane w najlepszej cenie, czujniku niskiej ceny i trendzie 30-dniowym."
         }
       },
       "names": {

@@ -34,12 +34,14 @@
           "stations": "Stazioni seguite",
           "add_stations": "Aggiungi stazioni",
           "rename_stations": "Rinomina stazioni",
-          "scan_interval": "Intervallo di aggiornamento"
+          "scan_interval": "Intervallo di aggiornamento",
+          "max_price_age": "Età massima dei prezzi"
         },
         "data_description": {
           "stations": "Deseleziona una stazione per smettere di seguirla.",
           "rename_stations": "Dai alle stazioni i tuoi nomi, nel passaggio successivo.",
-          "scan_interval": "Il flusso governativo viene aggiornato ogni 10 minuti."
+          "scan_interval": "Il flusso governativo viene aggiornato ogni 10 minuti.",
+          "max_price_age": "I prezzi non aggiornati da più giorni di questo valore sono esclusi dal prezzo migliore, dal sensore prezzo basso e dalla tendenza a 30 giorni."
         }
       },
       "names": {

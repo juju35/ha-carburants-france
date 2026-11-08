@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.12.0 (2026-11-07)
+
+### Changes
+- **Maximum price age** option (7 days by default): a price the station has not updated for longer is left out of the best price, the low price sensor and the 30-day trend. Price sensors show its age (`age_days`) and whether it is too old (`stale`).
+
+### Fixes
+- Removing a fuel in the options also removes its Low price and Target price entities, instead of leaving them orphaned.
+- Cards: the open or closed status and today's hours use the station's local time (mainland France, or the overseas department's time zone), not the browser's clock.
+
 ## 1.11.0 (2026-11-07)
 
 ### Changes

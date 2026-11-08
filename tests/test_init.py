@@ -1,5 +1,6 @@
 """Tests for the Carburants France integration."""
 
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
@@ -16,7 +17,12 @@ from custom_components.carburants_france.const import API_RECORDS, DOMAIN, LOGO_
 from custom_components.carburants_france.coordinator import station_title, useful_osm_name
 from custom_components.carburants_france.registry_compat import device_entry_ids, get_device
 
-# Two real records from the feed (Rennes, October 2026), horaires shortened.
+# Price dates relative to now: older than the "maximum price age" option (7 days by default),
+# a price is left out of the best price.
+UPDATED_A = (dt_util.utcnow() - timedelta(days=1)).replace(microsecond=0).isoformat()
+UPDATED_B = (dt_util.utcnow() - timedelta(hours=3)).replace(microsecond=0).isoformat()
+
+# Two real records from the feed (Rennes, October 2026), horaires shortened and prices dated from now.
 HOURS_24 = (
     '{"@automate-24-24": "1", "jour": [{"@id": "1", "@nom": "Lundi", "@ferme": "", '
     '"horaire": {"@ouverture": "00.00", "@fermeture": "23.59"}}]}'
@@ -36,14 +42,14 @@ STATION_A = {
     "ville": "Rennes",
     "horaires": HOURS_24,
     "geom": {"lon": -1.685, "lat": 48.126},
-    "gazole_maj": "2026-09-25T08:23:31+00:00",
+    "gazole_maj": UPDATED_A,
     "gazole_prix": 2.399,
-    "sp95_maj": "2026-09-25T08:23:31+00:00",
+    "sp95_maj": UPDATED_A,
     "sp95_prix": 2.251,
     "e85_prix": None,
     "gplc_prix": None,
     "e10_prix": None,
-    "sp98_maj": "2026-09-25T08:23:31+00:00",
+    "sp98_maj": UPDATED_A,
     "sp98_prix": 2.3,
     "e10_rupture_debut": "2021-02-02T08:32:57+00:00",
     "e10_rupture_type": "definitive",
@@ -67,7 +73,7 @@ STATION_B = {
     "ville": "RENNES",
     "horaires": HOURS_DAY,
     "geom": {"lon": -1.6540071882226999, "lat": 48.098902183757},
-    "gazole_maj": "2026-10-16T19:40:07+00:00",
+    "gazole_maj": UPDATED_B,
     "gazole_prix": 2.25,
     "sp95_prix": None,
     "sp98_prix": None,
@@ -170,7 +176,7 @@ def test_parse_station():
     assert a["latitude"] == 48.126
     assert a["fuels"]["gazole"] == {
         "price": 2.399,
-        "updated": "2026-09-25T08:23:31+00:00",
+        "updated": UPDATED_A,
         "available": True,
         "rupture": None,
         "rupture_since": None,
@@ -704,7 +710,7 @@ def test_best_price_tie_prefers_known_distance():
         return {"station_id": sid, "distance": distance, "fuels": {"gazole": {"price": 1.75, "available": True}}}
 
     data = {"1": station(1, None), "2": station(2, 3.2)}
-    assert CarburantsCoordinator.best(SimpleNamespace(data=data), "gazole")["station_id"] == 2
+    assert CarburantsCoordinator.best(SimpleNamespace(data=data, max_price_age=7), "gazole")["station_id"] == 2
 
 
 async def test_community_brand_first(hass, aioclient_mock, entry, community_names):
@@ -1021,6 +1027,8 @@ async def test_unfollowed_station_and_fuel_removed(hass, aioclient_mock, entry):
     ent_reg = er.async_get(hass)
     dev_reg = dr.async_get(hass)
     assert ent_reg.async_get("sensor.totalenergies_rennes_sp98") is not None
+    assert ent_reg.async_get("binary_sensor.carburants_low_price_sp98") is not None
+    assert ent_reg.async_get("number.carburants_target_price_sp98") is not None
     result = await hass.config_entries.options.async_init(entry.entry_id)
     await hass.config_entries.options.async_configure(
         result["flow_id"],
@@ -1031,6 +1039,11 @@ async def test_unfollowed_station_and_fuel_removed(hass, aioclient_mock, entry):
     assert ent_reg.async_get("binary_sensor.totalenergies_rennes_gazole_in_stock") is None
     assert ent_reg.async_get("sensor.leclerc_rennes_sp98") is None
     assert ent_reg.async_get("sensor.carburants_best_price_sp98") is None
+    # The entry's other per-fuel entities go with the fuel too.
+    assert ent_reg.async_get("binary_sensor.carburants_low_price_sp98") is None
+    assert ent_reg.async_get("number.carburants_target_price_sp98") is None
+    assert ent_reg.async_get("binary_sensor.carburants_low_price_gazole") is not None
+    assert ent_reg.async_get("number.carburants_target_price_gazole") is not None
     assert ent_reg.async_get("sensor.leclerc_rennes_gazole") is not None
     assert ent_reg.async_get("sensor.carburants_best_price_gazole") is not None
     assert get_device(dev_reg, (DOMAIN, f"{entry.entry_id}_35000013"), entry.entry_id) is None
@@ -1170,7 +1183,14 @@ async def test_options_flow_error_keeps_input(hass, aioclient_mock, entry):
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        {"fuels": ["e10"], "stations": [], "add_stations": False, "rename_stations": True, "scan_interval": 45},
+        {
+            "fuels": ["e10"],
+            "stations": [],
+            "add_stations": False,
+            "rename_stations": True,
+            "scan_interval": 45,
+            "max_price_age": 3,
+        },
     )
     assert result["errors"] == {"base": "no_station"}
     defaults = {str(key): key.default() for key in result["data_schema"].schema}
@@ -1180,6 +1200,7 @@ async def test_options_flow_error_keeps_input(hass, aioclient_mock, entry):
         "add_stations": False,
         "rename_stations": True,
         "scan_interval": 45,
+        "max_price_age": 3,
     }
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
@@ -1275,3 +1296,66 @@ async def test_trend_from_daily_statistics(hass):
     with _patch("homeassistant.components.recorder.get_instance", return_value=_Recorder()):
         trend = await async_trend(hass, "sensor.x")
     assert trend == {"average_30d": 2.25, "lowest_30d": 2.25, "highest_30d": 2.35}
+
+
+async def test_stale_prices_left_out_of_best_price(hass, aioclient_mock, entry):
+    """A price older than the maximum price age is not the best price, nor a low price; its age is shown."""
+    stale = (dt_util.utcnow() - timedelta(days=10)).replace(microsecond=0).isoformat()
+    # Leclerc is cheaper but has not updated its Gazole price for 10 days.
+    hass.config.latitude, hass.config.longitude = 48.11, -1.68
+    aioclient_mock.get(API_RECORDS, json={"total_count": 2, "results": [STATION_A, {**STATION_B, "gazole_maj": stale}]})
+    assert await async_setup_component(hass, "http", {})
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    leclerc = hass.states.get("sensor.leclerc_rennes_gazole")
+    assert leclerc.state == "2.25"
+    assert leclerc.attributes["age_days"] == 10
+    assert leclerc.attributes["stale"] is True
+    assert hass.states.get("sensor.totalenergies_rennes_gazole").attributes["stale"] is False
+    best = hass.states.get("sensor.carburants_best_price_gazole")
+    assert best.state == "2.399"
+    assert best.attributes["station_name"] == "TotalEnergies Rennes"
+    assert best.attributes["age_days"] == 1
+
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": "number.carburants_target_price_gazole", "value": 2.3}, blocking=True
+    )
+    await hass.async_block_till_done()
+    assert hass.states.get("binary_sensor.carburants_low_price_gazole").state == "off"
+
+    # A longer maximum age applies without reloading the entry: Leclerc counts again.
+    calls = aioclient_mock.call_count
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "fuels": ["gazole", "sp98", "e10"],
+            "stations": ["35000013", "35000025"],
+            "add_stations": False,
+            "scan_interval": 15,
+            "max_price_age": 14,
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert entry.options["max_price_age"] == 14
+    assert aioclient_mock.call_count == calls
+    assert hass.states.get("sensor.carburants_best_price_gazole").state == "2.25"
+    assert hass.states.get("sensor.leclerc_rennes_gazole").attributes["stale"] is False
+    assert hass.states.get("binary_sensor.carburants_low_price_gazole").state == "on"
+
+
+def test_price_age():
+    from custom_components.carburants_france.coordinator import is_stale, price_age_days
+
+    now = dt_util.parse_datetime("2026-11-07T12:00:00+00:00")
+    assert price_age_days({"updated": "2026-11-05T12:00:00+00:00"}, now) == 2
+    # The feed's dates are UTC; one without an offset is read as UTC.
+    assert price_age_days({"updated": "2026-11-06T12:00:00"}, now) == 1
+    assert price_age_days({"updated": None}, now) is None
+    assert price_age_days({"updated": "not a date"}, now) is None
+    assert is_stale({"updated": "2026-10-30T11:00:00+00:00"}, 7, now)
+    assert not is_stale({"updated": "2026-10-31T13:00:00+00:00"}, 7, now)
+    # No date: never stale (the price is still the station's latest).
+    assert not is_stale({"updated": None}, 7, now)

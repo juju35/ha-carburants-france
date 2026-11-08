@@ -34,12 +34,14 @@
           "stations": "Postos seguidos",
           "add_stations": "Adicionar postos",
           "rename_stations": "Mudar o nome dos postos",
-          "scan_interval": "Intervalo de atualização"
+          "scan_interval": "Intervalo de atualização",
+          "max_price_age": "Idade máxima dos preços"
         },
         "data_description": {
           "stations": "Desmarque um posto para deixar de o seguir.",
           "rename_stations": "Dê os seus próprios nomes aos postos, no passo seguinte.",
-          "scan_interval": "O feed do governo é atualizado a cada 10 minutos."
+          "scan_interval": "O feed do governo é atualizado a cada 10 minutos.",
+          "max_price_age": "Os preços não atualizados há mais dias do que este valor ficam fora do melhor preço, do sensor de preço baixo e da tendência de 30 dias."
         }
       },
       "names": {
