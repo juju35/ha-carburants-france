@@ -366,6 +366,25 @@ test('with language: auto, the map card labels follow a Home Assistant language 
   assert.equal(fsLink.title, 'Vollbild');
 });
 
+test('the list card redraws when the Home Assistant language changes with language: auto', () => {
+  const card = Object.create(CarburantsFranceCard.prototype);
+  let renders = 0;
+  card._render = () => { renders++; };
+  card.setConfig({ entity: 'sensor.x', language: 'auto' });
+  const states = { 'sensor.x': { state: '0', attributes: {} } };
+  card.hass = { locale: { language: 'fr' }, states };
+  assert.equal(renders, 1);
+  card.hass = { locale: { language: 'fr' }, states };
+  assert.equal(renders, 1);
+  card.hass = { locale: { language: 'de' }, states };
+  assert.equal(renders, 2);
+  // A fixed card language ignores Home Assistant's.
+  card.setConfig({ entity: 'sensor.x', language: 'en' });
+  const fixed = renders;
+  card.hass = { locale: { language: 'it' }, states };
+  assert.equal(renders, fixed);
+});
+
 // Keys a language adds when its grammar needs them; the others fall back to `stations`, `opens_at` and `since`.
 const OPTIONAL_KEYS = ['stations_one', 'stations_two', 'stations_few', 'stations_many', 'opens_on', 'out_since'];
 const withoutOptional = (dict) => Object.fromEntries(Object.entries(dict).filter(([key]) => !OPTIONAL_KEYS.includes(key)));

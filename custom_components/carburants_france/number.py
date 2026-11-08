@@ -53,6 +53,11 @@ class TargetPriceNumber(CoordinatorEntity[CarburantsCoordinator], RestoreNumber)
             self.coordinator.async_update_listeners()
 
     @property
+    def available(self) -> bool:
+        """A user setting, not feed data: stays settable while the price feed is down."""
+        return True
+
+    @property
     def native_value(self) -> float | None:
         return self.coordinator.targets.get(self.fuel)
 
