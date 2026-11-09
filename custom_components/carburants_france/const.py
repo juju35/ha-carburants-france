@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "carburants_france"
-VERSION: Final = "1.13.0"
+VERSION: Final = "1.14.0"
 USER_AGENT: Final = f"ha-carburants-france/{VERSION} (+https://github.com/juju35/ha-carburants-france)"
 
 API_RECORDS: Final = (
@@ -27,6 +27,10 @@ FUELS: Final = {
     "gplc": "GPLc",
 }
 DEFAULT_FUELS: Final = ["gazole"]
+
+# Fired when the best price of a fuel goes down by at least PRICE_DROP_MIN from its highest since the last event.
+EVENT_PRICE_DROP: Final = f"{DOMAIN}_price_drop"
+PRICE_DROP_MIN: Final = 0.01  # €/L
 
 RUPTURE_TEMPORARY: Final = "temporaire"
 RUPTURE_DEFINITIVE: Final = "definitive"

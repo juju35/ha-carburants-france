@@ -71,6 +71,7 @@
     "sensor": {
       "price": { "name": "{fuel}" },
       "best_price": { "name": "Legjobb ár {fuel}" },
+      "full_tank": { "name": "Teli tank {fuel}" },
       "stations": { "name": "Töltőállomások" }
     },
     "binary_sensor": {
@@ -78,7 +79,8 @@
       "low_price": { "name": "Alacsony ár {fuel}" }
     },
     "number": {
-      "target_price": { "name": "Célár {fuel}" }
+      "target_price": { "name": "Célár {fuel}" },
+      "tank_capacity": { "name": "Tankméret" }
     }
   },
   "services": {

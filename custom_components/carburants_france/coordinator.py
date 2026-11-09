@@ -23,8 +23,10 @@ from .const import (
     DEFAULT_MAX_PRICE_AGE,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    EVENT_PRICE_DROP,
     FUELS,
     MIN_SCAN_INTERVAL,
+    PRICE_DROP_MIN,
     ST_BRAND,
     ST_ID,
     ST_LOGO,
@@ -157,6 +159,11 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
         self.fuels: list[str] = list(entry.options.get(CONF_FUELS, DEFAULT_FUELS))
         # Target price per fuel (the Target price number entities): the Low price binary sensors compare to it.
         self.targets: dict[str, float | None] = {}
+        # Tank capacity in litres (the Tank capacity number entity), for the Full tank sensors; None until set.
+        self.tank_capacity: float | None = None
+        # Per fuel, the best price the next drop is measured from: the highest since the last drop event.
+        # Not kept across restarts: the first update after a start only sets it.
+        self._drop_reference: dict[str, float] = {}
         self.stations: dict[int, dict[str, Any]] = {int(s[ST_ID]): s for s in entry.options.get(CONF_STATIONS, [])}
         # (station id, fuel) pairs sold at some point: those with an entity, plus those seen since.
         # A fuel can briefly have neither price nor shortage in the feed (shortage just lifted,
@@ -248,14 +255,50 @@ class CarburantsCoordinator(DataUpdateCoordinator[dict[int, dict[str, Any]]]):
             self._apply_stored(station_id, station)
         if names_changed:
             self._async_update_devices(data)
+        self._check_drops(data)
         return data
 
-    def best(self, fuel: str) -> dict[str, Any] | None:
-        """The followed station selling this fuel cheapest right now, among prices updated recently."""
+    @callback
+    def _check_drops(self, data: dict[int, dict[str, Any]]) -> None:
+        """Fire carburants_france_price_drop for each fuel whose best price went down by PRICE_DROP_MIN or more.
+
+        Measured from the highest best price since the last event, so a slow fall of a few tenths of a cent at a
+        time fires once it adds up to a cent, and a price going back up then down again fires again.
+        """
+        for fuel in self.fuels:
+            best = self.best(fuel, data)
+            if best is None:
+                continue
+            price = best["fuels"][fuel]["price"]
+            reference = self._drop_reference.get(fuel)
+            if reference is None or price > reference:
+                self._drop_reference[fuel] = price
+                continue
+            if round(reference - price, 3) >= PRICE_DROP_MIN:
+                self._drop_reference[fuel] = price
+                self.hass.bus.async_fire(
+                    EVENT_PRICE_DROP,
+                    {
+                        "entry_id": self.config_entry.entry_id,
+                        "fuel": fuel,
+                        "fuel_name": FUELS[fuel],
+                        "price": price,
+                        "previous_price": reference,
+                        "drop": round(reference - price, 3),
+                        "station_id": best["id"],
+                        "station_name": best.get("name"),
+                    },
+                )
+
+    def best(self, fuel: str, data: dict[int, dict[str, Any]] | None = None) -> dict[str, Any] | None:
+        """The followed station selling this fuel cheapest right now, among prices updated recently.
+
+        data: the stations to choose from, the last update's by default.
+        """
         now = dt_util.utcnow()
         offers = [
             (s["fuels"][fuel]["price"], s)
-            for s in (self.data or {}).values()
+            for s in ((self.data if data is None else data) or {}).values()
             if fuel in s["fuels"]
             and s["fuels"][fuel]["available"]
             and not is_stale(s["fuels"][fuel], self.max_price_age, now)

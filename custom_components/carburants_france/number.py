@@ -1,11 +1,11 @@
-"""Target price per fuel: the Low price binary sensor turns on when the best price is at or below it."""
+"""Target price per fuel (the Low price binary sensor turns on at or below it), and the tank capacity."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from homeassistant.components.number import NumberMode, RestoreNumber
-from homeassistant.const import EntityCategory
+from homeassistant.components.number import NumberDeviceClass, NumberMode, RestoreNumber
+from homeassistant.const import EntityCategory, UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -23,7 +23,8 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: CarburantsConfigEntry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
     coordinator = entry.runtime_data
-    async_add_entities(TargetPriceNumber(coordinator, fuel) for fuel in coordinator.fuels)
+    targets = [TargetPriceNumber(coordinator, fuel) for fuel in coordinator.fuels]
+    async_add_entities([TankCapacityNumber(coordinator), *targets])
 
 
 class TargetPriceNumber(CoordinatorEntity[CarburantsCoordinator], RestoreNumber):
@@ -64,4 +65,43 @@ class TargetPriceNumber(CoordinatorEntity[CarburantsCoordinator], RestoreNumber)
     async def async_set_native_value(self, value: float) -> None:
         self.coordinator.targets[self.fuel] = round(float(value), 3)
         # The Low price binary sensors follow at once.
+        self.coordinator.async_update_listeners()
+
+
+class TankCapacityNumber(CoordinatorEntity[CarburantsCoordinator], RestoreNumber):
+    """The vehicle's tank capacity, for the Full tank sensors. Unknown (no full tank cost) until set; kept."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "tank_capacity"
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_mode = NumberMode.BOX
+    _attr_native_min_value = 0.0
+    _attr_native_max_value = 200.0
+    _attr_native_step = 1.0
+    _attr_native_unit_of_measurement = UnitOfVolume.LITERS
+    _attr_device_class = NumberDeviceClass.VOLUME_STORAGE
+
+    def __init__(self, coordinator: CarburantsCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_tank_capacity"
+        self._attr_device_info = entry_device(coordinator)
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if (last := await self.async_get_last_number_data()) is not None and last.native_value is not None:
+            self.coordinator.tank_capacity = float(last.native_value) or None
+            self.coordinator.async_update_listeners()
+
+    @property
+    def available(self) -> bool:
+        """A user setting, not feed data: stays settable while the price feed is down."""
+        return True
+
+    @property
+    def native_value(self) -> float | None:
+        return self.coordinator.tank_capacity
+
+    async def async_set_native_value(self, value: float) -> None:
+        # 0 clears it: no full tank cost.
+        self.coordinator.tank_capacity = float(value) or None
         self.coordinator.async_update_listeners()

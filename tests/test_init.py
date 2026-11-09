@@ -9,11 +9,18 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_capture_events
 
 from custom_components.carburants_france import _storage_resources
 from custom_components.carburants_france.api import parse_station
-from custom_components.carburants_france.const import API_RECORDS, DOMAIN, LOGO_VERSION, OVERPASS_URL, WIKIDATA_URL
+from custom_components.carburants_france.const import (
+    API_RECORDS,
+    DOMAIN,
+    EVENT_PRICE_DROP,
+    LOGO_VERSION,
+    OVERPASS_URL,
+    WIKIDATA_URL,
+)
 from custom_components.carburants_france.coordinator import station_title, useful_osm_name
 from custom_components.carburants_france.registry_compat import device_entry_ids, get_device
 
@@ -1378,3 +1385,62 @@ def test_price_age():
     assert not is_stale({"updated": "2026-10-31T13:00:00+00:00"}, 7, now)
     # No date: never stale (the price is still the station's latest).
     assert not is_stale({"updated": None}, 7, now)
+
+
+# ── Tank capacity, Full tank sensors and the price drop event ──
+
+FULL = "sensor.carburants_full_tank_gazole"
+TANK = "number.carburants_tank_capacity"
+
+
+async def test_full_tank_cost_follows_the_capacity_and_the_best_price(hass, aioclient_mock, entry):
+    await _setup(hass, aioclient_mock, entry)
+    # Unknown until the capacity is set.
+    assert hass.states.get(TANK).state == "unknown"
+    assert hass.states.get(FULL).state == "unknown"
+
+    await hass.services.async_call("number", "set_value", {"entity_id": TANK, "value": 55}, blocking=True)
+    state = hass.states.get(FULL)
+    # Best gazole price: 2.25 €/L at Leclerc.
+    assert float(state.state) == 123.75
+    assert state.attributes["unit_of_measurement"] == "EUR"
+    assert state.attributes["tank_capacity"] == 55
+    assert state.attributes["price"] == 2.25
+
+    # 0 clears it.
+    await hass.services.async_call("number", "set_value", {"entity_id": TANK, "value": 0}, blocking=True)
+    assert hass.states.get(FULL).state == "unknown"
+
+
+async def _refresh_with(hass, aioclient_mock, gazole_b: float) -> None:
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(
+        API_RECORDS, json={"total_count": 2, "results": [STATION_A, {**STATION_B, "gazole_prix": gazole_b}]}
+    )
+    # Straight to the coordinator: the action's refresh is debounced (one per 10 s).
+    await hass.config_entries.async_entries(DOMAIN)[0].runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+
+async def test_price_drop_event(hass, aioclient_mock, entry):
+    await _setup(hass, aioclient_mock, entry)  # gazole best 2.25: the reference
+    events = async_capture_events(hass, EVENT_PRICE_DROP)
+
+    # Half a cent, then another: fires once the drop adds up to a cent.
+    await _refresh_with(hass, aioclient_mock, 2.245)
+    assert events == []
+    await _refresh_with(hass, aioclient_mock, 2.24)
+    assert len(events) == 1
+    data = events[0].data
+    assert data["fuel"] == "gazole"
+    assert data["price"] == 2.24
+    assert data["previous_price"] == 2.25
+    assert data["drop"] == 0.01
+    assert data["station_id"] == 35000025
+    assert data["entry_id"] == entry.entry_id
+
+    # Up, then down again by a cent from the new high: fires again.
+    await _refresh_with(hass, aioclient_mock, 2.27)
+    await _refresh_with(hass, aioclient_mock, 2.26)
+    assert len(events) == 2
+    assert events[1].data["previous_price"] == 2.27

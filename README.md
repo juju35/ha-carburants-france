@@ -22,6 +22,7 @@ Home Assistant integration for [fuel prices in France](https://data.economie.gou
 - Per station and per fuel: a **Price** sensor (€/L, with history) and an **In stock** binary sensor (temporary or permanent shortage, with its start date)
 - Per fuel: a **Best price** sensor across your stations, with the station and the **30-day trend** (average, lowest, highest, today's difference) as attributes
 - Per fuel: a **Target price** to set yourself and a **Low price** binary sensor, on while the best price is at or below it — an automation trigger that needs no template
+- **Full tank** cost per fuel at the best price, from a **Tank capacity** you set once, and a `carburants_france_price_drop` **event** each time a best price goes down by a cent or more
 - **Brand and logo** of each station: 42 French networks' logos built in, the others found automatically through OpenStreetMap and Wikidata
 - `carburants_france.refresh` action to force an update
 - `custom:carburants-france-card` card, **shipped with the integration** and loaded automatically: logos, prices, shortages, best price in green, live opening status, opening hours, services and directions on click
@@ -98,6 +99,8 @@ Each station is a device, named after its brand and town (can be renamed in Home
 | Best price | `sensor.carburants_best_price_gazole` (`sensor.carburants_meilleur_prix_gazole`) | Lowest price across the stations where the fuel is available and its price is not older than the maximum price age, with the station and `age_days` as attributes, and from the recorder's daily statistics of the last 30 days: `average_30d`, `lowest_30d`, `highest_30d` and `change_30d` (today's best price minus the average: negative when cheaper than usual) |
 | Target price | `number.carburants_target_price_gazole` (`number.carburants_prix_cible_gazole`) | The price (€/L) under which the fuel counts as cheap. Unknown until you set it, kept across restarts |
 | Low price | `binary_sensor.carburants_low_price_gazole` (`binary_sensor.carburants_prix_bas_gazole`) | On while the best price is at or below the target price (off without a target). Attributes: `target`, `price`, `station_name`, `station_id` |
+| Tank capacity | `number.carburants_tank_capacity` (`number.carburants_capacite_du_reservoir`) | Your tank, in litres. Unknown until you set it (0 clears it), kept across restarts |
+| Full tank | `sensor.carburants_full_tank_gazole` (`sensor.carburants_plein_gazole`) | What a full tank costs at the best price (€): tank capacity × best price. Unknown without a tank capacity or a best price. Attributes: `tank_capacity`, `price` and the station |
 | Stations | `sensor.carburants_stations` | Number of followed stations, all the data as attributes (used by the cards) |
 
 A fuel in permanent shortage (no longer sold) has no entity, nor has a fuel that is not followed.
@@ -244,6 +247,24 @@ actions:
         Diesel at {{ state_attr(trigger.entity_id, 'price') }} € at {{ state_attr(trigger.entity_id, 'station_name') }}
         ({{ state_attr('sensor.carburants_best_price_gazole', 'change_30d') }} € against the month)
 ```
+
+Or on each fall of the best price, with the `carburants_france_price_drop` event:
+
+```yaml
+triggers:
+  - trigger: event
+    event_type: carburants_france_price_drop
+    event_data:
+      fuel: gazole
+actions:
+  - action: notify.mobile_app_phone
+    data:
+      message: >
+        Diesel down {{ (trigger.event.data.drop * 100) | round(1) }} c to {{ trigger.event.data.price }} €
+        at {{ trigger.event.data.station_name }}
+```
+
+The event fires when the best price of a followed fuel goes down by at least 0.01 €/L from its highest since the last event (a slow fall fires once it adds up to a cent). Data: `entry_id`, `fuel` (`gazole`, `sp95`, `sp98`, `e10`, `e85`, `gplc`), `fuel_name`, `price`, `previous_price`, `drop`, `station_id`, `station_name`. The first update after a restart only sets the reference.
 
 Get notified of a shortage:
 

@@ -71,6 +71,7 @@
     "sensor": {
       "price": { "name": "{fuel}" },
       "best_price": { "name": "Nejlepší cena {fuel}" },
+      "full_tank": { "name": "Plná nádrž {fuel}" },
       "stations": { "name": "Stanice" }
     },
     "binary_sensor": {
@@ -78,7 +79,8 @@
       "low_price": { "name": "Nízká cena {fuel}" }
     },
     "number": {
-      "target_price": { "name": "Cílová cena {fuel}" }
+      "target_price": { "name": "Cílová cena {fuel}" },
+      "tank_capacity": { "name": "Objem nádrže" }
     }
   },
   "services": {
