@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.2 (2026-11-09)
+
+### Fixes
+- The card's cache-busting hash no longer fails on a Python built in FIPS mode, where a plain `md5()` is refused: it is computed with `usedforsecurity=False`, as in ha-parcel and ha-reverse-proxy.
+
 ## 1.12.1 (2026-11-08)
 
 ### Fixes
