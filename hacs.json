@@ -2,5 +2,7 @@
   "name": "Carburants France",
   "content_in_root": false,
   "render_readme": true,
+  "zip_release": true,
+  "filename": "carburants_france.zip",
   "homeassistant": "2024.12.0"
 }

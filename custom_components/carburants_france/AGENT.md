@@ -70,7 +70,10 @@ custom_components/carburants_france/
 - 0.6.0 to 0.7.1 could ask an AI (`ai_task`) for names; removed in 0.8.0. `_async_drop_ai_options` strips the leftover `ai_task_entity` option and per-station `ai_name` / `ai_checked` at setup.
 
 ## Release
-HACS downloads the repository itself (no `zip_release`). Before releasing `vX.Y.Z`, bump the version in manifest.json, const.py (`VERSION`) and `CARBURANTS_CARD_VERSION` in the card. Pushing to main publishes release `vX.Y.Z` (tag, notes from the CHANGELOG.md section, `carburants_france.zip`) when that tag doesn't exist yet; the workflow fails if the three versions differ. Rerun notes on an existing release with the "Update release notes" workflow (input `tag`).
+The Marketplace installs `carburants_france.zip` (`zip_release`), built from the split frontend. Before releasing `vX.Y.Z`, bump the version in manifest.json, const.py (`VERSION`) and `CARBURANTS_CARD_VERSION` in the card. Pushing to main publishes release `vX.Y.Z` (tag, notes from the CHANGELOG.md section, `carburants_france.zip`) when that tag doesn't exist yet; the workflow fails if the three versions differ. Rerun notes on an existing release with the "Update release notes" workflow (input `tag`).
 
 ## Tests
 `pip install -r requirements_test.txt && pytest` (job `tests`, Python 3.14 = latest Home Assistant; HA 2026.3+ needs Python 3.14). An autouse fixture (`tests/conftest.py`, `no_deprecated_calls`) fails any test during which Home Assistant reports a deprecated call naming `carburants_france`, and CI turns those reports into annotations; `tests/test_registry_compat.py` covers both registry APIs with fakes. CI also runs the suite on the minimum Home Assistant (job `pytest-min-ha`: pytest-homeassistant-custom-component 0.13.190 = HA 2024.12.0). Card helpers: `node --test test/*.test.mjs` (Node 22, evaluates the card file with stubs).
+
+## Translations
+The frontend files keep every language in the sources. The release runs `scripts/split-frontend.mjs` before building the zip: English stays in each file, every other language goes to `<file>.i18n.<lang>.js` next to it, fetched when a card or the panel first needs it (`scripts/i18n-split.mjs`; it rebuilds every table to check the split, and the Validate job runs it on a copy with `--check`). The frontend folder is served as a whole, so those files are served next to the card.
