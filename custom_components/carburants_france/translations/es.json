@@ -71,6 +71,7 @@
     "sensor": {
       "price": { "name": "{fuel}" },
       "best_price": { "name": "Mejor precio {fuel}" },
+      "full_tank": { "name": "Depósito lleno {fuel}" },
       "stations": { "name": "Estaciones" }
     },
     "binary_sensor": {
@@ -78,7 +79,8 @@
       "low_price": { "name": "Precio bajo {fuel}" }
     },
     "number": {
-      "target_price": { "name": "Precio objetivo {fuel}" }
+      "target_price": { "name": "Precio objetivo {fuel}" },
+      "tank_capacity": { "name": "Capacidad del depósito" }
     }
   },
   "services": {

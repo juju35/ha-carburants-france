@@ -71,6 +71,7 @@
     "sensor": {
       "price": { "name": "{fuel}" },
       "best_price": { "name": "Най-добра цена {fuel}" },
+      "full_tank": { "name": "Пълен резервоар {fuel}" },
       "stations": { "name": "Бензиностанции" }
     },
     "binary_sensor": {
@@ -78,7 +79,8 @@
       "low_price": { "name": "Ниска цена {fuel}" }
     },
     "number": {
-      "target_price": { "name": "Целева цена {fuel}" }
+      "target_price": { "name": "Целева цена {fuel}" },
+      "tank_capacity": { "name": "Обем на резервоара" }
     }
   },
   "services": {

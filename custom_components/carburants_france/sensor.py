@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -56,6 +56,7 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
     entities: list[SensorEntity] = [StationsSensor(coordinator)]
     entities += [BestPriceSensor(coordinator, fuel) for fuel in coordinator.fuels]
+    entities += [FullTankSensor(coordinator, fuel) for fuel in coordinator.fuels]
     async_add_entities(entities)
     async_track_station_entities(entry, async_add_entities, FuelPriceSensor)
 
@@ -176,6 +177,41 @@ class BestPriceSensor(CoordinatorEntity[CarburantsCoordinator], SensorEntity):
             "age_days": _age_days(best["fuels"][self.fuel]),
             **_station_attributes(best),
             **trend,
+        }
+
+
+class FullTankSensor(CoordinatorEntity[CarburantsCoordinator], SensorEntity):
+    """What a full tank costs at the best price: the Tank capacity number entity times the Best price."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "full_tank"
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_native_unit_of_measurement = "EUR"
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator: CarburantsCoordinator, fuel: str) -> None:
+        super().__init__(coordinator)
+        self.fuel = fuel
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{fuel}_full_tank"
+        self._attr_translation_placeholders = {"fuel": FUELS[fuel]}
+        self._attr_device_info = entry_device(coordinator)
+
+    @property
+    def native_value(self) -> float | None:
+        best = self.coordinator.best(self.fuel)
+        capacity = self.coordinator.tank_capacity
+        if not best or not capacity:
+            return None
+        return round(capacity * best["fuels"][self.fuel]["price"], 2)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        best = self.coordinator.best(self.fuel)
+        return {
+            "fuel": FUELS[self.fuel],
+            "tank_capacity": self.coordinator.tank_capacity,
+            "price": best["fuels"][self.fuel]["price"] if best else None,
+            **(_station_attributes(best) if best else {}),
         }
 
 

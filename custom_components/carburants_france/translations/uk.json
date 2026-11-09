@@ -71,6 +71,7 @@
     "sensor": {
       "price": { "name": "{fuel}" },
       "best_price": { "name": "Найкраща ціна {fuel}" },
+      "full_tank": { "name": "Повний бак {fuel}" },
       "stations": { "name": "АЗС" }
     },
     "binary_sensor": {
@@ -78,7 +79,8 @@
       "low_price": { "name": "Низька ціна {fuel}" }
     },
     "number": {
-      "target_price": { "name": "Цільова ціна {fuel}" }
+      "target_price": { "name": "Цільова ціна {fuel}" },
+      "tank_capacity": { "name": "Об'єм бака" }
     }
   },
   "services": {

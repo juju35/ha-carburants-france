@@ -71,6 +71,7 @@
     "sensor": {
       "price": { "name": "{fuel}" },
       "best_price": { "name": "Καλύτερη τιμή {fuel}" },
+      "full_tank": { "name": "Γεμάτο ρεζερβουάρ {fuel}" },
       "stations": { "name": "Πρατήρια" }
     },
     "binary_sensor": {
@@ -78,7 +79,8 @@
       "low_price": { "name": "Χαμηλή τιμή {fuel}" }
     },
     "number": {
-      "target_price": { "name": "Τιμή-στόχος {fuel}" }
+      "target_price": { "name": "Τιμή-στόχος {fuel}" },
+      "tank_capacity": { "name": "Χωρητικότητα ρεζερβουάρ" }
     }
   },
   "services": {

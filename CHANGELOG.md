@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.0 (2026-11-09)
+
+### Features
+- **Tank capacity** number entity (litres, set once, kept across restarts) and a **Full tank** sensor per fuel: what a full tank costs at the best price, with the station as attributes.
+- **`carburants_france_price_drop` event** when the best price of a followed fuel goes down by at least 0.01 €/L from its highest since the last event, with the fuel, the new and previous prices, the drop and the station: a notification on each fall needs no template.
+
 ## 1.13.0 (2026-11-09)
 
 ### Performance
