@@ -27,13 +27,38 @@ async def async_setup_entry(
     async_add_entities([TankCapacityNumber(coordinator), *targets])
 
 
-class TargetPriceNumber(CoordinatorEntity[CarburantsCoordinator], RestoreNumber):
-    """The price under which the fuel counts as cheap. Unknown (no alert) until set; kept across restarts."""
+class _SettingNumber(CoordinatorEntity[CarburantsCoordinator], RestoreNumber):
+    """A user setting kept across restarts (restored into the coordinator), settable while the feed is down."""
 
     _attr_has_entity_name = True
-    _attr_translation_key = "target_price"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.BOX
+
+    def _store(self, value: float) -> None:
+        raise NotImplementedError
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if (last := await self.async_get_last_number_data()) is not None and last.native_value is not None:
+            self._store(float(last.native_value))
+            # The entities reading it may be set up already: they read the restored value now.
+            self.coordinator.async_update_listeners()
+
+    @property
+    def available(self) -> bool:
+        """A user setting, not feed data: stays settable while the price feed is down."""
+        return True
+
+    async def async_set_native_value(self, value: float) -> None:
+        self._store(float(value))
+        # The sensors reading it follow at once.
+        self.coordinator.async_update_listeners()
+
+
+class TargetPriceNumber(_SettingNumber):
+    """The price under which the fuel counts as cheap. Unknown (no alert) until set; kept across restarts."""
+
+    _attr_translation_key = "target_price"
     _attr_native_min_value = 0.0
     _attr_native_max_value = 5.0
     _attr_native_step = 0.001
@@ -46,35 +71,18 @@ class TargetPriceNumber(CoordinatorEntity[CarburantsCoordinator], RestoreNumber)
         self._attr_translation_placeholders = {"fuel": FUELS[fuel]}
         self._attr_device_info = entry_device(coordinator)
 
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        if (last := await self.async_get_last_number_data()) is not None and last.native_value is not None:
-            self.coordinator.targets[self.fuel] = float(last.native_value)
-            # The Low price sensors may be set up already: they read the restored target now.
-            self.coordinator.async_update_listeners()
-
-    @property
-    def available(self) -> bool:
-        """A user setting, not feed data: stays settable while the price feed is down."""
-        return True
+    def _store(self, value: float) -> None:
+        self.coordinator.targets[self.fuel] = round(value, 3)
 
     @property
     def native_value(self) -> float | None:
         return self.coordinator.targets.get(self.fuel)
 
-    async def async_set_native_value(self, value: float) -> None:
-        self.coordinator.targets[self.fuel] = round(float(value), 3)
-        # The Low price binary sensors follow at once.
-        self.coordinator.async_update_listeners()
 
+class TankCapacityNumber(_SettingNumber):
+    """The vehicle's tank capacity, for the Full tank sensors. Unknown (no full tank cost) until set; 0 clears it."""
 
-class TankCapacityNumber(CoordinatorEntity[CarburantsCoordinator], RestoreNumber):
-    """The vehicle's tank capacity, for the Full tank sensors. Unknown (no full tank cost) until set; kept."""
-
-    _attr_has_entity_name = True
     _attr_translation_key = "tank_capacity"
-    _attr_entity_category = EntityCategory.CONFIG
-    _attr_mode = NumberMode.BOX
     _attr_native_min_value = 0.0
     _attr_native_max_value = 200.0
     _attr_native_step = 1.0
@@ -86,22 +94,9 @@ class TankCapacityNumber(CoordinatorEntity[CarburantsCoordinator], RestoreNumber
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_tank_capacity"
         self._attr_device_info = entry_device(coordinator)
 
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        if (last := await self.async_get_last_number_data()) is not None and last.native_value is not None:
-            self.coordinator.tank_capacity = float(last.native_value) or None
-            self.coordinator.async_update_listeners()
-
-    @property
-    def available(self) -> bool:
-        """A user setting, not feed data: stays settable while the price feed is down."""
-        return True
+    def _store(self, value: float) -> None:
+        self.coordinator.tank_capacity = value or None
 
     @property
     def native_value(self) -> float | None:
         return self.coordinator.tank_capacity
-
-    async def async_set_native_value(self, value: float) -> None:
-        # 0 clears it: no full tank cost.
-        self.coordinator.tank_capacity = float(value) or None
-        self.coordinator.async_update_listeners()
