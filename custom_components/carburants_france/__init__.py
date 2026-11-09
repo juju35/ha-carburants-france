@@ -108,7 +108,9 @@ async def _async_register_card(hass: HomeAssistant) -> None:
 
     The file hash in the URL makes browsers fetch the new card after an update.
     """
-    digest = await hass.async_add_executor_job(lambda: hashlib.md5(CARD_PATH.read_bytes()).hexdigest()[:8])
+    digest = await hass.async_add_executor_job(
+        lambda: hashlib.md5(CARD_PATH.read_bytes(), usedforsecurity=False).hexdigest()[:8]
+    )
     base_url = f"{FRONTEND_URL}/{CARD_FILENAME}"
     url = f"{base_url}?v={digest}"
 
