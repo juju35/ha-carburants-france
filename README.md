@@ -119,6 +119,8 @@ type: custom:carburants-france-card
 |---|---|---|
 | `entity` | detected | Stations sensor to show (useful with several entries) |
 | `title` | `Fuel` | Card title |
+| `show_title` | `true` | Show the title in the header (e.g. `false` under a section heading of your own) |
+| `show_subtitle` | `true` | Show the subtitle under the title |
 | `language` | `auto` | Card language: `auto` (Home Assistant's), `en`, `fr`, `de`, `es`, `it`, `nl`, `pt` (European Portuguese), `pl`, `ro`, `da`, `sv`, `bg`, `ru`, `uk`, `hu`, `sk`, `cs`, `sl`, `lv`, `el`, `sr` (Serbian, Cyrillic) or `sr-Latn` (Serbian, Latin) |
 | `fuels` | all | Fuels shown, for example `[gazole, e10]` |
 | `sort` | `price` | `price`, `distance`, `name` or `config` (configuration order) |
