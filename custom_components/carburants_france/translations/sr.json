@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Цене и доступност горива које објављује француска влада (data.economie.gouv.fr), без API кључа.",
-        "data": { "name": "Назив", "fuels": "Горива за праћење" }
+        "data": { "name": "Назив", "fuels": "Горива за праћење", "add_stations": "Праћење станица" },
+        "data_description": { "add_stations": "Искључите да бисте користили само мапу, која приказује све станице око вас." }
       },
       "search": {
         "title": "Претрага станица",

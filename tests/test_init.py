@@ -372,6 +372,19 @@ async def test_config_flow(hass, aioclient_mock):
     assert station["brand_checked"] is True
 
 
+async def test_config_flow_map_only(hass):
+    """Follow stations off: the entry is created with no station, for the map card alone."""
+    result = await _start_flow(hass)
+    with patch("custom_components.carburants_france.async_setup_entry", return_value=True):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"name": "Carte", "fuels": ["gazole", "sp98"], "add_stations": False}
+        )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == "Carte"
+    assert result["options"]["fuels"] == ["gazole", "sp98"]
+    assert result["options"]["stations"] == []
+
+
 async def test_config_flow_search_again_keeps_selection(hass, aioclient_mock):
     aioclient_mock.get(API_RECORDS, json={"total_count": 1, "results": [STATION_A]})
     aioclient_mock.post(OVERPASS_URL, status=504)
@@ -421,6 +434,21 @@ async def test_options_flow_remove_station(hass, aioclient_mock, entry):
     assert [s["id"] for s in entry.options["stations"]] == [35000025]
     assert entry.runtime_data.fuels == ["gazole"]
     assert entry.runtime_data.update_interval.total_seconds() == 1800
+
+
+async def test_options_flow_remove_all_stations(hass, aioclient_mock, entry):
+    """Every station can be unticked: the entry stays, with the map card alone."""
+    await _setup(hass, aioclient_mock, entry)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"fuels": ["gazole"], "stations": [], "add_stations": False, "scan_interval": 15},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert entry.options["stations"] == []
+    assert entry.state is ConfigEntryState.LOADED
+    assert hass.states.get("sensor.carburants_stations").state == "0"
 
 
 async def test_brands_retried_at_startup(hass, aioclient_mock, entry):
@@ -1191,19 +1219,19 @@ async def test_options_flow_error_keeps_input(hass, aioclient_mock, entry):
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         {
-            "fuels": ["e10"],
-            "stations": [],
+            "fuels": [],
+            "stations": ["35000025"],
             "add_stations": False,
             "rename_stations": True,
             "scan_interval": 45,
             "max_price_age": 3,
         },
     )
-    assert result["errors"] == {"base": "no_station"}
+    assert result["errors"] == {"fuels": "no_fuel"}
     defaults = {str(key): key.default() for key in result["data_schema"].schema}
     assert defaults == {
-        "fuels": ["e10"],
-        "stations": [],
+        "fuels": [],
+        "stations": ["35000025"],
         "add_stations": False,
         "rename_stations": True,
         "scan_interval": 45,

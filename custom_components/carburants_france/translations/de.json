@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Kraftstoffpreise und Verfügbarkeit, veröffentlicht von der französischen Regierung (data.economie.gouv.fr), kein API-Schlüssel nötig.",
-        "data": { "name": "Name", "fuels": "Zu beobachtende Kraftstoffe" }
+        "data": { "name": "Name", "fuels": "Zu beobachtende Kraftstoffe", "add_stations": "Tankstellen beobachten" },
+        "data_description": { "add_stations": "Ausschalten, um nur die Karte zu nutzen, die alle Tankstellen in Ihrer Nähe anzeigt." }
       },
       "search": {
         "title": "Tankstellen suchen",

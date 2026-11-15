@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Francijas valdības publicētās degvielas cenas un pieejamība (data.economie.gouv.fr), bez API atslēgas.",
-        "data": { "name": "Nosaukums", "fuels": "Izsekojamās degvielas" }
+        "data": { "name": "Nosaukums", "fuels": "Izsekojamās degvielas", "add_stations": "Izsekot stacijas" },
+        "data_description": { "add_stations": "Izslēdziet, lai izmantotu tikai karti, kurā redzamas visas stacijas jūsu tuvumā." }
       },
       "search": {
         "title": "Meklēt stacijas",

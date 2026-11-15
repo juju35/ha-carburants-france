@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Prețurile și disponibilitatea carburanților publicate de guvernul francez (data.economie.gouv.fr), fără cheie API.",
-        "data": { "name": "Nume", "fuels": "Carburanți urmăriți" }
+        "data": { "name": "Nume", "fuels": "Carburanți urmăriți", "add_stations": "Urmărește stații" },
+        "data_description": { "add_stations": "Dezactivează pentru a folosi doar harta, care afișează toate stațiile din jurul tău." }
       },
       "search": {
         "title": "Caută stații",

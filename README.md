@@ -30,6 +30,7 @@ Home Assistant integration for [fuel prices in France](https://data.economie.gou
 - `custom:carburants-france-card` card, **shipped with the integration** and loaded automatically: logos, prices, shortages, best price in green, live opening status, opening hours, services and directions on click
 - `custom:carburants-france-mini-card` mini card: the cheapest price of one fuel and the station selling it on one line, with a button that shows the full list card
 - `custom:carburants-france-map-card` map card: your stations on a map, with the logo and the price of a fuel on each marker, your home, and the station details on click; **Locate me** button to see the stations around you (radius picked in the title) and **search by town**, without adding them to the integration
+- **Map card without following any station**: turn off **Follow stations** at setup to use the map card alone, with every station around you — no station sensor created
 - Add or remove stations and fuels at any time from the options
 - **Diagnostics** download (Settings > Devices & services), with positions and addresses redacted
 - English, French, German, Spanish, Italian, Dutch, Portuguese (European), Polish, Romanian, Danish, Swedish, Bulgarian, Russian, Ukrainian, Hungarian, Slovak, Czech, Slovenian, Latvian, Greek and Serbian (Cyrillic and Latin)
@@ -73,7 +74,7 @@ Copy `custom_components/carburants_france/` to `/config/custom_components/carbur
 
 **Settings → Devices & services → Add integration → Carburants France**, then:
 
-1. **Name and fuels**: give a name ("Fuel", "Work"…) and tick the fuels to follow.
+1. **Name and fuels**: give a name ("Fuel", "Work"…) and tick the fuels to follow. Leave **Follow stations** on to pick stations in the next steps, or turn it off to finish here and use the [map card](#map-card) alone, with every station around you.
 2. **Search**: leave empty to search around your home within the chosen radius, or enter a postcode (`35000`), a town (`Rennes`), a department (`35`) or a station id (`35000013`).
 3. **Stations**: tick the stations to follow. Each line shows the brand, the address, the prices of the chosen fuels (✕ when out of stock) and the distance. Tick **New search** to add stations elsewhere: the selection is kept.
 
