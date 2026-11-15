@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Brandstofprijzen en -beschikbaarheid gepubliceerd door de Franse overheid (data.economie.gouv.fr), geen API-sleutel nodig.",
-        "data": { "name": "Naam", "fuels": "Te volgen brandstoffen" }
+        "data": { "name": "Naam", "fuels": "Te volgen brandstoffen", "add_stations": "Tankstations volgen" },
+        "data_description": { "add_stations": "Schakel uit om alleen de kaart te gebruiken, die alle tankstations om je heen toont." }
       },
       "search": {
         "title": "Tankstations zoeken",

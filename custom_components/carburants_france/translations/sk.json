@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Ceny a dostupnosť palív zverejňované francúzskou vládou (data.economie.gouv.fr), bez kľúča API.",
-        "data": { "name": "Názov", "fuels": "Sledované palivá" }
+        "data": { "name": "Názov", "fuels": "Sledované palivá", "add_stations": "Sledovať stanice" },
+        "data_description": { "add_stations": "Vypnite, ak chcete používať iba mapu, ktorá zobrazuje všetky stanice okolo vás." }
       },
       "search": {
         "title": "Hľadať stanice",

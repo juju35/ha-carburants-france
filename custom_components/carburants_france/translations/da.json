@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Brændstofpriser og -tilgængelighed offentliggjort af den franske regering (data.economie.gouv.fr), ingen API-nøgle nødvendig.",
-        "data": { "name": "Navn", "fuels": "Brændstoffer, der skal følges" }
+        "data": { "name": "Navn", "fuels": "Brændstoffer, der skal følges", "add_stations": "Følg tankstationer" },
+        "data_description": { "add_stations": "Slå fra for kun at bruge kortet, der viser alle tankstationer omkring dig." }
       },
       "search": {
         "title": "Søg efter tankstationer",

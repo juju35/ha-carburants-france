@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "A francia kormány által közzétett üzemanyagárak és -elérhetőség (data.economie.gouv.fr), API-kulcs nélkül.",
-        "data": { "name": "Név", "fuels": "Követett üzemanyagok" }
+        "data": { "name": "Név", "fuels": "Követett üzemanyagok", "add_stations": "Töltőállomások követése" },
+        "data_description": { "add_stations": "Kapcsolja ki, hogy csak a térképet használja, amely minden töltőállomást megjelenít a környezetében." }
       },
       "search": {
         "title": "Töltőállomások keresése",

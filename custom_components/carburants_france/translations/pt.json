@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Preços e disponibilidade dos combustíveis publicados pelo governo francês (data.economie.gouv.fr), sem chave de API.",
-        "data": { "name": "Nome", "fuels": "Combustíveis a seguir" }
+        "data": { "name": "Nome", "fuels": "Combustíveis a seguir", "add_stations": "Seguir postos" },
+        "data_description": { "add_stations": "Desative para usar apenas o mapa, que mostra todos os postos à sua volta." }
       },
       "search": {
         "title": "Procurar postos",

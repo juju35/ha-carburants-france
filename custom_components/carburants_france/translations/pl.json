@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Ceny i dostępność paliw publikowane przez rząd Francji (data.economie.gouv.fr), bez klucza API.",
-        "data": { "name": "Nazwa", "fuels": "Obserwowane paliwa" }
+        "data": { "name": "Nazwa", "fuels": "Obserwowane paliwa", "add_stations": "Obserwuj stacje" },
+        "data_description": { "add_stations": "Wyłącz, aby używać tylko mapy, która pokazuje wszystkie stacje wokół Ciebie." }
       },
       "search": {
         "title": "Wyszukaj stacje",

@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Bränslepriser och tillgänglighet publicerade av den franska regeringen (data.economie.gouv.fr), ingen API-nyckel behövs.",
-        "data": { "name": "Namn", "fuels": "Bränslen att följa" }
+        "data": { "name": "Namn", "fuels": "Bränslen att följa", "add_stations": "Följ stationer" },
+        "data_description": { "add_stations": "Stäng av för att bara använda kartan, som visar alla stationer omkring dig." }
       },
       "search": {
         "title": "Sök stationer",

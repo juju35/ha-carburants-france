@@ -168,11 +168,9 @@ class StationPickerMixin:
             self._selected = selected
             if user_input.get(CONF_SEARCH_AGAIN):
                 return await self.async_step_search()
-            if not self._selected:
-                errors["base"] = "no_station"
-            else:
-                await self._async_add_logos()
-                return await self._async_finish()
+            # No station is fine: the integration can be used with the map card alone.
+            await self._async_add_logos()
+            return await self._async_finish()
 
         options: list[SelectOptionDict] = []
         for station_id, stored in self._selected.items():
@@ -228,14 +226,20 @@ class CarburantsConfigFlow(StationPickerMixin, ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._name = user_input.get(CONF_NAME) or self._name
             self._fuels = [f for f in user_input.get(CONF_FUELS, []) if f in FUELS]
-            if self._fuels:
+            if not self._fuels:
+                errors[CONF_FUELS] = "no_fuel"
+            elif user_input.get(CONF_ADD_STATIONS, True):
                 return await self.async_step_search()
-            errors[CONF_FUELS] = "no_fuel"
+            else:
+                # No station followed: only the map card, showing every station around you.
+                self._selected = {}
+                return await self._async_finish()
 
         schema = vol.Schema(
             {
                 vol.Required(CONF_NAME, default=self._name): TextSelector(),
                 vol.Required(CONF_FUELS, default=self._fuels): _fuels_selector(),
+                vol.Required(CONF_ADD_STATIONS, default=True): BooleanSelector(),
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
@@ -289,9 +293,8 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
                 errors[CONF_FUELS] = "no_fuel"
             elif user_input.get(CONF_ADD_STATIONS):
                 return await self.async_step_search()
-            elif not kept:
-                errors["base"] = "no_station"
             else:
+                # No station left is fine: the map card works without a followed station.
                 return await self._async_finish()
             shown = {
                 CONF_FUELS: fuels,
@@ -354,7 +357,7 @@ class CarburantsOptionsFlow(StationPickerMixin, OptionsFlow):
         return self.async_show_form(step_id="names", data_schema=schema)
 
     async def _async_finish(self) -> ConfigFlowResult:
-        if self._rename:
+        if self._rename and self._selected:
             return await self.async_step_names()
         return self.async_create_entry(
             data={

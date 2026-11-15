@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.16.0 - 2026-11-15
+
+### Features
+- The configuration can now be completed without following any station: a new **Follow stations** switch on the first step lets you set up the integration with the map card alone, which shows every station around you (asked in #68). Stations stay optional in the options too, so you can stop following all of them and keep only the map card.
+
 ## 1.15.0 - 2026-11-12
 
 ### Features

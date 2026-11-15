@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Prix et disponibilité des carburants publiés par l'État (data.economie.gouv.fr), sans clé d'API.",
-        "data": { "name": "Nom", "fuels": "Carburants à suivre" }
+        "data": { "name": "Nom", "fuels": "Carburants à suivre", "add_stations": "Suivre des stations" },
+        "data_description": { "add_stations": "Désactivez pour n'utiliser que la carte, qui affiche toutes les stations autour de vous." }
       },
       "search": {
         "title": "Rechercher des stations",

@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Ціни та наявність пального, що публікує уряд Франції (data.economie.gouv.fr), без ключа API.",
-        "data": { "name": "Назва", "fuels": "Відстежуване пальне" }
+        "data": { "name": "Назва", "fuels": "Відстежуване пальне", "add_stations": "Відстежувати АЗС" },
+        "data_description": { "add_stations": "Вимкніть, щоб використовувати лише карту, яка показує всі АЗС навколо вас." }
       },
       "search": {
         "title": "Пошук АЗС",

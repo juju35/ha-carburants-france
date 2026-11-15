@@ -4,7 +4,8 @@
       "user": {
         "title": "Carburants France",
         "description": "Fuel prices and availability published by the French government (data.economie.gouv.fr), no API key needed.",
-        "data": { "name": "Name", "fuels": "Fuels to follow" }
+        "data": { "name": "Name", "fuels": "Fuels to follow", "add_stations": "Follow stations" },
+        "data_description": { "add_stations": "Turn off to use only the map, which shows every station around you." }
       },
       "search": {
         "title": "Search stations",
