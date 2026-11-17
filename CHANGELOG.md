@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.17.0 - 2026-11-17
+
+### Features
+- Animated illustrated header on the list, mini and map cards: a 90 px banner with the title and subtitle on the sky and a fuel station on the right — price totem showing the card's cheapest prices, canopy, pumps and a car filling up — on a 10 px road strip, with day and night pictures (follows `sun.sun` or the dark theme, `illustration_theme: day | night` to force one) and still under reduced motion. The header icon colour follows the data (primary when prices are in stock, amber when every fuel is out of stock, grey with no station, red when unavailable), and the mini card shows the cheapest station's brand logo on it. `illustration: false` keeps the classic header; both options are in the visual editors, translated in every language.
+- Status pill after the title on the list, mini and map cards (banner and classic header), in the header icon's colour: the stations count, Out of stock or Data unavailable; it stays beside the title only while the title stays whole and the pill keeps its whole label (measured by the card in every language, no fixed width threshold), otherwise it drops under a one-line subtitle, and keeps its dot alone when even that does not fit the banner, and at 200 px or less. The count moved from the subtitle to the pill. At 300 px and below the fuel station shrinks to the right of the banner. The refresh and expand / collapse buttons are 24 px frosted discs on the banner's top-right line, the detail button in the corner.
+- Map card: the search field (shorter placeholder, "Town or postcode") and the radius list now sit over the map at its top left, the zoom, full screen and **Locate me** buttons in one bar at its bottom right, and **Show the out of stock station** at its bottom left.
+- Night picture with the dark theme even while the sun is up (it used to wait for sunset when `sun.sun` exists).
+
+### Documentation
+- README: screenshots of the mini card expanded to the full list card, light and dark.
+
 ## 1.16.0 - 2026-11-15
 
 ### Features

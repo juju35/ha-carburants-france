@@ -359,6 +359,23 @@ SHOTS = [
         "card": "mini",
         "width": 280,
     },
+    # The mini card expanded (its detail button pressed): the full list card, at the width of the list card.
+    {
+        "file": "mini-card-zoom",
+        "theme": "light",
+        "config": {"fuel": "gazole"},
+        "expand": None,
+        "card": "mini",
+        "zoom": True,
+    },
+    {
+        "file": "mini-card-zoom-dark",
+        "theme": "dark",
+        "config": {"fuel": "gazole"},
+        "expand": None,
+        "card": "mini",
+        "zoom": True,
+    },
 ]
 
 
@@ -837,6 +854,8 @@ def main():
             page = mount(context, shot)
             if shot["expand"]:
                 page.locator(f'.station[data-id="{shot["expand"]}"] .row').click()
+            if shot.get("zoom"):
+                page.locator("ha-card.mini .zoom").click()
             # Every logo loaded (lazy images: scrolled into view by the tall viewport).
             page.wait_for_function(
                 """() => [...document.getElementById("root").firstElementChild.shadowRoot.querySelectorAll("img")]
