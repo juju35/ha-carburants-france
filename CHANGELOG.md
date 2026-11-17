@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.17.0 - 2026-11-17
+
+### Features
+- Animated illustrated header on the list, mini and map cards: a 90 px banner with the title and subtitle on the sky and a fuel station on the right — price totem showing the card's cheapest prices, canopy, pumps and a car filling up — on a 10 px road strip, with day and night pictures (follows `sun.sun` or the dark theme, `illustration_theme: day | night` to force one) and still under reduced motion. The header icon colour follows the data (primary when prices are in stock, amber when every fuel is out of stock, grey with no station, red when unavailable), and the mini card shows the cheapest station's brand logo on it. `illustration: false` keeps the classic header; both options are in the visual editors, translated in every language.
+- Map card: the search field (shorter placeholder, "Town or postcode") and the radius list now sit over the map at its top left, the zoom, full screen and **Locate me** buttons in one bar at its bottom right, and **Show the out of stock station** at its bottom left.
+
 ## 1.16.0 - 2026-11-15
 
 ### Features

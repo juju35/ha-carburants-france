@@ -325,8 +325,8 @@ test('changing the language option relabels the search bar and the full screen b
   // Same input, not rebuilt: the text typed (and the focus) stay.
   assert.equal(bar.querySelector('input'), input);
   assert.equal(input.value, 'Renn');
-  assert.equal(input.placeholder, 'Rechercher une ville ou un code postal');
-  assert.equal(input.attrs['aria-label'], 'Rechercher une ville ou un code postal');
+  assert.equal(input.placeholder, 'Ville ou code postal');
+  assert.equal(input.attrs['aria-label'], 'Ville ou code postal');
   assert.equal(clear.title, 'Effacer la recherche');
   assert.equal(clear.attrs['aria-label'], 'Effacer la recherche');
   assert.equal(fsLink.title, 'Plein écran');
@@ -360,9 +360,9 @@ test('with language: auto, the map card labels follow a Home Assistant language 
   card.setConfig({ entity: 'sensor.x', language: 'auto' });
   card._update = () => {};
   card.hass = { locale: { language: 'fr' }, states: {} };
-  assert.equal(input.placeholder, 'Rechercher une ville ou un code postal');
+  assert.equal(input.placeholder, 'Ville ou code postal');
   card.hass = { locale: { language: 'de' }, states: {} };
-  assert.equal(input.placeholder, 'Ort oder Postleitzahl suchen');
+  assert.equal(input.placeholder, 'Ort oder PLZ');
   assert.equal(fsLink.title, 'Vollbild');
 });
 
@@ -573,10 +573,13 @@ test('the Leaflet controls of the map card follow the theme (no hard-coded colou
   assert.match(css, /\.leaflet-container \.leaflet-control-attribution a \{[^}]*color: /);
 });
 
-test('the map card search bar lines up with the header, and the position halo follows the primary colour', () => {
+test('the map card search bar sits over the map at its top left, and the position halo follows the primary colour', () => {
   const css = styles(CarburantsFranceMapCard);
   assert.match(css, /\.header \{[^}]*padding: 12px 12px 8px/);
-  assert.match(css, /\.searchbar \{ padding: 0 12px 8px; \}/);
+  assert.match(css, /\.searchbar \{ position: absolute; z-index: 1000; top: 10px; left: 10px; width: 210px; max-width: calc\(100% - 20px\)/);
+  // Out of stock toggle at the bottom left, the tools (zoom, full screen, locate) in one bar at the bottom right.
+  assert.match(css, /\.leaflet-bottom\.leaflet-left \.carb-toggle \{/);
+  assert.match(css, /\.leaflet-bottom\.leaflet-right \.carb-tools \{/);
   assert.doesNotMatch(css, /rgba\(3,169,244/);
   assert.match(css, /\.me \{[^}]*box-shadow: 0 0 0 6px color-mix\(in srgb, var\(--primary-color, #03a9f4\) 25%, transparent\)/);
 });
@@ -765,11 +768,11 @@ test('narrow card: the title keeps a few letters and the header buttons wrap rat
   // The subtitle (station count, "Data unavailable") wraps rather than being cut: "Podaci nisu dostupni" at 234 px.
   assert.match(list, /\.hsub \{[^}]*white-space: normal/);
   assert.doesNotMatch(list, /\.hsub \{[^}]*(nowrap|ellipsis)/);
-  // Map card: same for the title, the radius and "locate me" tools stay whole.
+  // Map card: same for the title; the radius stays whole in the search pill, which never leaves the map.
   assert.match(map, /\.header \{[^}]*flex-wrap: wrap/);
   assert.match(map, /\.hname \{[^}]*flex: 1 1 0; min-width: 5ch/);
-  assert.match(map, /\.tools \{[^}]*flex: none/);
-  assert.match(map, /\.locate \{[^}]*flex: none/);
+  assert.match(map, /\.rad \{[^}]*flex: none/);
+  assert.match(map, /\.leaflet-bar a\.locate \{[^}]*flex: none/);
 });
 
 test('narrow list card: the fuel tiles, opening status and details reflow instead of leaving the card', () => {
@@ -946,6 +949,9 @@ const miniHtml = (config, state) => CarburantsFranceMiniCard.prototype._miniHtml
   _price: CarburantsFranceCard.prototype._price,
   _miniFuel: CarburantsFranceMiniCard.prototype._miniFuel,
   _zoomButton: CarburantsFranceMiniCard.prototype._zoomButton,
+  _fuels: CarburantsFranceCard.prototype._fuels,
+  _iconHtml: CarburantsFranceCard.prototype._iconHtml,
+  _headerMarkup: CarburantsFranceCard.prototype._headerMarkup,
 });
 const miniState = {
   state: '2',
@@ -962,8 +968,12 @@ test('mini card: the cheapest station and price of the chosen fuel, with its 40 
   let html = miniHtml({}, miniState);
   assert.match(html, /1\.750 €/);
   assert.match(html, /Leclerc Cesson · 4 km/);
-  assert.match(html, /class="icon hbadge"/);
+  assert.match(html, /class="icon hbadge st-ok"/);
   assert.match(html, /class="zoom"[^>]*title="Show the full card"/);
+  // The illustrated banner, its totem with the cheapest prices; illustration: false keeps the compact row.
+  assert.match(html, /class="banner[^"]*"/);
+  assert.match(html, /cb-tprice[^>]*>1\.750</);
+  assert.match(miniHtml({ illustration: false }, miniState), /class="mrow"><span class="icon hbadge st-ok">/);
   html = miniHtml({ fuel: 'e10' }, miniState);
   assert.match(html, /1\.700 €/);
   assert.match(html, /Total Rennes · 2\.3 km/);
@@ -976,6 +986,9 @@ test('mini card: the cheapest station and price of the chosen fuel, with its 40 
 test('mini card: out of stock everywhere, unavailable sensor, no sensor', () => {
   const out = { ...miniState, attributes: { ...miniState.attributes, stations: [station(3, null, null)] } };
   assert.match(miniHtml({}, out), /class="fprice out">Out of stock/);
+  // The header icon says the status: amber when out of stock everywhere, red without data.
+  assert.match(miniHtml({}, out), /hbadge st-out/);
+  assert.match(miniHtml({}, { state: 'unavailable', attributes: {} }), /hbadge st-off/);
   assert.match(miniHtml({}, { state: 'unavailable', attributes: {} }), /Data unavailable/);
   assert.match(miniHtml({}, null), /Stations sensor not found/);
 });

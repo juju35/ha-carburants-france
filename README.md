@@ -29,7 +29,7 @@ Home Assistant integration for [fuel prices in France](https://data.economie.gou
 - `carburants_france.refresh` action to force an update
 - `custom:carburants-france-card` card, **shipped with the integration** and loaded automatically: logos, prices, shortages, best price in green, live opening status, opening hours, services and directions on click
 - `custom:carburants-france-mini-card` mini card: the cheapest price of one fuel and the station selling it on one line, with a button that shows the full list card
-- `custom:carburants-france-map-card` map card: your stations on a map, with the logo and the price of a fuel on each marker, your home, and the station details on click; **Locate me** button to see the stations around you (radius picked in the title) and **search by town**, without adding them to the integration
+- `custom:carburants-france-map-card` map card: your stations on a map, with the logo and the price of a fuel on each marker, your home, and the station details on click; **Locate me** button to see the stations around you (radius picked next to the search field) and **search by town**, without adding them to the integration
 - **Map card without following any station**: turn off **Follow stations** at setup to use the map card alone, with every station around you — no station sensor created
 - Add or remove stations and fuels at any time from the options
 - **Diagnostics** download (Settings > Devices & services), with positions and addresses redacted
@@ -140,6 +140,10 @@ type: custom:carburants-france-card
 | `highlight_best` | `true` | Best price of each fuel in green with a star |
 | `show_refresh` | `true` | Refresh button |
 | `hide_out_of_stock_stations` | `true` | Hide the stations where every fuel shown is out of stock |
+| `illustration` | `true` | Illustrated header (see below); `false` keeps the classic header |
+| `illustration_theme` | `auto` | Picture of the header: `auto` (night when the sun is below the horizon, else with the dark theme), `day` or `night` |
+
+The **illustrated header** is a 90 px banner: the title and the station count on the sky, a fuel station on the right — the price totem showing the cheapest price of the first three fuels shown, two pumps and a car filling up — on a road strip. The icon colour follows the data: the theme's primary colour when prices are in stock, amber when every fuel is out of stock, grey with no station to show, red when the data is unavailable; the car and the pump counter only appear while prices are in stock. The picture follows the sun (`sun.sun`) or the dark theme, and stays still when the system asks for reduced motion.
 
 Click a station to see its weekly opening hours, its services and a directions button. One station is expanded at a time; a click outside the card collapses it and hides the out-of-stock stations again.
 
@@ -163,6 +167,8 @@ It takes every option of the list card (they apply to the full view), plus:
 | `fuel` | `sort_fuel`, else the first fuel | Fuel whose cheapest price is shown |
 | `zoom` | `true` | Detail button at the top right, which shows the full card |
 
+The compact view also uses the list card's `illustration` and `illustration_theme` (both): the same 90 px banner, with the price and the station on its sky and the station's brand logo on the icon; the totem shows the chosen fuel first.
+
 When the fuel is out of stock at every station, the card says so instead of a price.
 
 ### Map card
@@ -179,7 +185,9 @@ type: custom:carburants-france-map-card
 | `title` | `Stations map` | Card title, `""` to hide it |
 | `language` | `auto` | Card language: `auto` (Home Assistant's), `en`, `fr`, `de`, `es`, `it`, `nl`, `pt` (European Portuguese), `pl`, `ro`, `da`, `sv`, `bg`, `ru`, `uk`, `hu`, `sk`, `cs`, `sl`, `lv`, `el`, `sr` (Serbian, Cyrillic) or `sr-Latn` (Serbian, Latin) |
 | `show_icon` | `true` | Icon next to the title, opening the data page on data.economie.gouv.fr |
-| `show_fullscreen` | `true` | Full screen button, under the zoom buttons |
+| `show_fullscreen` | `true` | Full screen button, under the zoom buttons (bottom right of the map) |
+| `illustration` | `true` | Illustrated header, as on the list card; `false` keeps the classic header |
+| `illustration_theme` | `auto` | Picture of the header: `auto`, `day` or `night` |
 | `fuel` | cheapest | Fuel shown on the markers. Without a value, each marker shows the cheapest available fuel of the station, with its name ("E10 1,990 €") |
 | `height` | `400` | Map height in pixels |
 | `zoom` | fitted | Fixed zoom; by default the map fits all the stations |
@@ -190,14 +198,14 @@ type: custom:carburants-france-map-card
 | `show_home` | `true` | Show your home |
 | `show_logo` | `true` | Brand logo on the markers |
 | `show_name` | `true` | Station name on the markers, above the price |
-| `hide_out_of_stock_stations` | `true` | Hide the stations where every followed fuel is out of stock (button at the top right to show them) |
-| `show_locate` | `true` | **Locate me** button and radius list in the title |
+| `hide_out_of_stock_stations` | `true` | Hide the stations where every followed fuel is out of stock (button at the bottom left of the map to show them) |
+| `show_locate` | `true` | **Locate me** button (bottom right of the map, under full screen) and radius list (next to the search field) |
 | `radius` | `5` | Default radius of **Locate me**, in km (up to 50) |
-| `show_search` | `true` | Search field under the title, to show the stations of a town (or a postcode) |
+| `show_search` | `true` | Search field at the top left of the map, to show the stations of a town (or a postcode) |
 
 Each marker shows the logo and the price: green for the best price of that fuel, orange when every followed fuel is out of stock. Click a marker to see all the prices, the opening status and the directions. The full screen button enlarges the map to the whole screen (on iPhone, where full screen is not available, it covers the page); Escape or the same button closes it.
 
-**Locate me** (crosshairs button in the title) shows the stations within the radius picked next to it (5 km by default) around you: your browser's position (HTTPS or the companion app), else your person's position, else your home. The title says so, the search area is drawn and your position is marked; changing the radius searches again. The **search field** shows the stations of a town (or a postcode, a department) and focuses the map on that town; the cross clears it. Neither adds anything to the integration: stations you already follow keep their name and logo and are marked as followed in their popup. Clicking **Locate me** again, or clearing the search, brings back your followed stations.
+**Locate me** (crosshairs button at the bottom right of the map) shows the stations within the radius picked next to the search field (5 km by default) around you: your browser's position (HTTPS or the companion app), else your person's position, else your home. The title says so, the search area is drawn and your position is marked; changing the radius searches again. The **search field** shows the stations of a town (or a postcode, a department) and focuses the map on that town; the cross clears it. Neither adds anything to the integration: stations you already follow keep their name and logo and are marked as followed in their popup. Clicking **Locate me** again, or clearing the search, brings back your followed stations.
 
 Scroll-wheel zoom is disabled so it doesn't get in the way of scrolling the dashboard (use the buttons or pinch).
 

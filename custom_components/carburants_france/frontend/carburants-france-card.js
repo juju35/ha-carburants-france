@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.16.0';
+var CARBURANTS_CARD_VERSION = '1.17.0';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -60,6 +60,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Masquer les stations en rupture',
       language: 'Langue',
       language_auto: 'Selon Home Assistant',
+      illustration: 'En-tête illustré',
+      illustration_theme: 'Thème de l’illustration',
+      illustration_theme_auto: 'Automatique (soleil)',
+      illustration_theme_day: 'Jour',
+      illustration_theme_night: 'Nuit',
       fuel: 'Carburant',
       zoom: 'Bouton détail',
     },
@@ -120,6 +125,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Hide out of stock stations',
       language: 'Language',
       language_auto: 'Home Assistant language',
+      illustration: 'Illustrated header',
+      illustration_theme: 'Illustration theme',
+      illustration_theme_auto: 'Automatic (sun)',
+      illustration_theme_day: 'Day',
+      illustration_theme_night: 'Night',
       fuel: 'Fuel',
       zoom: 'Detail button',
     },
@@ -180,6 +190,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Nicht verfügbare Tankstellen ausblenden',
       language: 'Sprache',
       language_auto: 'Wie Home Assistant',
+      illustration: 'Illustrierte Kopfzeile',
+      illustration_theme: 'Thema der Illustration',
+      illustration_theme_auto: 'Automatisch (Sonne)',
+      illustration_theme_day: 'Tag',
+      illustration_theme_night: 'Nacht',
       fuel: 'Kraftstoff',
       zoom: 'Detail-Schaltfläche',
     },
@@ -240,6 +255,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Ocultar las estaciones agotadas',
       language: 'Idioma',
       language_auto: 'Según Home Assistant',
+      illustration: 'Encabezado ilustrado',
+      illustration_theme: 'Tema de la ilustración',
+      illustration_theme_auto: 'Automático (sol)',
+      illustration_theme_day: 'Día',
+      illustration_theme_night: 'Noche',
       fuel: 'Carburante',
       zoom: 'Botón de detalle',
     },
@@ -302,6 +322,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Nascondi le stazioni esaurite',
       language: 'Lingua',
       language_auto: 'Lingua di Home Assistant',
+      illustration: 'Intestazione illustrata',
+      illustration_theme: 'Tema dell’illustrazione',
+      illustration_theme_auto: 'Automatico (sole)',
+      illustration_theme_day: 'Giorno',
+      illustration_theme_night: 'Notte',
       fuel: 'Carburante',
       zoom: 'Pulsante dettagli',
     },
@@ -364,6 +389,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Uitverkochte tankstations verbergen',
       language: 'Taal',
       language_auto: 'Taal van Home Assistant',
+      illustration: 'Geïllustreerde koptekst',
+      illustration_theme: 'Thema van de illustratie',
+      illustration_theme_auto: 'Automatisch (zon)',
+      illustration_theme_day: 'Dag',
+      illustration_theme_night: 'Nacht',
       fuel: 'Brandstof',
       zoom: 'Detailknop',
     },
@@ -425,6 +455,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Ocultar os postos esgotados',
       language: 'Idioma',
       language_auto: 'Idioma do Home Assistant',
+      illustration: 'Cabeçalho ilustrado',
+      illustration_theme: 'Tema da ilustração',
+      illustration_theme_auto: 'Automático (sol)',
+      illustration_theme_day: 'Dia',
+      illustration_theme_night: 'Noite',
       fuel: 'Combustível',
       zoom: 'Botão de detalhe',
     },
@@ -488,6 +523,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Ukryj stacje bez paliwa',
       language: 'Język',
       language_auto: 'Język Home Assistant',
+      illustration: 'Ilustrowany nagłówek',
+      illustration_theme: 'Motyw ilustracji',
+      illustration_theme_auto: 'Automatyczny (słońce)',
+      illustration_theme_day: 'Dzień',
+      illustration_theme_night: 'Noc',
       fuel: 'Paliwo',
       zoom: 'Przycisk szczegółów',
     },
@@ -551,6 +591,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Ascunde stațiile fără carburant',
       language: 'Limbă',
       language_auto: 'Limba Home Assistant',
+      illustration: 'Antet ilustrat',
+      illustration_theme: 'Tema ilustrației',
+      illustration_theme_auto: 'Automat (soare)',
+      illustration_theme_day: 'Zi',
+      illustration_theme_night: 'Noapte',
       fuel: 'Carburant',
       zoom: 'Buton de detalii',
     },
@@ -613,6 +658,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Skjul tankstationer uden brændstof',
       language: 'Sprog',
       language_auto: 'Home Assistant-sprog',
+      illustration: 'Illustreret overskrift',
+      illustration_theme: 'Illustrationens tema',
+      illustration_theme_auto: 'Automatisk (sol)',
+      illustration_theme_day: 'Dag',
+      illustration_theme_night: 'Nat',
       fuel: 'Brændstof',
       zoom: 'Detaljeknap',
     },
@@ -675,6 +725,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Dölj stationer utan bränsle',
       language: 'Språk',
       language_auto: 'Home Assistants språk',
+      illustration: 'Illustrerad rubrik',
+      illustration_theme: 'Illustrationens tema',
+      illustration_theme_auto: 'Automatiskt (sol)',
+      illustration_theme_day: 'Dag',
+      illustration_theme_night: 'Natt',
       fuel: 'Drivmedel',
       zoom: 'Detaljknapp',
     },
@@ -737,6 +792,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Скрий бензиностанциите без гориво',
       language: 'Език',
       language_auto: 'Езикът на Home Assistant',
+      illustration: 'Илюстрирано заглавие',
+      illustration_theme: 'Тема на илюстрацията',
+      illustration_theme_auto: 'Автоматично (слънце)',
+      illustration_theme_day: 'Ден',
+      illustration_theme_night: 'Нощ',
       fuel: 'Гориво',
       zoom: 'Бутон за подробности',
     },
@@ -798,6 +858,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Скрыть АЗС без топлива',
       language: 'Язык',
       language_auto: 'Язык Home Assistant',
+      illustration: 'Иллюстрированный заголовок',
+      illustration_theme: 'Тема иллюстрации',
+      illustration_theme_auto: 'Автоматически (солнце)',
+      illustration_theme_day: 'День',
+      illustration_theme_night: 'Ночь',
       fuel: 'Топливо',
       zoom: 'Кнопка подробностей',
     },
@@ -859,6 +924,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Приховати АЗС без пального',
       language: 'Мова',
       language_auto: 'Мова Home Assistant',
+      illustration: 'Ілюстрований заголовок',
+      illustration_theme: 'Тема ілюстрації',
+      illustration_theme_auto: 'Автоматично (сонце)',
+      illustration_theme_day: 'День',
+      illustration_theme_night: 'Ніч',
       fuel: 'Пальне',
       zoom: 'Кнопка деталей',
     },
@@ -920,6 +990,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Kifogyott töltőállomások elrejtése',
       language: 'Nyelv',
       language_auto: 'Home Assistant nyelve',
+      illustration: 'Illusztrált fejléc',
+      illustration_theme: 'Illusztráció témája',
+      illustration_theme_auto: 'Automatikus (nap)',
+      illustration_theme_day: 'Nappal',
+      illustration_theme_night: 'Éjszaka',
       fuel: 'Üzemanyag',
       zoom: 'Részletek gomb',
     },
@@ -983,6 +1058,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Skryť stanice bez paliva',
       language: 'Jazyk',
       language_auto: 'Jazyk Home Assistant',
+      illustration: 'Ilustrovaná hlavička',
+      illustration_theme: 'Téma ilustrácie',
+      illustration_theme_auto: 'Automaticky (slnko)',
+      illustration_theme_day: 'Deň',
+      illustration_theme_night: 'Noc',
       fuel: 'Palivo',
       zoom: 'Tlačidlo podrobností',
     },
@@ -1046,6 +1126,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Skrýt stanice bez paliva',
       language: 'Jazyk',
       language_auto: 'Jazyk Home Assistant',
+      illustration: 'Ilustrované záhlaví',
+      illustration_theme: 'Motiv ilustrace',
+      illustration_theme_auto: 'Automaticky (slunce)',
+      illustration_theme_day: 'Den',
+      illustration_theme_night: 'Noc',
       fuel: 'Palivo',
       zoom: 'Tlačítko podrobností',
     },
@@ -1110,6 +1195,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Skrij postaje brez goriva',
       language: 'Jezik',
       language_auto: 'Jezik sistema Home Assistant',
+      illustration: 'Ilustrirana glava',
+      illustration_theme: 'Tema ilustracije',
+      illustration_theme_auto: 'Samodejno (sonce)',
+      illustration_theme_day: 'Dan',
+      illustration_theme_night: 'Noč',
       fuel: 'Gorivo',
       zoom: 'Gumb za podrobnosti',
     },
@@ -1172,6 +1262,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Paslēpt stacijas bez degvielas',
       language: 'Valoda',
       language_auto: 'Home Assistant valoda',
+      illustration: 'Ilustrēta galvene',
+      illustration_theme: 'Ilustrācijas motīvs',
+      illustration_theme_auto: 'Automātiski (saule)',
+      illustration_theme_day: 'Diena',
+      illustration_theme_night: 'Nakts',
       fuel: 'Degviela',
       zoom: 'Detaļu poga',
     },
@@ -1234,6 +1329,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Απόκρυψη πρατηρίων χωρίς καύσιμα',
       language: 'Γλώσσα',
       language_auto: 'Γλώσσα του Home Assistant',
+      illustration: 'Εικονογραφημένη κεφαλίδα',
+      illustration_theme: 'Θέμα εικονογράφησης',
+      illustration_theme_auto: 'Αυτόματο (ήλιος)',
+      illustration_theme_day: 'Ημέρα',
+      illustration_theme_night: 'Νύχτα',
       fuel: 'Καύσιμο',
       zoom: 'Κουμπί λεπτομερειών',
     },
@@ -1295,6 +1395,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Сакриј станице са несташицом',
       language: 'Језик',
       language_auto: 'Аутоматски',
+      illustration: 'Илустровано заглавље',
+      illustration_theme: 'Тема илустрације',
+      illustration_theme_auto: 'Аутоматски (сунце)',
+      illustration_theme_day: 'Дан',
+      illustration_theme_night: 'Ноћ',
       fuel: 'Гориво',
       zoom: 'Дугме за детаље',
     },
@@ -1356,6 +1461,11 @@ var CarburantsI18n = {
       hide_out_of_stock_stations: 'Sakrij stanice sa nestašicom',
       language: 'Jezik',
       language_auto: 'Automatski',
+      illustration: 'Ilustrovano zaglavlje',
+      illustration_theme: 'Tema ilustracije',
+      illustration_theme_auto: 'Automatski (sunce)',
+      illustration_theme_day: 'Dan',
+      illustration_theme_night: 'Noć',
       fuel: 'Gorivo',
       zoom: 'Dugme za detalje',
     },
@@ -1380,6 +1490,8 @@ var CARBURANTS_DEFAULTS = {
   highlight_best: true,
   hide_out_of_stock_stations: true,
   show_refresh: true,
+  illustration: true,
+  illustration_theme: 'auto',
 };
 // Options of the mini card only: `fuel` (the fuel it shows, else the sort fuel, else the first one) has no default.
 var CARBURANTS_MINI_DEFAULTS = { zoom: true };
@@ -1743,6 +1855,189 @@ function carbRelative(iso, locale) {
   return rtf.format(0, 'minute');
 }
 
+// ── Illustrated header (list, mini and map cards) ─────────────────────────────
+// A fuel station on the right of a 90 px banner: price totem with the cheapest prices the card shows, canopy,
+// two pumps and a car filling up, over a sky (sun or moon) and a 10 px road strip edge to edge at the bottom. The
+// left of the banner is open sky for the icon, the title and the subtitle. Status of the data:
+// ok (prices in stock: the car fills up), idle (no station to show), out (every fuel out of stock), off (no data).
+var CARBURANTS_NO_VALUE = new Set(['unavailable', 'unknown', '']);
+// Short names on the totem, as at the pump.
+var CARBURANTS_TOTEM_LABELS = { gazole: 'Gazole', sp95: 'SP95', sp98: 'SP98', e10: 'SP95-E10', e85: 'E85', gplc: 'GPLc' };
+var carbUidSeq = 0;
+function carbUid() {
+  carbUidSeq += 1;
+  return `cb${carbUidSeq}`;
+}
+
+// Night picture: forced by illustration_theme, else the sun below the horizon, else Home Assistant's dark mode.
+function carbIsNight(hass, config) {
+  var theme = config?.illustration_theme;
+  if (theme === 'night') return true;
+  if (theme === 'day') return false;
+  var sun = hass?.states?.['sun.sun'];
+  if (sun && !CARBURANTS_NO_VALUE.has(String(sun.state))) return sun.state === 'below_horizon';
+  return !!hass?.themes?.darkMode;
+}
+
+// The totem rows: the cheapest price in stock of the first three fuels shown (`best` from carbBestPrices).
+function carbTotemRows(fuels, best, locale) {
+  var fmt = new Intl.NumberFormat(locale, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  return (fuels || []).slice(0, 3).map((f) => ({
+    label: CARBURANTS_TOTEM_LABELS[f.key] || String(f.name || f.key || '').slice(0, 8),
+    color: CARBURANTS_FUEL_BADGES[f.key]?.bg || '#8a96a3',
+    price: best && best[f.key] != null ? fmt.format(best[f.key]) : null,
+  }));
+}
+
+// Status of a set of stations: ok when a fuel shown is in stock somewhere, out when every one is out of stock.
+function carbStatus(st, stations, fuels) {
+  if (!st || carbUnavailable(st)) return 'off';
+  if (!stations || !stations.length) return 'idle';
+  var best = carbBestPrices(stations, fuels || []);
+  return Object.keys(best).some((k) => best[k] != null) ? 'ok' : 'out';
+}
+
+// The picture, drawn in a 320 × 78 frame of which x 150–320 is shown (viewBox), base line at y 78 (top of the
+// road strip). The station is drawn at the 200 × 80 scale of its design, then scaled 1.18 into place.
+function carbSceneSvg(uid, status, rows) {
+  var esc = carbEsc;
+  var stars = [[158, 6, 0.7], [168, 24, 0.5], [190, 4, 0.6], [226, 22, 0.45], [252, 6, 0.7], [276, 14, 0.5], [298, 5, 0.6], [314, 16, 0.45]]
+    .map(([x, y, r], i) => `<circle class="cb-star${i % 3 ? '' : ' tw'}" cx="${x}" cy="${y}" r="${r}"/>`).join('');
+  var list = rows && rows.length ? rows : [{ label: '', color: '#8a96a3', price: null }];
+  var h = 10 + list.length * 9.6;
+  var totem = `<g class="cb-totem" transform="translate(96 ${56 - h})"><rect class="cb-pole" x="-1.5" y="${h - 4}" width="3" height="22"/>` +
+    `<rect class="cb-tbox" x="-22" y="0" width="44" height="${h + 1}" rx="3"/><rect class="cb-thead" x="-22" y="0" width="44" height="7" rx="3"/><rect class="cb-thead" x="-22" y="4" width="44" height="3"/>` +
+    '<text class="cb-tprix" y="5.3" text-anchor="middle">PRIX</text>' +
+    list.map((r, i) => {
+      var y = 9.6 + i * 9.6;
+      return `<rect class="cb-trow" x="-19.5" y="${y}" width="39" height="8" rx="1"/><rect x="-19.5" y="${y}" width="2" height="8" fill="${esc(r.color)}"/>` +
+        `<text class="cb-tlabel" x="-16" y="${y + 5.3}">${esc(r.label)}</text>` +
+        `<text class="cb-tprice${r.price && status !== 'off' ? '' : ' none'}" x="18.4" y="${y + 5.9}" text-anchor="end">${esc(status === 'off' ? '' : r.price || '----')}</text>`;
+    }).join('') + '</g>';
+  var screen = (x) => {
+    if (status === 'out') return '<text class="cb-digits out" y="-21.8" text-anchor="middle">----</text>';
+    if (status === 'off') return '';
+    if (status === 'ok' && x > 150) {
+      return ['12.6', '24.1', '32.4'].map((v, i) => `<text class="cb-digits cb-n${i + 1}" y="-21.8" text-anchor="middle">${v}</text>`).join('');
+    }
+    return '<text class="cb-digits" y="-21.8" text-anchor="middle">0.00</text>';
+  };
+  var pump = (x) => `<g transform="translate(${x} 74)"><rect class="cb-pump" x="-7" y="-30" width="14" height="30" rx="2"/>` +
+    `<rect class="cb-screen" x="-5" y="-27" width="10" height="7" rx="1"/>${screen(x)}` +
+    '<rect class="cb-band" x="-7" y="-14" width="14" height="3"/><path class="cb-hose" d="M7 -18 q5 0 5 6 v8"/>' +
+    (status === 'ok' && x > 150 ? '<path class="cb-flow" d="M7 -18 q5 0 5 6 v8"/>' : '') + '</g>';
+  var car = status === 'ok'
+    ? '<g class="cb-car" transform="translate(150 75.6)"><path class="cb-body" d="M0 -6 Q1 -11 8 -12 L14 -16 H26 L33 -12 Q40 -11 40 -6 V-2 H0Z"/>' +
+      '<path class="cb-glass" d="M15 -15 H25 L30 -12 H11Z"/><rect class="cb-light" x="38" y="-8" width="2" height="1.6" rx=".6"/>' +
+      '<circle class="cb-wheel" cx="9" cy="-2" r="3.4"/><circle class="cb-wheel" cx="31" cy="-2" r="3.4"/>' +
+      '<circle class="cb-hub" cx="9" cy="-2" r="1.2"/><circle class="cb-hub" cx="31" cy="-2" r="1.2"/></g>'
+    : '';
+  return `<svg class="cb-scene" viewBox="150 0 170 78" preserveAspectRatio="xMaxYMax meet" aria-hidden="true" focusable="false">
+    <defs><linearGradient id="cb-glow-${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4" stop-opacity=".55"/><stop offset="1" stop-color="#fff3c4" stop-opacity="0"/></linearGradient></defs>
+    <g class="cb-day"><circle class="cb-sunhalo" cx="238" cy="9" r="7"/><circle class="cb-sun" cx="238" cy="9" r="4.4"/>
+      <path class="cb-cloud" d="M158 14a3.4 3.4 0 0 1 5-2.8 4.2 4.2 0 0 1 8 1.2 2.6 2.6 0 0 1 .4 5H160a2.6 2.6 0 0 1-2-3.4Z"/></g>
+    <g class="cb-night">${stars}<path class="cb-moon" d="M238 4a5 5 0 1 0 4.4 7.5 4 4 0 1 1-4.4-7.5Z"/></g>
+    <path class="cb-hill" d="M150 78C186 70 214 64 252 62.6C278 61.8 300 62 320 62.4V78Z"/>
+    <g transform="translate(320 78) scale(1.18) translate(-200 -74)">
+      ${totem}
+      <rect class="cb-roof" x="122" y="24" width="78" height="7" rx="1"/><rect class="cb-stripe ${status === 'off' ? 'dim' : ''}" x="122" y="29" width="78" height="3"/>
+      <rect class="cb-lamp" x="124" y="32" width="76" height="42" fill="url(#cb-glow-${uid})"/>
+      <rect class="cb-post" x="132" y="32" width="3" height="42"/><rect class="cb-post" x="190" y="32" width="3" height="42"/>
+      ${pump(146)}${pump(178)}${car}
+    </g>
+  </svg>`;
+}
+
+var CARBURANTS_SCENE_STYLE = [
+  '.banner { position: relative; overflow: hidden; height: 90px; color: #0d2a45; container-type: inline-size; background: linear-gradient(90deg, #f1f8ff 0%, #e2f1fd 34%, #b9def8 70%, #9fd0f3 100%); }',
+  '.banner.night { color: #fff; background: linear-gradient(90deg, #1b2f52 0%, #15284a 36%, #0f1f3d 72%, #0a1830 100%); }',
+  // The road: a 10 px strip edge to edge, dashed centre line; the scene stands on it.
+  '.cb-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: #858c94; box-shadow: inset 0 1px 0 #6f767d; }',
+  '.cb-ground::after { content: ""; position: absolute; left: 0; right: 0; top: calc(50% - .8px); height: 1.6px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.85) 0 9px, transparent 9px 18px); }',
+  '.night .cb-ground { background: #2c323b; box-shadow: inset 0 1px 0 #3a414b; }',
+  '.night .cb-ground::after { background: repeating-linear-gradient(90deg, rgba(255,255,255,.45) 0 9px, transparent 9px 18px); }',
+  '.cb-scene { position: absolute; right: 0; bottom: 10px; height: calc(100% - 10px); width: min(46cqw, 175px); overflow: hidden; }',
+  // The text on the sky, left of the scene.
+  '.banner .htext { position: absolute; left: 12px; top: 6px; bottom: 16px; right: calc(min(46cqw, 175px) + 4px); display: flex; align-items: center; gap: 10px; min-width: 0; }',
+  '.banner .titles { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 1px; }',
+  '.banner .hname { color: inherit; font-weight: 600; }',
+  // The subtitle wraps on two lines at most on a narrow card.
+  '.banner .hsub { color: #3b5b78; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }',
+  '.banner.night .hsub { color: rgba(255,255,255,.78); }',
+  '.banner .hbadge { position: relative; background: rgba(255,255,255,.62); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 22%, transparent); }',
+  '.banner.night .hbadge { background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); color: color-mix(in srgb, var(--c) 62%, #fff); }',
+  // Buttons on the sky, top right (refresh, detail).
+  '.banner .btools { position: absolute; top: 4px; right: 4px; display: flex; gap: 4px; }',
+  '.banner .btools > * { margin: 0 !important; color: #10283f !important; background: rgba(255,255,255,.6); border-radius: 50%; }',
+  '.banner.night .btools > * { color: #fff !important; background: rgba(10,20,40,.5); }',
+  '.banner .refresh-btn { --mdc-icon-button-size: 32px; --mdc-icon-size: 18px; --ha-icon-button-size: 32px; width: 32px !important; height: 32px !important; }',
+  '.banner .zoom { width: 28px; height: 28px; align-self: auto; }',
+  // Narrow card: the scene shrinks with the card (meet), the text keeps at least half.
+  '.cb-night, .night .cb-day { display: none; }',
+  '.night .cb-night { display: inline; }',
+  '.cb-sun { fill: #ffd65a; } .cb-sunhalo { fill: #ffd65a; opacity: .28; }',
+  '.cb-cloud { fill: #fff; opacity: .9; animation: cb-drift 6s ease-in-out infinite alternate; }',
+  '.cb-star { fill: #fff; opacity: .8; } .cb-star.tw { animation: cb-twinkle 3.2s ease-in-out infinite alternate; }',
+  '.cb-moon { fill: #f3eed2; }',
+  '.cb-hill { fill: #a7d39f; } .night .cb-hill { fill: #1d3a4a; }',
+  '.cb-pole { fill: #5f6b7a; }',
+  '.cb-tbox { fill: #1d3a5e; } .night .cb-tbox { fill: #1f2a36; }',
+  '.cb-thead { fill: #e5484d; }',
+  '.cb-tprix { font: 700 4.4px sans-serif; fill: #fff; }',
+  '.cb-trow { fill: #0b0f14; }',
+  '.cb-tlabel { font: 3.3px sans-serif; fill: #cfd6de; }',
+  '.cb-tprice { font: 700 5px monospace; fill: #ffd65a; } .cb-tprice.none { fill: #8a96a3; }',
+  '.night .cb-tprice { filter: drop-shadow(0 0 1px #ffb300); } .night .cb-tprice.none { filter: none; }',
+  '.cb-roof { fill: #f6f8fa; } .night .cb-roof { fill: #e8ecf0; }',
+  '.cb-stripe { fill: #e5484d; } .cb-stripe.dim { fill: #9aa3ae; }',
+  '.cb-lamp { display: none; } .night .cb-lamp { display: inline; }',
+  '.cb-post { fill: #c9ced6; } .night .cb-post { fill: #9aa3ae; }',
+  '.cb-pump { fill: #fff; stroke: #c9ced6; stroke-width: .6; } .night .cb-pump { fill: #d8dce2; stroke: #9aa3ae; }',
+  '.cb-screen { fill: #101418; }',
+  '.cb-digits { font: 700 4px monospace; fill: #ffd65a; } .cb-digits.out { fill: #ff6b5e; }',
+  '.cb-band { fill: #e5484d; }',
+  '.cb-hose { stroke: #2a3038; stroke-width: 1.4; fill: none; }',
+  '.cb-flow { stroke: #f5b400; stroke-width: .8; fill: none; stroke-dasharray: 1.4 2.2; animation: cb-flow .8s linear infinite; }',
+  '.cb-body { fill: #2f80ed; } .cb-glass { fill: #cfe6f7; } .night .cb-glass { fill: #3b4b5e; }',
+  '.cb-wheel { fill: #22262b; } .cb-hub { fill: #9aa3ae; }',
+  '.cb-light { fill: #fff2c2; } .night .cb-light { fill: #fffbe6; filter: drop-shadow(0 0 1.4px #fff3b0); }',
+  // The pump counter: 12.6, 24.1 then 32.4 litres, again and again.
+  // Without animation (reduced motion, a still picture), the last count stays.
+  '.cb-n1, .cb-n2 { opacity: 0; }',
+  '.cb-n1 { animation: cb-c1 3s steps(1, end) infinite; } .cb-n2 { animation: cb-c2 3s steps(1, end) infinite; } .cb-n3 { animation: cb-c3 3s steps(1, end) infinite; }',
+  '@keyframes cb-c1 { 0% { opacity: 1; } 33.34%, 100% { opacity: 0; } }',
+  '@keyframes cb-c2 { 0% { opacity: 0; } 33.34% { opacity: 1; } 66.67%, 100% { opacity: 0; } }',
+  '@keyframes cb-c3 { 0% { opacity: 0; } 66.67%, 100% { opacity: 1; } }',
+  '@keyframes cb-flow { to { stroke-dashoffset: -3.6; } }',
+  '@keyframes cb-drift { from { transform: translateX(-3px); } to { transform: translateX(3px); } }',
+  '@keyframes cb-twinkle { from { opacity: .3; } to { opacity: 1; } }',
+].join('\n');
+// Reduced motion for the picture: inside each card's own reduced motion block, which comes last.
+var CARBURANTS_SCENE_REDUCED = '.cb-cloud, .cb-star.tw, .cb-flow, .cb-n1, .cb-n2, .cb-n3 { animation: none !important; }';
+
+// Status colour of the header icon, day and night, banner or classic header.
+var CARBURANTS_STATUS_STYLE = [
+  '.hbadge.st-ok { --c: var(--primary-color, #03a9f4); }',
+  '.hbadge.st-idle { --c: var(--disabled-text-color, #8a96a3); }',
+  '.hbadge.st-out { --c: var(--warning-color, #ffa600); }',
+  '.hbadge.st-off { --c: var(--error-color, #db4437); }',
+  // Brand badge on the header icon (mini card: the cheapest station's brand), on a white tile.
+  '.hbadge .badge { position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 5px; padding: 2px; box-sizing: border-box; display: grid; place-items: center; background: #fff; box-shadow: 0 0 0 1px rgba(13,42,69,.16), 0 1px 3px rgba(13,42,69,.18); }',
+  '.hbadge .badge img { width: 100%; height: 100%; object-fit: contain; }',
+  '.hbadge { position: relative; }',
+].join('\n');
+
+// The banner: picture, road, then the icon and the titles on the sky, and `tools` at the top right.
+function carbBanner(o) {
+  return `<div class="banner${o.night ? ' night' : ''} st-${o.status}"><div class="cb-ground" aria-hidden="true"></div>${carbSceneSvg(o.uid, o.status, o.rows)}` +
+    `<div class="htext">${o.icon}<div class="titles">${o.titles}</div></div>${o.tools ? `<div class="btools">${o.tools}</div>` : ''}</div>`;
+}
+
+// Choices of the illustration_theme option, labelled from an editor table.
+function carbIllustrationThemes(editor) {
+  return ['auto', 'day', 'night'].map((k) => ({ value: k, label: editor[`illustration_theme_${k}`] }));
+}
+
 // ── carburants-france-card ────────────────────────────────────────────────────
 class CarburantsFranceCard extends HTMLElement {
   static getConfigElement() {
@@ -1790,11 +2085,14 @@ class CarburantsFranceCard extends HTMLElement {
     var entityId = this._entityId();
     var st = entityId ? hass.states[entityId] : null;
     var dark = !!hass.themes?.darkMode;
+    // The illustration turns to night with the sun (or the dark theme).
+    var night = carbIsNight(hass, this._config);
     // language: auto follows the Home Assistant language (and region, for numbers), which can change without a reload.
     var locale = carbLocale(hass, this._config?.language);
-    if (first || st !== this._lastState || dark !== this._darkMode || locale !== this._renderedLocale) {
+    if (first || st !== this._lastState || dark !== this._darkMode || night !== this._night || locale !== this._renderedLocale) {
       this._lastState = st;
       this._darkMode = dark;
+      this._night = night;
       this._renderedLocale = locale;
       this._render();
     }
@@ -1874,17 +2172,14 @@ class CarburantsFranceCard extends HTMLElement {
     var header = this._root.querySelector('.header');
     var list = this._root.querySelector('.list');
     var title = this._config.title || t.default_title;
-    var icon = this._config.show_icon
-      ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
-        '<span class="icon hbadge"><ha-icon icon="mdi:gas-station"></ha-icon></span></a>'
-      : '';
     // The last refresh error stays in the button's tooltip until the next refresh.
     var refreshTitle = this._refreshError ? `${t.refresh_failed} ${this._refreshError}` : t.refresh;
+    header.classList?.toggle('illus', this._config.illustration !== false);
 
     if (!st) {
       this._headerHtml = null;
       this._listHtml = null;
-      header.innerHTML = `<div class="title">${icon}<div class="titles"><div class="hname">${carbEsc(title)}</div></div></div>${this._zoomButton()}`;
+      header.innerHTML = this._headerMarkup({ title: title, status: 'off', tools: this._zoomButton() });
       list.innerHTML = `<div class="empty">${carbEsc(t.no_entity)}</div>`;
       this._root.querySelector('.footer').hidden = true;
       return;
@@ -1906,14 +2201,16 @@ class CarburantsFranceCard extends HTMLElement {
 
     var unavailable = carbUnavailable(st);
     var sub = unavailable ? t.unavailable : `${st.state} ${carbPlural(t, 'stations', st.state, this._locale())}`;
-    var headerHtml =
-      '<div class="title">' + icon + '<div class="titles"><div class="hname">' + carbEsc(title) + '</div>' +
-      '<div class="hsub">' + carbEsc(sub) + '</div></div></div>' +
-      (this._config.show_refresh
+    var headerHtml = this._headerMarkup({
+      title: title,
+      sub: sub,
+      status: carbStatus(st, all, fuels),
+      rows: carbTotemRows(fuels, best, this._locale()),
+      tools: (this._config.show_refresh
         ? '<ha-icon-button class="refresh-btn' + (this._refreshing ? ' spinning' : '') + '" label="' + carbEsc(t.refresh) +
           '" title="' + carbEsc(refreshTitle) + '"><ha-icon icon="mdi:refresh"></ha-icon></ha-icon-button>'
-        : '') +
-      this._zoomButton();
+        : '') + this._zoomButton(),
+    });
     if (headerHtml !== this._headerHtml) {
       this._headerHtml = headerHtml;
       header.innerHTML = headerHtml;
@@ -1953,6 +2250,25 @@ class CarburantsFranceCard extends HTMLElement {
   // Hook for the mini card: its detail button at the right of the header.
   _zoomButton() {
     return '';
+  }
+
+  // The header icon, tinted with the status of the data, opening the government data page (`link`).
+  _iconHtml(status, badge, link) {
+    if (!this._config.show_icon) return '';
+    var icon = `<span class="icon hbadge st-${status}"><ha-icon icon="mdi:gas-station"></ha-icon>${badge || ''}</span>`;
+    return link === false ? icon
+      : `<a class="icon-link" href="${CARBURANTS_SOURCE_URL}" target="_blank" rel="noopener" title="data.economie.gouv.fr">${icon}</a>`;
+  }
+
+  // The header: the illustrated banner (title and subtitle on its sky, `tools` at its top right), or the classic one.
+  // o: { title, titleHtml, sub, status, rows, tools, badge, link }
+  _headerMarkup(o) {
+    var icon = this._iconHtml(o.status, o.badge, o.link);
+    var titles = `<div class="hname">${o.titleHtml || carbEsc(o.title)}</div>` +
+      (o.sub ? `<div class="hsub"${o.subTitle ? ` title="${carbEsc(o.sub)}"` : ''}>${carbEsc(o.sub)}</div>` : '');
+    if (this._config.illustration === false) return `<div class="title">${icon}<div class="titles">${titles}</div></div>${o.tools || ''}`;
+    this._uid = this._uid || carbUid();
+    return carbBanner({ uid: this._uid, night: carbIsNight(this._hass, this._config), status: o.status, rows: o.rows, icon: icon, titles: titles, tools: o.tools });
   }
 
   _sorted(stations, fuels) {
@@ -2139,6 +2455,11 @@ class CarburantsFranceCard extends HTMLElement {
       // Icon 12 px from the top and left edges; the first station's own 8 px padding sets the body 8 px below.
       // Narrow card: the title keeps the icon and 5 letters; below that the refresh button wraps instead of leaving the card.
       '.header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; padding: 12px 12px 0; }',
+      // Illustrated header: the banner edge to edge, the first station 8 px below it.
+      '.header.illus { display: block; padding: 0 0 4px; }',
+      CARBURANTS_SCENE_STYLE,
+      CARBURANTS_STATUS_STYLE,
+      '.banner .fprice { color: inherit; }',
       '.title { flex: 1 1 0; display: flex; align-items: center; gap: 10px; }',
       '.titles { flex: 1 1 0; min-width: 5ch; contain: inline-size; }',
       ':host([hide-title]) .titles > .hname, :host([hide-subtitle]) .titles > .hsub { display: none; }',
@@ -2212,7 +2533,7 @@ class CarburantsFranceCard extends HTMLElement {
       // overflowing, the opening status goes under the name (which keeps the whole width) and wraps, so do the hours. !important: the tile columns are an inline style (carbFuelColumns).
       '@container carb-card (max-width: 299px) { .fuels { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)) !important; margin-left: 0; } .details { margin-left: 0; } .line1 { flex-flow: column nowrap; align-items: stretch; gap: 0; } .opening { white-space: normal; } .fuel.empty { display: none; } }',
       // Last, so that it outranks the rules above. Reduced motion: no spin nor swing; a dimmed icon still says a refresh is running.
-      '@media (prefers-reduced-motion: reduce) { .refresh-btn.spinning ha-icon { animation: none; opacity: .5; } .chevron { transition: none; } }',
+      `@media (prefers-reduced-motion: reduce) { .refresh-btn.spinning ha-icon { animation: none; opacity: .5; } .chevron { transition: none; } ${CARBURANTS_SCENE_REDUCED} }`,
     ].join('\n');
   }
 }
@@ -2274,6 +2595,14 @@ class CarburantsFranceCardEditor extends HTMLElement {
         ],
       },
       { name: 'max_stations', selector: { number: { min: 0, max: 50, mode: 'box' } } },
+      {
+        type: 'grid',
+        name: '',
+        schema: [
+          { name: 'illustration', selector: { boolean: {} } },
+          { name: 'illustration_theme', selector: { select: { mode: 'dropdown', options: carbIllustrationThemes(t.editor) } } },
+        ],
+      },
       {
         type: 'grid',
         name: '',
@@ -2351,6 +2680,11 @@ if (!customElements.get('carburants-france-card')) {
 var CARBURANTS_MINI_STYLE = [
   ':host([mini])::before { grid-template-columns: minmax(0, 240px); }',
   'ha-card.mini { padding: 12px; container: carb-mini / inline-size; }',
+  // Illustrated: the 90 px banner is the whole compact card.
+  'ha-card.mini.illus { padding: 0; }',
+  '.banner .mprice .fprice { font-size: 16px; }',
+  // Narrow compact card: the price alone on the sky (the totem shows the chosen fuel first).
+  '@container (max-width: 340px) { .banner .mprice .fbadge { display: none; } }',
   '.mrow { display: flex; align-items: center; gap: 10px; min-width: 0; }',
   '.mrow .titles { min-width: 4ch; }',
   '.mrow .hsub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
@@ -2463,7 +2797,13 @@ class CarburantsFranceMiniCard extends CarburantsFranceCard {
       super._render();
       return;
     }
-    mini.innerHTML = this._miniHtml();
+    mini.classList?.toggle('illus', this._config.illustration !== false);
+    var html = this._miniHtml();
+    // Unchanged (the minute timer): the picture keeps its running animations.
+    if (html !== this._miniCache) {
+      this._miniCache = html;
+      mini.innerHTML = html;
+    }
   }
 
   _miniHtml() {
@@ -2484,7 +2824,28 @@ class CarburantsFranceMiniCard extends CarburantsFranceCard {
         sub += ` · ${new Intl.NumberFormat(this._locale(), { maximumFractionDigits: 1 }).format(station.distance)} km`;
       }
     }
-    var icon = this._config.show_icon ? '<span class="icon hbadge"><ha-icon icon="mdi:gas-station"></ha-icon></span>' : '';
+    var status = carbStatus(st, st?.attributes?.stations, this._fuels());
+    if (this._config.illustration !== false) {
+      // The chosen fuel first on the totem, then the others shown.
+      var fuels = this._fuels();
+      if (fuel) fuels = [fuel].concat(fuels.filter((f) => f.key !== fuel.key));
+      var known = station && this._config.show_logo ? carbLogo(station) : null;
+      var badge = known && !CARBURANTS_FAILED_LOGOS.has(known.src)
+        ? `<span class="badge" title="${carbEsc(station.brand || '')}"><img src="${carbEsc(known.src)}" alt="" referrerpolicy="no-referrer"></span>`
+        : '';
+      return this._headerMarkup({
+        title: title,
+        titleHtml: line1,
+        sub: sub,
+        status: status,
+        rows: carbTotemRows(fuels, st && !carbUnavailable(st) ? carbBestPrices(st.attributes.stations || [], fuels) : null, this._locale()),
+        subTitle: true,
+        tools: this._zoomButton(),
+        badge: badge,
+        link: false,
+      });
+    }
+    var icon = this._iconHtml(status, '', false);
     return '<div class="mrow">' + icon +
       '<div class="titles"><div class="hname">' + line1 + '</div>' +
       (sub ? `<div class="hsub" title="${carbEsc(sub)}">${carbEsc(sub)}</div>` : '') + '</div>' +
@@ -2517,7 +2878,7 @@ if (!customElements.get('carburants-france-mini-card')) {
 // ── carburants-france-map-card ────────────────────────────────────────────────
 // Leaflet ships with the integration: no CDN, only the map tiles come from the network.
 var CARBURANTS_STATIC = '/carburants_france_static';
-var CARBURANTS_MAP_DEFAULTS = { language: 'auto', height: 400, show_icon: true, show_fullscreen: true, show_home: true, show_logo: true, show_name: true, map_style: 'ha', theme: 'auto', hide_out_of_stock_stations: true, show_locate: true, show_search: true, radius: 5 };
+var CARBURANTS_MAP_DEFAULTS = { language: 'auto', height: 400, show_icon: true, show_fullscreen: true, show_home: true, show_logo: true, show_name: true, map_style: 'ha', theme: 'auto', hide_out_of_stock_stations: true, show_locate: true, show_search: true, radius: 5, illustration: true, illustration_theme: 'auto' };
 // Radius choices of the nearby search, in km (the configured default is added when missing).
 var CARBURANTS_RADII = [1, 2, 5, 10, 15, 20, 30, 50];
 // Search icons, same drawings as ha-system-monitor-card.
@@ -2586,7 +2947,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stations à moins de {r} km du domicile',
     city_title: 'Stations : {q}',
     you: 'Vous êtes ici',
-    search_city: 'Rechercher une ville ou un code postal',
+    search_city: 'Ville ou code postal',
     clear_search: 'Effacer la recherche',
     no_results: 'Aucune station trouvée.',
     no_position: 'Position indisponible.',
@@ -2612,6 +2973,11 @@ var CarburantsMapI18n = {
       radius: 'Rayon par défaut (km)',
       language: 'Langue',
       language_auto: 'Selon Home Assistant',
+      illustration: 'En-tête illustré',
+      illustration_theme: 'Thème de l’illustration',
+      illustration_theme_auto: 'Automatique (soleil)',
+      illustration_theme_day: 'Jour',
+      illustration_theme_night: 'Nuit',
     },
     themes: { auto: 'Selon le thème', light: 'Clair', dark: 'Sombre' },
     styles: {
@@ -2638,7 +3004,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stations within {r} km of home',
     city_title: 'Stations: {q}',
     you: 'You are here',
-    search_city: 'Search a town or postcode',
+    search_city: 'Town or postcode',
     clear_search: 'Clear the search',
     no_results: 'No station found.',
     no_position: 'Position unavailable.',
@@ -2664,6 +3030,11 @@ var CarburantsMapI18n = {
       radius: 'Default radius (km)',
       language: 'Language',
       language_auto: 'Home Assistant language',
+      illustration: 'Illustrated header',
+      illustration_theme: 'Illustration theme',
+      illustration_theme_auto: 'Automatic (sun)',
+      illustration_theme_day: 'Day',
+      illustration_theme_night: 'Night',
     },
     themes: { auto: 'Follow theme', light: 'Light', dark: 'Dark' },
     styles: {
@@ -2690,7 +3061,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Tankstellen im Umkreis von {r} km um das Zuhause',
     city_title: 'Tankstellen: {q}',
     you: 'Du bist hier',
-    search_city: 'Ort oder Postleitzahl suchen',
+    search_city: 'Ort oder PLZ',
     clear_search: 'Suche löschen',
     no_results: 'Keine Tankstelle gefunden.',
     no_position: 'Standort nicht verfügbar.',
@@ -2716,6 +3087,11 @@ var CarburantsMapI18n = {
       radius: 'Standardradius (km)',
       language: 'Sprache',
       language_auto: 'Wie Home Assistant',
+      illustration: 'Illustrierte Kopfzeile',
+      illustration_theme: 'Thema der Illustration',
+      illustration_theme_auto: 'Automatisch (Sonne)',
+      illustration_theme_day: 'Tag',
+      illustration_theme_night: 'Nacht',
     },
     themes: { auto: 'Design folgen', light: 'Hell', dark: 'Dunkel' },
     styles: {
@@ -2742,7 +3118,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Estaciones a menos de {r} km de casa',
     city_title: 'Estaciones: {q}',
     you: 'Estás aquí',
-    search_city: 'Buscar un municipio o código postal',
+    search_city: 'Ciudad o código postal',
     clear_search: 'Borrar la búsqueda',
     no_results: 'No se ha encontrado ninguna estación.',
     no_position: 'Ubicación no disponible.',
@@ -2768,6 +3144,11 @@ var CarburantsMapI18n = {
       radius: 'Radio predeterminado (km)',
       language: 'Idioma',
       language_auto: 'Según Home Assistant',
+      illustration: 'Encabezado ilustrado',
+      illustration_theme: 'Tema de la ilustración',
+      illustration_theme_auto: 'Automático (sol)',
+      illustration_theme_day: 'Día',
+      illustration_theme_night: 'Noche',
     },
     themes: { auto: 'Según el tema', light: 'Claro', dark: 'Oscuro' },
     styles: {
@@ -2794,7 +3175,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stazioni entro {r} km da casa',
     city_title: 'Stazioni: {q}',
     you: 'Sei qui',
-    search_city: 'Cerca un comune o un CAP',
+    search_city: 'Città o CAP',
     clear_search: 'Cancella la ricerca',
     no_results: 'Nessuna stazione trovata.',
     no_position: 'Posizione non disponibile.',
@@ -2820,6 +3201,11 @@ var CarburantsMapI18n = {
       radius: 'Raggio predefinito (km)',
       language: 'Lingua',
       language_auto: 'Lingua di Home Assistant',
+      illustration: 'Intestazione illustrata',
+      illustration_theme: 'Tema dell’illustrazione',
+      illustration_theme_auto: 'Automatico (sole)',
+      illustration_theme_day: 'Giorno',
+      illustration_theme_night: 'Notte',
     },
     themes: { auto: 'Segui il tema', light: 'Chiaro', dark: 'Scuro' },
     styles: {
@@ -2846,7 +3232,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Tankstations binnen {r} km van huis',
     city_title: 'Tankstations: {q}',
     you: 'Je bent hier',
-    search_city: 'Zoek een gemeente of postcode',
+    search_city: 'Plaats of postcode',
     clear_search: 'Zoekopdracht wissen',
     no_results: 'Geen tankstation gevonden.',
     no_position: 'Positie niet beschikbaar.',
@@ -2872,6 +3258,11 @@ var CarburantsMapI18n = {
       radius: 'Standaardstraal (km)',
       language: 'Taal',
       language_auto: 'Taal van Home Assistant',
+      illustration: 'Geïllustreerde koptekst',
+      illustration_theme: 'Thema van de illustratie',
+      illustration_theme_auto: 'Automatisch (zon)',
+      illustration_theme_day: 'Dag',
+      illustration_theme_night: 'Nacht',
     },
     themes: { auto: 'Thema volgen', light: 'Licht', dark: 'Donker' },
     styles: {
@@ -2898,7 +3289,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Postos a menos de {r} km de casa',
     city_title: 'Postos: {q}',
     you: 'Está aqui',
-    search_city: 'Procurar uma localidade ou código postal',
+    search_city: 'Localidade ou código postal',
     clear_search: 'Limpar a pesquisa',
     no_results: 'Nenhum posto encontrado.',
     no_position: 'Localização indisponível.',
@@ -2924,6 +3315,11 @@ var CarburantsMapI18n = {
       radius: 'Raio predefinido (km)',
       language: 'Idioma',
       language_auto: 'Idioma do Home Assistant',
+      illustration: 'Cabeçalho ilustrado',
+      illustration_theme: 'Tema da ilustração',
+      illustration_theme_auto: 'Automático (sol)',
+      illustration_theme_day: 'Dia',
+      illustration_theme_night: 'Noite',
     },
     themes: { auto: 'Seguir o tema', light: 'Claro', dark: 'Escuro' },
     styles: {
@@ -2950,7 +3346,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stacje w promieniu {r} km od domu',
     city_title: 'Stacje: {q}',
     you: 'Jesteś tutaj',
-    search_city: 'Wyszukaj miejscowość lub kod pocztowy',
+    search_city: 'Miasto lub kod pocztowy',
     clear_search: 'Wyczyść wyszukiwanie',
     no_results: 'Nie znaleziono żadnej stacji.',
     no_position: 'Pozycja niedostępna.',
@@ -2976,6 +3372,11 @@ var CarburantsMapI18n = {
       radius: 'Domyślny promień (km)',
       language: 'Język',
       language_auto: 'Język Home Assistant',
+      illustration: 'Ilustrowany nagłówek',
+      illustration_theme: 'Motyw ilustracji',
+      illustration_theme_auto: 'Automatyczny (słońce)',
+      illustration_theme_day: 'Dzień',
+      illustration_theme_night: 'Noc',
     },
     themes: { auto: 'Zgodnie z motywem', light: 'Jasny', dark: 'Ciemny' },
     styles: {
@@ -3002,7 +3403,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stații pe o rază de {r} km de casă',
     city_title: 'Stații: {q}',
     you: 'Sunteți aici',
-    search_city: 'Caută localitate sau cod poștal',
+    search_city: 'Localitate sau cod poștal',
     clear_search: 'Șterge căutarea',
     no_results: 'Nu a fost găsită nicio stație.',
     no_position: 'Poziție indisponibilă.',
@@ -3028,6 +3429,11 @@ var CarburantsMapI18n = {
       radius: 'Rază implicită (km)',
       language: 'Limbă',
       language_auto: 'Limba Home Assistant',
+      illustration: 'Antet ilustrat',
+      illustration_theme: 'Tema ilustrației',
+      illustration_theme_auto: 'Automat (soare)',
+      illustration_theme_day: 'Zi',
+      illustration_theme_night: 'Noapte',
     },
     themes: { auto: 'Conform temei', light: 'Luminos', dark: 'Întunecat' },
     styles: {
@@ -3054,7 +3460,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stationer inden for {r} km fra hjemmet',
     city_title: 'Stationer: {q}',
     you: 'Du er her',
-    search_city: 'Søg efter by eller postnummer',
+    search_city: 'By eller postnummer',
     clear_search: 'Ryd søgningen',
     no_results: 'Ingen tankstationer fundet.',
     no_position: 'Position utilgængelig.',
@@ -3080,6 +3486,11 @@ var CarburantsMapI18n = {
       radius: 'Standardradius (km)',
       language: 'Sprog',
       language_auto: 'Home Assistant-sprog',
+      illustration: 'Illustreret overskrift',
+      illustration_theme: 'Illustrationens tema',
+      illustration_theme_auto: 'Automatisk (sol)',
+      illustration_theme_day: 'Dag',
+      illustration_theme_night: 'Nat',
     },
     themes: { auto: 'Følg temaet', light: 'Lyst', dark: 'Mørkt' },
     styles: {
@@ -3106,7 +3517,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stationer inom {r} km från hemmet',
     city_title: 'Stationer: {q}',
     you: 'Du är här',
-    search_city: 'Sök ort eller postnummer',
+    search_city: 'Ort eller postnummer',
     clear_search: 'Rensa sökningen',
     no_results: 'Inga stationer hittades.',
     no_position: 'Positionen är otillgänglig.',
@@ -3132,6 +3543,11 @@ var CarburantsMapI18n = {
       radius: 'Standardradie (km)',
       language: 'Språk',
       language_auto: 'Home Assistants språk',
+      illustration: 'Illustrerad rubrik',
+      illustration_theme: 'Illustrationens tema',
+      illustration_theme_auto: 'Automatiskt (sol)',
+      illustration_theme_day: 'Dag',
+      illustration_theme_night: 'Natt',
     },
     themes: { auto: 'Följ temat', light: 'Ljust', dark: 'Mörkt' },
     styles: {
@@ -3158,7 +3574,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Станции в радиус {r} km от дома',
     city_title: 'Станции: {q}',
     you: 'Вие сте тук',
-    search_city: 'Търсене на град или пощ. код',
+    search_city: 'Град или пощенски код',
     clear_search: 'Изчисти търсенето',
     no_results: 'Не е намерена бензиностанция.',
     no_position: 'Местоположението не е налично.',
@@ -3184,6 +3600,11 @@ var CarburantsMapI18n = {
       radius: 'Радиус по подразбиране (km)',
       language: 'Език',
       language_auto: 'Езикът на Home Assistant',
+      illustration: 'Илюстрирано заглавие',
+      illustration_theme: 'Тема на илюстрацията',
+      illustration_theme_auto: 'Автоматично (слънце)',
+      illustration_theme_day: 'Ден',
+      illustration_theme_night: 'Нощ',
     },
     themes: { auto: 'Според темата', light: 'Светла', dark: 'Тъмна' },
     styles: {
@@ -3210,7 +3631,7 @@ var CarburantsMapI18n = {
     near_home_title: 'АЗС в радиусе {r} km от дома',
     city_title: 'АЗС: {q}',
     you: 'Вы здесь',
-    search_city: 'Найти город или индекс',
+    search_city: 'Город или индекс',
     clear_search: 'Очистить поиск',
     no_results: 'АЗС не найдены.',
     no_position: 'Местоположение недоступно.',
@@ -3236,6 +3657,11 @@ var CarburantsMapI18n = {
       radius: 'Радиус по умолчанию (km)',
       language: 'Язык',
       language_auto: 'Язык Home Assistant',
+      illustration: 'Иллюстрированный заголовок',
+      illustration_theme: 'Тема иллюстрации',
+      illustration_theme_auto: 'Автоматически (солнце)',
+      illustration_theme_day: 'День',
+      illustration_theme_night: 'Ночь',
     },
     themes: { auto: 'Как в теме', light: 'Светлая', dark: 'Тёмная' },
     styles: {
@@ -3262,7 +3688,7 @@ var CarburantsMapI18n = {
     near_home_title: 'АЗС у радіусі {r} km від дому',
     city_title: 'АЗС: {q}',
     you: 'Ви тут',
-    search_city: 'Знайти місто або індекс',
+    search_city: 'Місто або індекс',
     clear_search: 'Очистити пошук',
     no_results: 'АЗС не знайдено.',
     no_position: 'Місцезнаходження недоступне.',
@@ -3288,6 +3714,11 @@ var CarburantsMapI18n = {
       radius: 'Типовий радіус (km)',
       language: 'Мова',
       language_auto: 'Мова Home Assistant',
+      illustration: 'Ілюстрований заголовок',
+      illustration_theme: 'Тема ілюстрації',
+      illustration_theme_auto: 'Автоматично (сонце)',
+      illustration_theme_day: 'День',
+      illustration_theme_night: 'Ніч',
     },
     themes: { auto: 'Як у темі', light: 'Світла', dark: 'Темна' },
     styles: {
@@ -3340,6 +3771,11 @@ var CarburantsMapI18n = {
       radius: 'Alapértelmezett sugár (km)',
       language: 'Nyelv',
       language_auto: 'Home Assistant nyelve',
+      illustration: 'Illusztrált fejléc',
+      illustration_theme: 'Illusztráció témája',
+      illustration_theme_auto: 'Automatikus (nap)',
+      illustration_theme_day: 'Nappal',
+      illustration_theme_night: 'Éjszaka',
     },
     themes: { auto: 'Téma szerint', light: 'Világos', dark: 'Sötét' },
     styles: {
@@ -3366,7 +3802,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stanice do {r} km od domova',
     city_title: 'Stanice: {q}',
     you: 'Tu ste',
-    search_city: 'Hľadať obec alebo PSČ',
+    search_city: 'Obec alebo PSČ',
     clear_search: 'Vymazať vyhľadávanie',
     no_results: 'Nenašla sa žiadna stanica.',
     no_position: 'Poloha nie je k dispozícii.',
@@ -3392,6 +3828,11 @@ var CarburantsMapI18n = {
       radius: 'Predvolený polomer (km)',
       language: 'Jazyk',
       language_auto: 'Jazyk Home Assistant',
+      illustration: 'Ilustrovaná hlavička',
+      illustration_theme: 'Téma ilustrácie',
+      illustration_theme_auto: 'Automaticky (slnko)',
+      illustration_theme_day: 'Deň',
+      illustration_theme_night: 'Noc',
     },
     themes: { auto: 'Podľa motívu', light: 'Svetlý', dark: 'Tmavý' },
     styles: {
@@ -3418,7 +3859,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stanice do {r} km od domova',
     city_title: 'Stanice: {q}',
     you: 'Jste zde',
-    search_city: 'Hledat obec nebo PSČ',
+    search_city: 'Obec nebo PSČ',
     clear_search: 'Vymazat hledání',
     no_results: 'Nebyla nalezena žádná stanice.',
     no_position: 'Poloha není k dispozici.',
@@ -3444,6 +3885,11 @@ var CarburantsMapI18n = {
       radius: 'Výchozí okruh (km)',
       language: 'Jazyk',
       language_auto: 'Jazyk Home Assistant',
+      illustration: 'Ilustrované záhlaví',
+      illustration_theme: 'Motiv ilustrace',
+      illustration_theme_auto: 'Automaticky (slunce)',
+      illustration_theme_day: 'Den',
+      illustration_theme_night: 'Noc',
     },
     themes: { auto: 'Podle motivu', light: 'Světlý', dark: 'Tmavý' },
     styles: {
@@ -3470,7 +3916,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Postaje do {r} km od doma',
     city_title: 'Postaje: {q}',
     you: 'Tukaj ste',
-    search_city: 'Išči kraj ali poštno številko',
+    search_city: 'Kraj ali poštna številka',
     clear_search: 'Počisti iskanje',
     no_results: 'Ni najdenih postaj.',
     no_position: 'Položaj ni na voljo.',
@@ -3496,6 +3942,11 @@ var CarburantsMapI18n = {
       radius: 'Privzeti polmer (km)',
       language: 'Jezik',
       language_auto: 'Jezik sistema Home Assistant',
+      illustration: 'Ilustrirana glava',
+      illustration_theme: 'Tema ilustracije',
+      illustration_theme_auto: 'Samodejno (sonce)',
+      illustration_theme_day: 'Dan',
+      illustration_theme_night: 'Noč',
     },
     themes: { auto: 'Po temi', light: 'Svetla', dark: 'Temna' },
     styles: {
@@ -3522,7 +3973,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stacijas {r} km rādiusā no mājām',
     city_title: 'Stacijas: {q}',
     you: 'Jūs esat šeit',
-    search_city: 'Meklēt pilsētu vai pasta indeksu',
+    search_city: 'Pilsēta vai pasta indekss',
     clear_search: 'Notīrīt meklēšanu',
     no_results: 'Neviena stacija nav atrasta.',
     no_position: 'Atrašanās vieta nav pieejama.',
@@ -3548,6 +3999,11 @@ var CarburantsMapI18n = {
       radius: 'Noklusējuma rādiuss (km)',
       language: 'Valoda',
       language_auto: 'Home Assistant valoda',
+      illustration: 'Ilustrēta galvene',
+      illustration_theme: 'Ilustrācijas motīvs',
+      illustration_theme_auto: 'Automātiski (saule)',
+      illustration_theme_day: 'Diena',
+      illustration_theme_night: 'Nakts',
     },
     themes: { auto: 'Atbilstoši motīvam', light: 'Gaišs', dark: 'Tumšs' },
     styles: {
@@ -3574,7 +4030,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Πρατήρια έως {r} km από το σπίτι',
     city_title: 'Πρατήρια: {q}',
     you: 'Βρίσκεστε εδώ',
-    search_city: 'Αναζήτηση πόλης ή Τ.Κ.',
+    search_city: 'Πόλη ή ταχ. κώδικας',
     clear_search: 'Απαλοιφή αναζήτησης',
     no_results: 'Δεν βρέθηκε κανένα πρατήριο.',
     no_position: 'Η θέση δεν είναι διαθέσιμη.',
@@ -3600,6 +4056,11 @@ var CarburantsMapI18n = {
       radius: 'Προεπιλεγμένη ακτίνα (km)',
       language: 'Γλώσσα',
       language_auto: 'Γλώσσα του Home Assistant',
+      illustration: 'Εικονογραφημένη κεφαλίδα',
+      illustration_theme: 'Θέμα εικονογράφησης',
+      illustration_theme_auto: 'Αυτόματο (ήλιος)',
+      illustration_theme_day: 'Ημέρα',
+      illustration_theme_night: 'Νύχτα',
     },
     themes: { auto: 'Σύμφωνα με το θέμα', light: 'Ανοιχτό', dark: 'Σκούρο' },
     styles: {
@@ -3626,7 +4087,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Станице у кругу од {r} km од куће',
     city_title: 'Станице: {q}',
     you: 'Ви сте овде',
-    search_city: 'Претражи место или поштански број',
+    search_city: 'Град или поштански број',
     clear_search: 'Очисти претрагу',
     no_results: 'Није пронађена ниједна станица.',
     no_position: 'Положај није доступан.',
@@ -3652,6 +4113,11 @@ var CarburantsMapI18n = {
       radius: 'Подразумевани радијус (km)',
       language: 'Језик',
       language_auto: 'Аутоматски',
+      illustration: 'Илустровано заглавље',
+      illustration_theme: 'Тема илустрације',
+      illustration_theme_auto: 'Аутоматски (сунце)',
+      illustration_theme_day: 'Дан',
+      illustration_theme_night: 'Ноћ',
     },
     themes: { auto: 'Према теми', light: 'Светла', dark: 'Тамна' },
     styles: {
@@ -3678,7 +4144,7 @@ var CarburantsMapI18n = {
     near_home_title: 'Stanice u krugu od {r} km od kuće',
     city_title: 'Stanice: {q}',
     you: 'Vi ste ovde',
-    search_city: 'Pretraži mesto ili poštanski broj',
+    search_city: 'Grad ili poštanski broj',
     clear_search: 'Očisti pretragu',
     no_results: 'Nije pronađena nijedna stanica.',
     no_position: 'Položaj nije dostupan.',
@@ -3704,6 +4170,11 @@ var CarburantsMapI18n = {
       radius: 'Podrazumevani radijus (km)',
       language: 'Jezik',
       language_auto: 'Automatski',
+      illustration: 'Ilustrovano zaglavlje',
+      illustration_theme: 'Tema ilustracije',
+      illustration_theme_auto: 'Automatski (sunce)',
+      illustration_theme_day: 'Dan',
+      illustration_theme_night: 'Noć',
     },
     themes: { auto: 'Prema temi', light: 'Svetla', dark: 'Tamna' },
     styles: {
@@ -3785,6 +4256,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     // A new default radius in the editor replaces the one picked in the header.
     if (previous && previous.radius !== this._config.radius) this._radius = null;
     if (previous && !!previous.show_fullscreen !== !!this._config.show_fullscreen) this._applyFullscreenOption();
+    else if (previous && !!previous.show_locate !== !!this._config.show_locate) this._syncTools(window.L);
     this._syncLanguage();
     this._reloadTilesIfNeeded();
     // Read the current state now: a config change must redraw at once, not at the next hass update.
@@ -3803,9 +4275,10 @@ class CarburantsFranceMapCard extends HTMLElement {
       this._lastState = st;
       this._update();
     } else if (this._root) {
-      // Theme switched in Home Assistant: dark filter and light / dark vector style follow.
+      // Theme switched in Home Assistant: dark filter and light / dark vector style follow, so does the picture.
       this._root.querySelector('.map').classList.toggle('dark', this._darkTiles());
       this._reloadTilesIfNeeded();
+      this._renderHeader();
     }
   }
 
@@ -3917,11 +4390,10 @@ class CarburantsFranceMapCard extends HTMLElement {
       '<link rel="stylesheet" href="' + CARBURANTS_STATIC + '/leaflet/leaflet.css?v=1.9.4">' +
       '<link rel="stylesheet" href="' + CARBURANTS_STATIC + '/maplibre/maplibre-gl.css?v=6.14.0">' +
       '<style>' + CarburantsFranceMapCard._styles() + '</style>' +
-      '<ha-card><div class="header" hidden></div><div class="searchbar" hidden></div><div class="message" hidden></div><div class="map"></div></ha-card>';
-    var header = this._root.querySelector('.header');
-    header.addEventListener('click', (ev) => {
-      if (ev.target.closest('.locate')) this._toggleNearby();
-    });
+      '<ha-card><div class="header" hidden></div><div class="message" hidden></div>' +
+      // The search field and its radius over the map, at its top left.
+      '<div class="mapwrap"><div class="map"></div><div class="searchbar" hidden></div></div></ha-card>';
+    var bar = this._root.querySelector('.searchbar');
     // A marker logo that fails to load becomes its initials. error does not bubble: capture phase.
     this._root.querySelector('.map').addEventListener('error', (ev) => {
       var img = ev.target;
@@ -3932,7 +4404,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       badge.textContent = img.dataset.initials || '';
       img.replaceWith(badge);
     }, true);
-    header.addEventListener('change', (ev) => {
+    bar.addEventListener('change', (ev) => {
       if (!ev.target.classList.contains('radius')) return;
       this._radius = Number(ev.target.value);
       if (this._results?.mode === 'near') this._searchNearby();
@@ -3957,36 +4429,87 @@ class CarburantsFranceMapCard extends HTMLElement {
     return this._config.title === undefined ? mt.default_title : this._config.title;
   }
 
-  // Rewritten only when something in it changes, so the radius list stays open across updates.
+  // Number of stations shown on the map, and the radius of a nearby search.
+  _subtitle(mt) {
+    var data = this._data();
+    var n = carbVisibleStations((data.stations || []).filter((x) => x.latitude != null), data.fuels || [], this._config, this._showAll).shown.length;
+    var sub = `${n} ${carbPlural(this._t(), 'stations', n, this._locale())}`;
+    return this._results?.mode === 'near' ? `${sub} · ${this._results.radius} km` : sub;
+  }
+
+  // Rewritten only when something in it changes, so the picture keeps its running animations.
   _renderHeader() {
     var mt = this._mt();
     var header = this._root.querySelector('.header');
+    if (!header) return;
     var title = this._title(mt);
+    var data = this._data();
+    var unavailable = !this._results && (!this._lastState || carbUnavailable(this._lastState));
+    var status = unavailable ? 'off' : carbStatus(this._lastState || { state: 'ok' }, data.stations, data.fuels);
+    var illus = this._config.illustration !== false;
     // Same icon as the list card, opening the government data page.
     var icon = this._config.show_icon
       ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
-        '<span class="icon hbadge"><ha-icon icon="mdi:gas-station"></ha-icon></span></a>'
+        `<span class="icon hbadge st-${status}"><ha-icon icon="mdi:gas-station"></ha-icon></span></a>`
       : '';
-    var tools = '';
+    var html;
+    if (illus) {
+      this._uid = this._uid || carbUid();
+      var sub = unavailable ? this._t().unavailable : this._subtitle(mt);
+      html = carbBanner({
+        uid: this._uid,
+        night: carbIsNight(this._hass, this._config),
+        status: status,
+        rows: carbTotemRows(data.fuels, unavailable ? null : carbBestPrices(data.stations || [], data.fuels || []), this._locale()),
+        icon: icon,
+        titles: `<div class="hname">${carbEsc(title || '')}</div><div class="hsub">${carbEsc(sub)}</div>`,
+      });
+    } else {
+      html = `${icon}<span class="hname">${carbEsc(title || '')}</span>`;
+    }
+    header.classList?.toggle('illus', illus);
+    // An empty title and no icon: no header.
+    header.hidden = !title && !icon;
+    if (html !== this._headerHtml) {
+      this._headerHtml = html;
+      header.innerHTML = html;
+    }
+    this._renderLocate();
+  }
+
+  // The "locate me" button of the map's tools (bottom right).
+  _renderLocate() {
+    var link = this._locateLink;
+    if (!link) return;
+    var mt = this._mt();
+    var active = this._results?.mode === 'near';
+    var label = active ? mt.back_to_followed : mt.locate;
+    link.className = `locate${active ? ' active' : ''}${this._busy === 'near' ? ' busy' : ''}`;
+    link.title = label;
+    link.setAttribute('aria-label', label);
+    link.setAttribute('aria-pressed', String(active));
+    var html = `<ha-icon icon="${active ? 'mdi:crosshairs-off' : 'mdi:crosshairs-gps'}"></ha-icon>`;
+    if (link.innerHTML !== html) link.innerHTML = html;
+  }
+
+  // The radius of the nearby search, in the search field's pill; rewritten only when it changes, so its list
+  // stays open across updates.
+  _renderRadius() {
+    var slot = this._root.querySelector('.searchbar .rad');
+    if (!slot) return;
+    var html = '';
     if (this._config.show_locate) {
+      var mt = this._mt();
       var radius = this._currentRadius();
       var radii = CARBURANTS_RADII.indexOf(radius) === -1
         ? CARBURANTS_RADII.concat(radius).sort((a, b) => a - b)
         : CARBURANTS_RADII;
-      var active = this._results?.mode === 'near';
-      var label = active ? mt.back_to_followed : mt.locate;
-      tools = '<div class="tools">' +
-        `<select class="radius" title="${carbEsc(mt.radius)}" aria-label="${carbEsc(mt.radius)}">` +
-        radii.map((r) => `<option value="${r}"${r === radius ? ' selected' : ''}>${r} km</option>`).join('') +
-        '</select>' +
-        `<button type="button" class="locate${active ? ' active' : ''}${this._busy === 'near' ? ' busy' : ''}" title="${carbEsc(label)}" aria-label="${carbEsc(label)}" aria-pressed="${active}">` +
-        `<ha-icon icon="${active ? 'mdi:crosshairs-off' : 'mdi:crosshairs-gps'}"></ha-icon></button></div>`;
+      html = `<select class="radius" title="${carbEsc(mt.radius)}" aria-label="${carbEsc(mt.radius)}">` +
+        radii.map((r) => `<option value="${r}"${r === radius ? ' selected' : ''}>${r} km</option>`).join('') + '</select>';
     }
-    var html = `${icon}<span class="hname">${carbEsc(title || '')}</span>${tools}`;
-    header.hidden = !title && !icon && !tools;
-    if (html !== this._headerHtml) {
-      this._headerHtml = html;
-      header.innerHTML = html;
+    if (html !== this._radiusHtml) {
+      this._radiusHtml = html;
+      slot.innerHTML = html;
     }
   }
 
@@ -4015,12 +4538,17 @@ class CarburantsFranceMapCard extends HTMLElement {
   // Built once: re-rendering would lose the focus and the caret while typing.
   _renderSearchbar() {
     var bar = this._root.querySelector('.searchbar');
-    bar.hidden = !this._config.show_search;
-    if (!this._config.show_search || bar.firstChild) return;
+    bar.hidden = !this._config.show_search && !this._config.show_locate;
+    bar.classList.toggle('nosearch', !this._config.show_search);
+    if (bar.firstChild) {
+      this._renderRadius();
+      return;
+    }
     var mt = this._mt();
     bar.innerHTML = `<label class="search">${carbSvg(CARBURANTS_SEARCH_PATH)}` +
       `<input type="search" placeholder="${carbEsc(mt.search_city)}" aria-label="${carbEsc(mt.search_city)}" autocomplete="off" spellcheck="false">` +
-      `<span class="clear empty" role="button" tabindex="-1" title="${carbEsc(mt.clear_search)}" aria-label="${carbEsc(mt.clear_search)}">${carbSvg(CARBURANTS_CLOSE_PATH)}</span></label>`;
+      `<span class="clear empty" role="button" tabindex="-1" title="${carbEsc(mt.clear_search)}" aria-label="${carbEsc(mt.clear_search)}">${carbSvg(CARBURANTS_CLOSE_PATH)}</span></label><span class="rad"></span>`;
+    this._renderRadius();
     var input = bar.querySelector('input');
     var clear = bar.querySelector('.clear');
     var sync = () => {
@@ -4223,7 +4751,8 @@ class CarburantsFranceMapCard extends HTMLElement {
   _ensureMap(L) {
     if (this._map) return;
     var mapEl = this._root.querySelector('.map');
-    this._map = L.map(mapEl, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, zoomSnap: 0.25 });
+    // Zoom, full screen and "locate me" together at the bottom right (_syncTools).
+    this._map = L.map(mapEl, { zoomControl: false, attributionControl: true, scrollWheelZoom: false, zoomSnap: 0.25 });
     mapEl.classList.toggle('dark', this._darkTiles());
     this._loadTiles(L);
     this._layer = L.layerGroup().addTo(this._map);
@@ -4239,8 +4768,9 @@ class CarburantsFranceMapCard extends HTMLElement {
         return el;
       },
     });
-    this._toggle = new Toggle({ position: 'topright' }).addTo(this._map);
-    if (this._config.show_fullscreen) this._addFullscreenControl(L);
+    this._toggle = new Toggle({ position: 'bottomleft' }).addTo(this._map);
+    if (this._config.show_fullscreen) this._listenFullscreen();
+    this._syncTools(L);
     this._fitted = false;
     if (window.ResizeObserver) {
       this._resizeObserver = new ResizeObserver(() => { this._invalidate(); });
@@ -4381,41 +4911,62 @@ class CarburantsFranceMapCard extends HTMLElement {
     this._tiles = null;
     this._tilesLoadedKey = null;
     this._toggle = null;
-    this._fsControl = null;
+    this._tools = null;
+    this._zoomCtl = null;
     this._fsLink = null;
+    this._locateLink = null;
     this._resizeObserver = null;
     this._signature = null;
   }
 
-  // Real full screen where the browser allows it on an element; elsewhere (iPhone Safari and
-  // the iOS app) the card covers the window instead.
-  _addFullscreenControl(L) {
-    var mt = CarburantsMapI18n[carbLang(this._hass, this._config?.language)];
-    var Fullscreen = L.Control.extend({
-      onAdd: () => {
-        var bar = L.DomUtil.create('div', 'leaflet-bar carb-fs');
-        var link = L.DomUtil.create('a', '', bar);
-        link.href = '#';
-        link.setAttribute('role', 'button');
-        L.DomEvent.disableClickPropagation(bar);
-        L.DomEvent.on(link, 'click', (ev) => {
-          L.DomEvent.preventDefault(ev);
-          this._toggleFullscreen();
-        });
-        this._fsLink = link;
-        this._updateFullscreenButton(mt);
-        return bar;
-      },
-    });
-    this._fsControl = new Fullscreen({ position: 'topleft' }).addTo(this._map);
-    this._listenFullscreen();
+  // The map's tools at the bottom right, one bar from top to bottom: zoom in and out (Leaflet's), full screen and
+  // "locate me" (shown by their options). Rebuilt when an option changes, so the order stays the same.
+  _syncTools(L) {
+    if (!this._map || !L) return;
+    if (this._zoomCtl) this._zoomCtl.remove();
+    if (this._tools) this._tools.remove();
+    this._tools = null;
+    this._fsLink = null;
+    this._locateLink = null;
+    var mt = this._mt();
+    var fs = this._config.show_fullscreen;
+    var locate = this._config.show_locate;
+    if (fs || locate) {
+      var Tools = L.Control.extend({
+        onAdd: () => {
+          var bar = L.DomUtil.create('div', 'leaflet-bar carb-tools');
+          L.DomEvent.disableClickPropagation(bar);
+          var button = (cls, fn) => {
+            var link = L.DomUtil.create('a', cls, bar);
+            link.href = '#';
+            link.setAttribute('role', 'button');
+            L.DomEvent.on(link, 'click', (ev) => {
+              L.DomEvent.preventDefault(ev);
+              fn();
+            });
+            return link;
+          };
+          // Real full screen where the browser allows it on an element; elsewhere (iPhone Safari and
+          // the iOS app) the card covers the window instead.
+          if (fs) this._fsLink = button('carb-fs', () => { this._toggleFullscreen(); });
+          if (locate) this._locateLink = button('locate', () => { this._toggleNearby(); });
+          return bar;
+        },
+      });
+      // Bottom corners stack upwards: the tools first, then the zoom above them.
+      this._tools = new Tools({ position: 'bottomright' }).addTo(this._map);
+      this._updateFullscreenButton(mt);
+      this._renderLocate();
+    }
+    this._zoomCtl = L.control.zoom({ position: 'bottomright' }).addTo(this._map);
   }
 
-  // show_fullscreen changed in the editor: add or remove the button on the map already built.
+  // show_fullscreen or show_locate changed in the editor: rebuild the tools of the map already built.
   _applyFullscreenOption() {
     if (!this._map) return;
     if (this._config.show_fullscreen) {
-      if (!this._fsControl) this._addFullscreenControl(window.L);
+      this._listenFullscreen();
+      this._syncTools(window.L);
       return;
     }
     if (this._isNativeFullscreen()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
@@ -4425,9 +4976,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       this._root.querySelector('ha-card').classList.remove('fullscreen', 'pseudo');
       setTimeout(this._invalidate.bind(this), 50);
     }
-    if (this._fsControl) this._fsControl.remove();
-    this._fsControl = null;
-    this._fsLink = null;
+    this._syncTools(window.L);
     this._unlistenFullscreen();
   }
 
@@ -4533,7 +5082,7 @@ class CarburantsFranceMapCard extends HTMLElement {
     } else if (this._bounds) {
       // Pins are centred on their point and ~120 px wide: leave room on every side.
       var side = this._config.show_name ? 110 : 80;
-      this._map.fitBounds(this._bounds, { paddingTopLeft: [side, 40], paddingBottomRight: [side, 40], maxZoom: 15 });
+      this._map.fitBounds(this._bounds, { paddingTopLeft: [side, 56], paddingBottomRight: [side, 48], maxZoom: 15 });
     }
     this._fitted = true;
   }
@@ -4657,6 +5206,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       points.push([home.attributes.latitude, home.attributes.longitude]);
     }
 
+    // The subtitle counts the stations shown.
+    this._renderHeader();
     this._bounds = points.length ? L.latLngBounds(points) : null;
     if (bounds) this._bounds = this._bounds ? this._bounds.extend(bounds) : bounds;
     if (!this._fitted) this._fit();
@@ -4705,21 +5256,35 @@ class CarburantsFranceMapCard extends HTMLElement {
       // and dark themes (the plain colours stay on borders, pins and dots).
       ':host { --carb-success-text: color-mix(in srgb, var(--success-color, #43a047) 55%, var(--primary-text-color, #212121)); --carb-info-text: color-mix(in srgb, var(--info-color, #039be5) 55%, var(--primary-text-color, #212121)); --carb-error-text: color-mix(in srgb, var(--error-color, #db4437) 55%, var(--primary-text-color, #212121)); --carb-warning-text: color-mix(in srgb, var(--warning-color, #ffa600) 50%, var(--primary-text-color, #212121)); }',
       'ha-card { overflow: hidden; }',
-      // Narrow card: the title keeps 5 letters; below that the radius and "locate me" tools wrap instead of leaving the card.
+      // Classic header (illustration: false): the icon and the title; the title keeps 5 letters on a narrow card.
       '.header { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-height: 36px; padding: 12px 12px 8px; }',
+      // Illustrated header: the banner edge to edge, the map right under its road.
+      '.header.illus { display: block; padding: 0; min-height: 0; }',
+      CARBURANTS_SCENE_STYLE,
+      CARBURANTS_STATUS_STYLE,
+      '.banner .hname { flex: none; font-size: 16px; }',
+      '.banner .hsub { font-size: 12px; }',
       '.hname { flex: 1 1 0; min-width: 5ch; font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.icon-link { display: flex; flex: none; }',
       // Generic fuel pump in a round badge tinted with the theme's primary colour.
       '.hbadge { --c: var(--primary-color, #03a9f4); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); --mdc-icon-size: 24px; }',
       '.header[hidden], .message[hidden] { display: none; }',
       '.message { padding: 12px 16px; color: var(--secondary-text-color); }',
+      '.mapwrap { position: relative; display: flex; flex-direction: column; }',
       '.map { width: 100%; background: var(--secondary-background-color, #e5e5e5); z-index: 0; }',
       // Full screen: the card fills the screen, the map takes what the title leaves.
       ':host(:fullscreen) { background: var(--card-background-color, #fff); }',
       'ha-card.fullscreen { display: flex !important; flex-direction: column; width: 100%; height: 100vh; height: 100dvh; border-radius: 0; box-sizing: border-box; }',
+      'ha-card.fullscreen .mapwrap { flex: 1; }',
       'ha-card.fullscreen .map { flex: 1; height: auto !important; }',
       'ha-card.pseudo { position: fixed; inset: 0; z-index: 9999; height: 100vh; height: 100dvh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }',
-      '.carb-fs a { display: flex; align-items: center; justify-content: center; cursor: pointer; }',
+      // The tools at the bottom right: zoom, full screen and "locate me" in one bar, above the attribution.
+      '.carb-tools a { display: flex; align-items: center; justify-content: center; cursor: pointer; --mdc-icon-size: 20px; }',
+      '.leaflet-bottom.leaflet-right .leaflet-control-zoom:has(+ .carb-tools) { margin-bottom: 0; border-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }',
+      '.leaflet-bottom.leaflet-right .leaflet-control-zoom:has(+ .carb-tools) a:last-child { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 1px solid var(--divider-color, #ccc); }',
+      '.leaflet-bottom.leaflet-right .carb-tools { margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }',
+      '.leaflet-bottom.leaflet-right .carb-tools a:first-child { border-top-left-radius: 0; border-top-right-radius: 0; }',
+      '.leaflet-bottom.leaflet-right .leaflet-bar { margin-bottom: 6px; }',
       // Leaflet's controls (zoom, full screen, attribution) in the theme's colours, light or dark.
       '.leaflet-bar a { background-color: var(--card-background-color, #fff); color: var(--primary-text-color, #000); border-bottom-color: var(--divider-color, #ccc); }',
       '.leaflet-bar a:hover, .leaflet-bar a:focus { background-color: var(--secondary-background-color, #f4f4f4); }',
@@ -4768,30 +5333,34 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.popup b.best { color: var(--carb-success-text); }',
       '.popup .out { color: var(--carb-warning-text); font-weight: 500; }',
       '.popup .nodata { color: var(--secondary-text-color, #727272); }',
-      '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 4px; border: 2px solid var(--divider-color, rgba(0,0,0,.2)); background: var(--card-background-color, #fff); color: var(--primary-color, #03a9f4); cursor: pointer; background-clip: padding-box; }',
+      // "Show the out of stock stations": a pill at the bottom left of the map.
+      '.leaflet-bottom.leaflet-left .carb-toggle { margin: 0 0 8px 10px; }',
+      '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; height: 30px; padding: 0 12px; border-radius: 15px; border: 0; background: color-mix(in srgb, var(--card-background-color, #fff) 95%, transparent); color: var(--primary-color, #03a9f4); box-shadow: 0 1px 4px rgba(0,0,0,.3); cursor: pointer; white-space: nowrap; }',
+      '.carb-toggle:hover { background: var(--card-background-color, #fff); }',
       '.carb-toggle[hidden] { display: none; }',
-      // Header tools: radius of the nearby search and "locate me".
-      '.tools { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: none; }',
-      '.radius { font: inherit; font-size: 13px; height: 32px; padding: 0 6px; border-radius: 10px; border: 1px solid var(--divider-color, rgba(127,127,127,.3)); background: var(--secondary-background-color, rgba(127,127,127,.08)); color: var(--primary-text-color); cursor: pointer; }',
-      '.locate { flex: none; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--secondary-text-color); cursor: pointer; --mdc-icon-size: 22px; }',
-      '.locate:hover { background: var(--divider-color, rgba(127,127,127,.25)); color: var(--primary-text-color); }',
-      '.locate.active { background: color-mix(in srgb, var(--primary-color, #03a9f4) 16%, transparent); color: var(--primary-color, #03a9f4); }',
-      '.locate.active:hover { background: color-mix(in srgb, var(--primary-color, #03a9f4) 24%, transparent); color: var(--primary-color, #03a9f4); }',
+      // "Locate me" in the tools: tinted when on, pulsing while the position is looked up.
+      '.leaflet-bar a.locate { flex: none; color: var(--primary-color, #03a9f4); }',
+      '.leaflet-bar a.locate.active { background-color: color-mix(in srgb, var(--primary-color, #03a9f4) 18%, var(--card-background-color, #fff)); }',
       '.locate.busy ha-icon { animation: carb-pulse 1s ease-in-out infinite; }',
       '@keyframes carb-pulse { 50% { opacity: .3; } }',
-      // Search field, as in ha-system-monitor-card.
-      '.searchbar { padding: 0 12px 8px; }',
+      // Search field and radius: one narrow pill over the map, at its top left.
+      '.searchbar { position: absolute; z-index: 1000; top: 10px; left: 10px; width: 210px; max-width: calc(100% - 20px); box-sizing: border-box; display: flex; align-items: center; gap: 4px; height: 34px; padding: 0 4px 0 10px; border-radius: 17px; background: color-mix(in srgb, var(--card-background-color, #fff) 95%, transparent); box-shadow: 0 1px 4px rgba(0,0,0,.3); color: var(--secondary-text-color); }',
       '.searchbar[hidden] { display: none; }',
-      '.search { display: flex; align-items: center; gap: 6px; padding: 0 10px; height: 34px; border-radius: 10px; background: var(--secondary-background-color, rgba(127,127,127,.08)); color: var(--secondary-text-color); cursor: text; }',
-      '.search:focus-within { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: -2px; }',
+      '.searchbar.nosearch { width: auto; padding-left: 4px; }',
+      '.searchbar.nosearch .search { display: none; }',
+      '.searchbar:focus-within { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: -2px; }',
+      '.search { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; height: 100%; cursor: text; }',
       '.search .svg { width: 16px; height: 16px; flex: none; }',
-      '.search input { width: 0; flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 13px; color: var(--primary-text-color); }',
+      '.search input { width: 0; flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 13px; color: var(--primary-text-color); text-overflow: ellipsis; }',
       '.search input::placeholder { color: var(--secondary-text-color); }',
       '.search input::-webkit-search-cancel-button { display: none; }',
-      '.search .clear { flex: none; width: 24px; height: 24px; margin-right: -4px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: var(--secondary-text-color); }',
-      '.search .clear.empty { opacity: .35; pointer-events: none; }',
+      '.search .clear { flex: none; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: var(--secondary-text-color); }',
+      '.search .clear.empty { display: none; }',
       '.search .clear:hover { background: var(--divider-color, rgba(127,127,127,.25)); color: var(--primary-text-color); }',
       '.search .clear .svg { width: 16px; height: 16px; }',
+      '.rad { flex: none; display: flex; }',
+      '.rad:empty { display: none; }',
+      '.radius { font: inherit; font-size: 12px; height: 26px; padding: 0 4px; border-radius: 13px; border: 0; background: var(--secondary-background-color, rgba(127,127,127,.12)); color: var(--primary-text-color); cursor: pointer; }',
       // Nearby search: area and starting point.
       '.leaflet-container path.carb-area { stroke: var(--primary-color, #03a9f4); stroke-width: 1.5; stroke-opacity: .7; fill: var(--primary-color, #03a9f4); fill-opacity: .06; }',
       '.me { position: absolute; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: var(--primary-color, #03a9f4); border: 3px solid #fff; box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary-color, #03a9f4) 25%, transparent), 0 1px 4px rgba(0,0,0,.35); }',
@@ -4801,7 +5370,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.leaflet-container a.pdir:hover { background: color-mix(in srgb, var(--primary-color, #03a9f4) 24%, transparent); }',
       '.pdir ha-icon { --mdc-icon-size: 18px; }',
       // Last, so that it outranks the rules above. Reduced motion: no pulse; a dimmed icon still says the position is being looked up.
-      '@media (prefers-reduced-motion: reduce) { .locate.busy ha-icon { animation: none; opacity: .5; } }',
+      `@media (prefers-reduced-motion: reduce) { .locate.busy ha-icon { animation: none; opacity: .5; } ${CARBURANTS_SCENE_REDUCED} }`,
     ].join('\n');
   }
 }
@@ -4852,6 +5421,14 @@ class CarburantsFranceMapCardEditor extends HTMLElement {
         schema: [
           { name: 'map_style', selector: { select: { mode: 'dropdown', options: styles } } },
           { name: 'theme', selector: { select: { mode: 'dropdown', options: themes } } },
+        ],
+      },
+      {
+        type: 'grid',
+        name: '',
+        schema: [
+          { name: 'illustration', selector: { boolean: {} } },
+          { name: 'illustration_theme', selector: { select: { mode: 'dropdown', options: carbIllustrationThemes(mt.editor) } } },
         ],
       },
     ].concat(custom, [
