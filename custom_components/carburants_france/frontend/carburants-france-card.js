@@ -1959,19 +1959,13 @@ var CARBURANTS_SCENE_STYLE = [
   '.cb-scene { position: absolute; right: 0; bottom: 10px; height: calc(100% - 10px); width: min(46cqw, 175px); overflow: hidden; }',
   // The text on the sky, left of the scene.
   '.banner .htext { position: absolute; left: 12px; top: 6px; bottom: 16px; right: calc(min(46cqw, 175px) + 4px); display: flex; align-items: center; gap: 10px; min-width: 0; }',
-  '.banner .titles { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 1px; container: carb-titles / inline-size; align-self: stretch; justify-content: center; }',
-  // The status pill right after the title, centred on it; the title ellipsises first (4 characters kept). Short of
-  // room the pill goes on its own line under the subtitle; on a narrow card, its dot alone.
-  '.banner .tline { display: flex; align-items: center; gap: 8px; min-width: 0; }',
-  '.banner .tline .hname { flex: 0 1 auto; min-width: 4ch; }',
+  '.banner .titles { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 1px; align-self: stretch; justify-content: center; }',
+  // The status pill right after the title, centred on it (placed by carbFitPill); on a narrow card, its dot alone.
   '.banner .stpill { background: color-mix(in srgb, var(--c) 18%, rgba(255,255,255,.78)); color: color-mix(in srgb, var(--c) 45%, #0d2a45); }',
   '.banner.night .stpill { background: color-mix(in srgb, var(--c) 30%, rgba(8,18,38,.55)); color: color-mix(in srgb, var(--c) 35%, #ffffff); }',
-  '@container carb-titles (max-width: 210px) { .banner .tline { display: contents; } .banner .stpill { order: 3; align-self: flex-start; margin-top: 1px; } }',
-  // Half a Sections view or narrower: a smaller station (the buttons keep the sky above it), a smaller icon, and
-  // the status pill on its own line under the subtitle, whole.
+  // Half a Sections view or narrower: a smaller station (the buttons keep the sky above it) and a smaller icon.
   '@container carb-banner (max-width: 300px) { .cb-scene { width: 34cqw; } .banner .htext { right: calc(34cqw + 2px); gap: 8px; }' +
-    ' .banner .htext .hbadge { width: 34px; height: 34px; --mdc-icon-size: 20px; } .banner .tline { display: contents; }' +
-    ' .banner .stpill { order: 3; align-self: flex-start; margin-top: 1px; max-width: none; position: relative; z-index: 1; } }',
+    ' .banner .htext .hbadge { width: 34px; height: 34px; --mdc-icon-size: 20px; } .banner .stpill { position: relative; z-index: 1; } }',
   '@container carb-banner (max-width: 200px) { .banner .stpill { padding: 4px; } .banner .stpill .st-text { display: none; } }',
   '.banner .hname { color: inherit; font-weight: 600; }',
   // The subtitle wraps on two lines at most on a narrow card.
@@ -2049,6 +2043,21 @@ var CARBURANTS_STATUS_STYLE = [
   '.stpill.st-out { --c: var(--warning-color, #ffa600); } .stpill.st-off { --c: var(--error-color, #db4437); }',
   '.stpill .sdot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--c); }',
   '.stpill .st-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }',
+  // The status pill right after the title, its whole label on one line, while the title stays whole beside it
+  // (measured by the card, see carbFitPill); otherwise on its own line under a one-line subtitle, and with its dot
+  // alone when even that does not fit the header.
+  ':is(.tline, .ctline) { display: flex; align-items: center; gap: 8px; min-width: 0; }',
+  ':is(.tline, .ctline) > .hname { flex: 0 1 auto; min-width: 0; }',
+  ':is(.tline, .ctline) > .stpill { flex: none; max-width: none; }',
+  ':is(.tline, .ctline) > .stpill .st-text { white-space: nowrap; overflow: visible; }',
+  '.titles.below { display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; }',
+  '.titles.below > :is(.tline, .ctline) { display: contents; }',
+  '.titles.below > :is(.tline, .ctline) > .stpill { order: 3; justify-self: start; align-self: start; margin-top: 3px; }',
+  '.titles.below > .hsub { order: 2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+  '.titles.dot-only > :is(.tline, .ctline) { display: flex; }',
+  '.titles.dot-only > :is(.tline, .ctline) > .stpill { order: 0; margin-top: 0; align-self: center; padding: 4px; }',
+  '.titles.dot-only > :is(.tline, .ctline) > .stpill .st-text { display: none; }',
+  '.titles.below > .hsub { display: block; }',
 ].join('\n');
 
 // The status pill: the stations count, out of stock, or unavailable data, in the status colour.
@@ -2061,6 +2070,79 @@ function carbPillLabel(t, status, n, locale) {
 function carbPill(status, label) {
   var l = carbEsc(label);
   return `<span class="stpill st-${status}" role="status" title="${l}" aria-label="${l}"><span class="sdot"></span><span class="st-text">${l}</span></span>`;
+}
+
+// The width of an element's whole text in fractional pixels, even while an ellipsis cuts it.
+const carbTextWidth = (el) => {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  return range.getBoundingClientRect().width || el.scrollWidth;
+};
+
+// The header's status pill goes right after the title, on its row, only while the title stays whole and the
+// pill's whole label fits beside it; otherwise it takes a line of its own under the subtitle (.below), the title
+// whole on its row (cut only when it does not fit alone). There, in the banner, the subtitle keeps one line; if the
+// text still does not fit above the ground strip, the pill keeps its dot alone (.dot-only, its label in its tooltip
+// and for screen readers). Measured after each render and on each new width, whatever the language: no fixed
+// width threshold.
+function carbFitPill(card, root) {
+  if (!card.isConnected) return;
+  for (const t of root?.querySelectorAll?.('.titles') || []) {
+    const row = t.querySelector('.tline, .ctline');
+    const pills = row ? [...row.children].filter((n) => n.matches('.stpill')) : [];
+    if (!pills.length || !pills[0].getBoundingClientRect) continue;
+    t.classList.remove('below', 'dot-only');
+    const name = row.querySelector('.hname');
+    const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
+    const title = name && getComputedStyle(name).display !== 'none' ? carbTextWidth(name) + gap : 0;
+    // A card of 200 px or less: the dot alone beside the title (its label in its tooltip), as in the banner.
+    if (card.getBoundingClientRect().width <= 200) {
+      t.classList.add('dot-only');
+      continue;
+    }
+    const need = pills.reduce((w, p) => w + p.getBoundingClientRect().width + gap, title - gap);
+    if (need > t.getBoundingClientRect().width - 0.5) {
+      t.classList.add('below');
+      const banner = t.closest('.banner');
+      if (banner) {
+        const b = banner.getBoundingClientRect();
+        // Each element as it shows: its box cut by its ancestors that hide their overflow (a clamped line).
+        const out = [...t.querySelectorAll('*')].some((n) => {
+          let { top, bottom } = n.getBoundingClientRect();
+          for (let p = n.parentElement; p && p !== t; p = p.parentElement) {
+            if (getComputedStyle(p).overflowY === 'visible') continue;
+            top = Math.max(top, p.getBoundingClientRect().top);
+            bottom = Math.min(bottom, p.getBoundingClientRect().bottom);
+          }
+          return bottom - top > 0.5 && (top < b.top - 0.5 || bottom > b.bottom - 10 + 0.5);
+        });
+        if (out) t.classList.add('dot-only');
+      }
+    }
+    // A subtitle cut by its ellipsis keeps its whole text in its tooltip.
+    const s = t.querySelector('.hsub');
+    if (s && (!s.hasAttribute('title') || s.dataset.fit)) {
+      const cut = s.scrollWidth > s.clientWidth + 1;
+      s.toggleAttribute('data-fit', cut);
+      if (cut) s.title = s.textContent.trim();
+      else s.removeAttribute('title');
+    }
+  }
+}
+
+// A new width (or the web font loaded): the status pill is fitted again, in the next frame.
+function carbObserve(card) {
+  if (typeof ResizeObserver === 'function') {
+    card._resize = card._resize || new ResizeObserver((entries) => {
+      const w = Math.round(entries[entries.length - 1].contentRect.width);
+      if (w === card._fitWidth) return;
+      card._fitWidth = w;
+      cancelAnimationFrame(card._fitFrame);
+      card._fitFrame = requestAnimationFrame(() => carbFitPill(card, card._root));
+    });
+    card._resize.observe(card);
+  }
+  document.fonts?.ready?.then(() => carbFitPill(card, card._root));
 }
 
 // The banner: picture, road, then the icon and the titles on the sky, and `tools` at the top right.
@@ -2135,6 +2217,7 @@ class CarburantsFranceCard extends HTMLElement {
   }
 
   connectedCallback() {
+    carbObserve(this);
     this._timer = setInterval(() => { this._render(); }, 60000);
     // A click elsewhere collapses the station and hides the out of stock ones again.
     this._onOutside = this._onOutside || carbOutsideListener(this, () => {
@@ -2147,6 +2230,8 @@ class CarburantsFranceCard extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this._resize?.disconnect();
+    this._fitWidth = null;
     clearInterval(this._timer);
     document.removeEventListener('click', this._onOutside, true);
   }
@@ -2216,6 +2301,7 @@ class CarburantsFranceCard extends HTMLElement {
       this._headerHtml = null;
       this._listHtml = null;
       header.innerHTML = this._headerMarkup({ title: title, status: 'off', pill: t.unavailable, tools: this._zoomButton() });
+      carbFitPill(this, this._root);
       list.innerHTML = `<div class="empty">${carbEsc(t.no_entity)}</div>`;
       this._root.querySelector('.footer').hidden = true;
       return;
@@ -2251,6 +2337,7 @@ class CarburantsFranceCard extends HTMLElement {
     if (headerHtml !== this._headerHtml) {
       this._headerHtml = headerHtml;
       header.innerHTML = headerHtml;
+      carbFitPill(this, this._root);
       var refreshBtn = header.querySelector('.refresh-btn');
       if (refreshBtn) refreshBtn.addEventListener('click', this._refresh.bind(this));
     }
@@ -2501,12 +2588,6 @@ class CarburantsFranceCard extends HTMLElement {
       '.banner .fprice { color: inherit; }',
       '.title { flex: 1 1 0; display: flex; align-items: center; gap: 10px; }',
       '.titles { flex: 1 1 0; min-width: 5ch; contain: inline-size; }',
-      // Classic header: the status pill right after the title, the title ellipsising first.
-      '.ctline { display: flex; align-items: center; gap: 8px; min-width: 0; }',
-      '.ctline .hname { flex: 0 1 auto; min-width: 4ch; }',
-      // Short of room for the title and the whole pill: the pill on its own line under the title.
-      '.title > .titles { container: carb-ctitles / inline-size; }',
-      '@container carb-ctitles (max-width: 150px) { .ctline { display: contents; } .ctline .stpill { margin-top: 2px; } }',
       ':host([hide-title]) .titles > .hname, :host([hide-title]) .titles > :is(.ctline, .tline) > .hname, :host([hide-subtitle]) .titles > .hsub { display: none; }',
       '.hname { font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       // The subtitle wraps rather than being cut ("Podaci nisu dostupni" on a 234 px card).
@@ -2731,9 +2812,7 @@ var CARBURANTS_MINI_STYLE = [
   // Narrow compact card: the price alone on the sky (the totem shows the chosen fuel first).
   '@container carb-banner (max-width: 340px) { .banner .mprice .fbadge { display: none; } }',
   '.mrow { display: flex; align-items: center; gap: 10px; min-width: 0; }',
-  '.mrow .titles { min-width: 4ch; display: flex; flex-direction: column; container: carb-mtitles / inline-size; }',
-  // Short of room for the price, its fuel badge and the status pill: the pill on its own line under the subtitle.
-  '@container carb-mtitles (max-width: 240px) { .mrow .ctline { display: contents; } .mrow .stpill { order: 3; align-self: flex-start; margin-top: 2px; } }',
+  '.mrow .titles { min-width: 4ch; display: flex; flex-direction: column; }',
   '.mrow .hsub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
   '.mprice { display: flex; align-items: center; gap: 6px; min-width: 0; }',
   '.mprice .fprice { font-size: 16px; }',
@@ -2850,6 +2929,7 @@ class CarburantsFranceMiniCard extends CarburantsFranceCard {
     if (html !== this._miniCache) {
       this._miniCache = html;
       mini.innerHTML = html;
+      carbFitPill(this, this._root);
     }
   }
 
@@ -4332,6 +4412,7 @@ class CarburantsFranceMapCard extends HTMLElement {
   }
 
   connectedCallback() {
+    carbObserve(this);
     // A click elsewhere closes the popup and hides the out of stock stations again.
     this._onOutside = this._onOutside || carbOutsideListener(this, () => {
       if (!this._map) return;
@@ -4367,6 +4448,8 @@ class CarburantsFranceMapCard extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this._resize?.disconnect();
+    this._fitWidth = null;
     if (this._resizeObserver) this._resizeObserver.disconnect();
     clearInterval(this._tokenTimer);
     clearTimeout(this._searchTimer);
@@ -4520,8 +4603,9 @@ class CarburantsFranceMapCard extends HTMLElement {
       });
     } else {
       var classicN = unavailable ? 0 : this._mapCount();
-      html = `${icon}<span class="hname">${carbEsc(title || '')}</span>` +
-        carbPill(status, status === 'ok' || status === 'idle' ? `${classicN} ${carbPlural(this._t(), 'stations', classicN, this._locale())}` : carbPillLabel(this._t(), status, 0, this._locale()));
+      html = `${icon}<div class="titles"><div class="ctline"><span class="hname">${carbEsc(title || '')}</span>` +
+        carbPill(status, status === 'ok' || status === 'idle' ? `${classicN} ${carbPlural(this._t(), 'stations', classicN, this._locale())}` : carbPillLabel(this._t(), status, 0, this._locale())) +
+        '</div></div>';
     }
     header.classList?.toggle('illus', illus);
     // An empty title and no icon: no header.
@@ -4530,6 +4614,7 @@ class CarburantsFranceMapCard extends HTMLElement {
       this._headerHtml = html;
       header.innerHTML = html;
     }
+    carbFitPill(this, this._root);
     this._renderLocate();
   }
 
@@ -5318,7 +5403,8 @@ class CarburantsFranceMapCard extends HTMLElement {
       '.header.illus { display: block; padding: 0; min-height: 0; }',
       CARBURANTS_SCENE_STYLE,
       CARBURANTS_STATUS_STYLE,
-      '.banner .hname { flex: none; font-size: 16px; }',
+      '.banner .hname { font-size: 16px; }',
+      '.header > .titles { flex: 1 1 0; min-width: 0; }',
       '.banner .hsub { font-size: 12px; }',
       '.hname { flex: 1 1 0; min-width: 5ch; font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       '.icon-link { display: flex; flex: none; }',

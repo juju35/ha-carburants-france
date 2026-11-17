@@ -766,9 +766,11 @@ test('narrow card: the title keeps a few letters and the header buttons wrap rat
   assert.match(list, /\.titles \{[^}]*flex: 1 1 0; min-width: 5ch; contain: inline-size/);
   assert.doesNotMatch(list, /\.titles \{[^}]*flex: 1 1 auto/);
   assert.match(list, /\.refresh-btn \{ flex: none;/);
-  // The subtitle (station count, "Data unavailable") wraps rather than being cut: "Podaci nisu dostupni" at 234 px.
+  // The subtitle (station count, "Data unavailable") wraps rather than being cut: "Podaci nisu dostupni" at 234 px;
+  // only with the status pill on its own line under it does it keep one line (its whole text in its tooltip).
   assert.match(list, /\.hsub \{[^}]*white-space: normal/);
-  assert.doesNotMatch(list, /\.hsub \{[^}]*(nowrap|ellipsis)/);
+  assert.doesNotMatch(list, /(?:^|\} )\.hsub \{[^}]*(nowrap|ellipsis)/);
+  assert.match(list, /\.titles\.below > \.hsub \{[^}]*white-space: nowrap/);
   // Map card: same for the title; the radius stays whole in the search pill, which never leaves the map.
   assert.match(map, /\.header \{[^}]*flex-wrap: wrap/);
   assert.match(map, /\.hname \{[^}]*flex: 1 1 0; min-width: 5ch/);
