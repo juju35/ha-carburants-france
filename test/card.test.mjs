@@ -658,7 +658,8 @@ const listFor = (state, lang = 'en') => {
   });
   card.setConfig({ entity: 'sensor.x', language: lang, show_logo: false });
   card.hass = { language: 'en', states: { 'sensor.x': state } };
-  const sub = parts['.header'].innerHTML.match(/<div class="hsub">([^<]*)<\/div>/)?.[1];
+  // The stations count, or the data's state, is in the status pill after the title.
+  const sub = parts['.header'].innerHTML.match(/<span class="st-text">([^<]*)<\/span>/)?.[1];
   return { sub, list: parts['.list'].innerHTML };
 };
 
@@ -861,7 +862,7 @@ test('auto-detection finds an unavailable stations sensor from the entity regist
   });
   card.setConfig({ language: 'en', show_logo: false });
   card.hass = { language: 'en', ...hass };
-  assert.match(parts['.header'].innerHTML, /<div class="hsub">Data unavailable<\/div>/);
+  assert.match(parts['.header'].innerHTML, /<span class="stpill st-off"[^>]*><span class="sdot"><\/span><span class="st-text">Data unavailable<\/span>/);
 });
 
 // ── Romanian, Danish, Swedish, Bulgarian, Russian, Ukrainian, Hungarian, Slovak, Czech, Slovenian, Latvian, Greek ──

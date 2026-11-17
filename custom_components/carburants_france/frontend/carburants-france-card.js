@@ -1949,7 +1949,7 @@ function carbSceneSvg(uid, status, rows) {
 }
 
 var CARBURANTS_SCENE_STYLE = [
-  '.banner { position: relative; overflow: hidden; height: 90px; color: #0d2a45; container-type: inline-size; background: linear-gradient(90deg, #f1f8ff 0%, #e2f1fd 34%, #b9def8 70%, #9fd0f3 100%); }',
+  '.banner { position: relative; overflow: hidden; height: 90px; color: #0d2a45; container: carb-banner / inline-size; background: linear-gradient(90deg, #f1f8ff 0%, #e2f1fd 34%, #b9def8 70%, #9fd0f3 100%); }',
   '.banner.night { color: #fff; background: linear-gradient(90deg, #1b2f52 0%, #15284a 36%, #0f1f3d 72%, #0a1830 100%); }',
   // The road: a 10 px strip edge to edge, dashed centre line; the scene stands on it.
   '.cb-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: #858c94; box-shadow: inset 0 1px 0 #6f767d; }',
@@ -1959,7 +1959,18 @@ var CARBURANTS_SCENE_STYLE = [
   '.cb-scene { position: absolute; right: 0; bottom: 10px; height: calc(100% - 10px); width: min(46cqw, 175px); overflow: hidden; }',
   // The text on the sky, left of the scene.
   '.banner .htext { position: absolute; left: 12px; top: 6px; bottom: 16px; right: calc(min(46cqw, 175px) + 4px); display: flex; align-items: center; gap: 10px; min-width: 0; }',
-  '.banner .titles { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 1px; }',
+  '.banner .titles { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 1px; container: carb-titles / inline-size; align-self: stretch; justify-content: center; }',
+  // The status pill right after the title, centred on it; the title ellipsises first (4 characters kept). Short of
+  // room the pill goes on its own line under the subtitle; on a narrow card, its dot alone.
+  '.banner .tline { display: flex; align-items: center; gap: 8px; min-width: 0; }',
+  '.banner .tline .hname { flex: 0 1 auto; min-width: 4ch; }',
+  '.banner .stpill { background: color-mix(in srgb, var(--c) 18%, rgba(255,255,255,.78)); color: color-mix(in srgb, var(--c) 45%, #0d2a45); }',
+  '.banner.night .stpill { background: color-mix(in srgb, var(--c) 30%, rgba(8,18,38,.55)); color: color-mix(in srgb, var(--c) 35%, #ffffff); }',
+  '@container carb-titles (max-width: 210px) { .banner .tline { display: contents; } .banner .stpill { order: 3; align-self: flex-start; margin-top: 1px; } }',
+  // Half a Sections view or narrower: the sky alone, the title and the whole status pill get the room.
+  '@container carb-banner (max-width: 300px) { .cb-scene { display: none; } .banner .htext { right: 12px; } .banner:has(.btools) .htext { right: 36px; }' +
+    ' .banner:has(.btools > :nth-child(2)) .htext { right: 64px; } }',
+  '@container carb-banner (max-width: 200px) { .banner .stpill { padding: 4px; } .banner .stpill .st-text { display: none; } }',
   '.banner .hname { color: inherit; font-weight: 600; }',
   // The subtitle wraps on two lines at most on a narrow card.
   '.banner .hsub { color: #3b5b78; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }',
@@ -1967,11 +1978,15 @@ var CARBURANTS_SCENE_STYLE = [
   '.banner .hbadge { position: relative; background: rgba(255,255,255,.62); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 22%, transparent); }',
   '.banner.night .hbadge { background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); color: color-mix(in srgb, var(--c) 62%, #fff); }',
   // Buttons on the sky, top right (refresh, detail).
-  '.banner .btools { position: absolute; top: 4px; right: 4px; display: flex; gap: 4px; }',
-  '.banner .btools > * { margin: 0 !important; color: #10283f !important; background: rgba(255,255,255,.6); border-radius: 50%; }',
-  '.banner.night .btools > * { color: #fff !important; background: rgba(10,20,40,.5); }',
-  '.banner .refresh-btn { --mdc-icon-button-size: 32px; --mdc-icon-size: 18px; --ha-icon-button-size: 32px; width: 32px !important; height: 32px !important; }',
-  '.banner .zoom { width: 28px; height: 28px; align-self: auto; }',
+  // 24 px frosted discs on the banner's top line: the detail button in the top-right corner, refresh at its left.
+  '.banner .btools { position: absolute; z-index: 2; top: 5px; right: 5px; display: flex; gap: 4px; }',
+  '.banner .btools > * { margin: 0 !important; box-sizing: border-box; color: #33506b !important; background: rgba(255,255,255,.55); border-radius: 50%;' +
+    ' box-shadow: inset 0 0 0 1px rgba(255,255,255,.7); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }',
+  '.banner .btools > *:hover { background: rgba(255,255,255,.75); }',
+  '.banner.night .btools > * { color: #fff !important; background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }',
+  '.banner.night .btools > *:hover { background: rgba(255,255,255,.22); }',
+  '.banner .refresh-btn { --mdc-icon-button-size: 24px; --mdc-icon-size: 16px; --ha-icon-button-size: 24px; width: 24px !important; height: 24px !important; display: grid; place-items: center; }',
+  '.banner .zoom { width: 24px; height: 24px; align-self: auto; }',
   // Narrow card: the scene shrinks with the card (meet), the text keeps at least half.
   '.cb-night, .night .cb-day { display: none; }',
   '.night .cb-night { display: inline; }',
@@ -2025,7 +2040,26 @@ var CARBURANTS_STATUS_STYLE = [
   '.hbadge .badge { position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 5px; padding: 2px; box-sizing: border-box; display: grid; place-items: center; background: #fff; box-shadow: 0 0 0 1px rgba(13,42,69,.16), 0 1px 3px rgba(13,42,69,.18); }',
   '.hbadge .badge img { width: 100%; height: 100%; object-fit: contain; }',
   '.hbadge { position: relative; }',
+  // The status pill after the title, in the header icon's colour (classic style; the banner restyles it).
+  '.stpill { display: inline-flex; align-items: center; gap: 4px; flex: none; max-width: 100%; box-sizing: border-box; padding: 1px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;' +
+    ' line-height: 16px; white-space: nowrap; background: color-mix(in srgb, var(--c) 15%, transparent); color: color-mix(in srgb, var(--c) 50%, var(--primary-text-color)); }',
+  '.stpill.st-ok { --c: var(--primary-color, #03a9f4); } .stpill.st-idle { --c: var(--disabled-text-color, #8a96a3); }',
+  '.stpill.st-out { --c: var(--warning-color, #ffa600); } .stpill.st-off { --c: var(--error-color, #db4437); }',
+  '.stpill .sdot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--c); }',
+  '.stpill .st-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }',
 ].join('\n');
+
+// The status pill: the stations count, out of stock, or unavailable data, in the status colour.
+function carbPillLabel(t, status, n, locale) {
+  if (status === 'off') return t.unavailable;
+  if (status === 'out') return t.out_of_stock;
+  var count = Number(n) || 0;
+  return `${count} ${carbPlural(t, 'stations', count, locale)}`;
+}
+function carbPill(status, label) {
+  var l = carbEsc(label);
+  return `<span class="stpill st-${status}" role="status" title="${l}" aria-label="${l}"><span class="sdot"></span><span class="st-text">${l}</span></span>`;
+}
 
 // The banner: picture, road, then the icon and the titles on the sky, and `tools` at the top right.
 function carbBanner(o) {
@@ -2179,7 +2213,7 @@ class CarburantsFranceCard extends HTMLElement {
     if (!st) {
       this._headerHtml = null;
       this._listHtml = null;
-      header.innerHTML = this._headerMarkup({ title: title, status: 'off', tools: this._zoomButton() });
+      header.innerHTML = this._headerMarkup({ title: title, status: 'off', pill: t.unavailable, tools: this._zoomButton() });
       list.innerHTML = `<div class="empty">${carbEsc(t.no_entity)}</div>`;
       this._root.querySelector('.footer').hidden = true;
       return;
@@ -2200,11 +2234,12 @@ class CarburantsFranceCard extends HTMLElement {
       : '';
 
     var unavailable = carbUnavailable(st);
-    var sub = unavailable ? t.unavailable : `${st.state} ${carbPlural(t, 'stations', st.state, this._locale())}`;
+    var status = carbStatus(st, all, fuels);
     var headerHtml = this._headerMarkup({
       title: title,
-      sub: sub,
-      status: carbStatus(st, all, fuels),
+      // The stations count (or the data's state) in the status pill.
+      pill: carbPillLabel(t, status, st.state, this._locale()),
+      status: status,
       rows: carbTotemRows(fuels, best, this._locale()),
       tools: (this._config.show_refresh
         ? '<ha-icon-button class="refresh-btn' + (this._refreshing ? ' spinning' : '') + '" label="' + carbEsc(t.refresh) +
@@ -2264,9 +2299,11 @@ class CarburantsFranceCard extends HTMLElement {
   // o: { title, titleHtml, sub, status, rows, tools, badge, link }
   _headerMarkup(o) {
     var icon = this._iconHtml(o.status, o.badge, o.link);
-    var titles = `<div class="hname">${o.titleHtml || carbEsc(o.title)}</div>` +
-      (o.sub ? `<div class="hsub"${o.subTitle ? ` title="${carbEsc(o.sub)}"` : ''}>${carbEsc(o.sub)}</div>` : '');
-    if (this._config.illustration === false) return `<div class="title">${icon}<div class="titles">${titles}</div></div>${o.tools || ''}`;
+    var pill = o.pill ? carbPill(o.status, o.pill) : '';
+    var sub = o.sub ? `<div class="hsub"${o.subTitle ? ` title="${carbEsc(o.sub)}"` : ''}>${carbEsc(o.sub)}</div>` : '';
+    var name = `<div class="hname">${o.titleHtml || carbEsc(o.title)}</div>`;
+    if (this._config.illustration === false) return `<div class="title">${icon}<div class="titles"><div class="ctline">${name}${pill}</div>${sub}</div></div>${o.tools || ''}`;
+    var titles = `<div class="tline">${name}${pill}</div>${sub}`;
     this._uid = this._uid || carbUid();
     return carbBanner({ uid: this._uid, night: carbIsNight(this._hass, this._config), status: o.status, rows: o.rows, icon: icon, titles: titles, tools: o.tools });
   }
@@ -2462,6 +2499,9 @@ class CarburantsFranceCard extends HTMLElement {
       '.banner .fprice { color: inherit; }',
       '.title { flex: 1 1 0; display: flex; align-items: center; gap: 10px; }',
       '.titles { flex: 1 1 0; min-width: 5ch; contain: inline-size; }',
+      // Classic header: the status pill right after the title, the title ellipsising first.
+      '.ctline { display: flex; align-items: center; gap: 8px; min-width: 0; }',
+      '.ctline .hname { flex: 0 1 auto; min-width: 4ch; }',
       ':host([hide-title]) .titles > .hname, :host([hide-subtitle]) .titles > .hsub { display: none; }',
       '.hname { font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       // The subtitle wraps rather than being cut ("Podaci nisu dostupni" on a 234 px card).
@@ -2684,7 +2724,7 @@ var CARBURANTS_MINI_STYLE = [
   'ha-card.mini.illus { padding: 0; }',
   '.banner .mprice .fprice { font-size: 16px; }',
   // Narrow compact card: the price alone on the sky (the totem shows the chosen fuel first).
-  '@container (max-width: 340px) { .banner .mprice .fbadge { display: none; } }',
+  '@container carb-banner (max-width: 340px) { .banner .mprice .fbadge { display: none; } }',
   '.mrow { display: flex; align-items: center; gap: 10px; min-width: 0; }',
   '.mrow .titles { min-width: 4ch; }',
   '.mrow .hsub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
@@ -2836,7 +2876,8 @@ class CarburantsFranceMiniCard extends CarburantsFranceCard {
       return this._headerMarkup({
         title: title,
         titleHtml: line1,
-        sub: sub,
+        sub: sub === t.unavailable ? '' : sub,
+        pill: carbPillLabel(t, status, st?.state, this._locale()),
         status: status,
         rows: carbTotemRows(fuels, st && !carbUnavailable(st) ? carbBestPrices(st.attributes.stations || [], fuels) : null, this._locale()),
         subTitle: true,
@@ -2846,9 +2887,10 @@ class CarburantsFranceMiniCard extends CarburantsFranceCard {
       });
     }
     var icon = this._iconHtml(status, '', false);
+    var mpill = carbPill(status, carbPillLabel(t, status, st?.state, this._locale()));
     return '<div class="mrow">' + icon +
-      '<div class="titles"><div class="hname">' + line1 + '</div>' +
-      (sub ? `<div class="hsub" title="${carbEsc(sub)}">${carbEsc(sub)}</div>` : '') + '</div>' +
+      '<div class="titles"><div class="ctline"><div class="hname">' + line1 + '</div>' + mpill + '</div>' +
+      (sub && sub !== t.unavailable ? `<div class="hsub" title="${carbEsc(sub)}">${carbEsc(sub)}</div>` : '') + '</div>' +
       this._zoomButton() + '</div>';
   }
 }
@@ -4429,12 +4471,15 @@ class CarburantsFranceMapCard extends HTMLElement {
     return this._config.title === undefined ? mt.default_title : this._config.title;
   }
 
-  // Number of stations shown on the map, and the radius of a nearby search.
-  _subtitle(mt) {
+  // Number of stations shown on the map (in the status pill).
+  _mapCount() {
     var data = this._data();
-    var n = carbVisibleStations((data.stations || []).filter((x) => x.latitude != null), data.fuels || [], this._config, this._showAll).shown.length;
-    var sub = `${n} ${carbPlural(this._t(), 'stations', n, this._locale())}`;
-    return this._results?.mode === 'near' ? `${sub} · ${this._results.radius} km` : sub;
+    return carbVisibleStations((data.stations || []).filter((x) => x.latitude != null), data.fuels || [], this._config, this._showAll).shown.length;
+  }
+
+  // The subtitle: the radius of a nearby search (the stations count is in the status pill).
+  _subtitle(_mt) {
+    return this._results?.mode === 'near' ? `${this._results.radius} km` : '';
   }
 
   // Rewritten only when something in it changes, so the picture keeps its running animations.
@@ -4455,17 +4500,21 @@ class CarburantsFranceMapCard extends HTMLElement {
     var html;
     if (illus) {
       this._uid = this._uid || carbUid();
-      var sub = unavailable ? this._t().unavailable : this._subtitle(mt);
+      var mapN = unavailable ? 0 : this._mapCount();
+      var mapPill = carbPill(status, status === 'ok' || status === 'idle' ? `${mapN} ${carbPlural(this._t(), 'stations', mapN, this._locale())}` : carbPillLabel(this._t(), status, 0, this._locale()));
+      var sub = unavailable ? '' : this._subtitle(mt);
       html = carbBanner({
         uid: this._uid,
         night: carbIsNight(this._hass, this._config),
         status: status,
         rows: carbTotemRows(data.fuels, unavailable ? null : carbBestPrices(data.stations || [], data.fuels || []), this._locale()),
         icon: icon,
-        titles: `<div class="hname">${carbEsc(title || '')}</div><div class="hsub">${carbEsc(sub)}</div>`,
+        titles: `<div class="tline"><div class="hname">${carbEsc(title || '')}</div>${mapPill}</div>${sub ? `<div class="hsub">${carbEsc(sub)}</div>` : ''}`,
       });
     } else {
-      html = `${icon}<span class="hname">${carbEsc(title || '')}</span>`;
+      var classicN = unavailable ? 0 : this._mapCount();
+      html = `${icon}<span class="hname">${carbEsc(title || '')}</span>` +
+        carbPill(status, status === 'ok' || status === 'idle' ? `${classicN} ${carbPlural(this._t(), 'stations', classicN, this._locale())}` : carbPillLabel(this._t(), status, 0, this._locale()));
     }
     header.classList?.toggle('illus', illus);
     // An empty title and no icon: no header.
