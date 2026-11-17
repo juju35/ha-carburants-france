@@ -7,6 +7,9 @@
 - Status pill after the title on the list, mini and map cards (banner and classic header), in the header icon's colour: the stations count, Out of stock or Data unavailable; on its own line under the subtitle when the title needs the room, its dot alone below 200 px. The count moved from the subtitle to the pill. At 300 px and below the fuel station shrinks to the right of the banner and the pill drops under the subtitle, whole; on the classic header the pill drops under the title (or the subtitle on the mini card) when it would be cut. The refresh and expand / collapse buttons are 24 px frosted discs on the banner's top-right line, the detail button in the corner.
 - Map card: the search field (shorter placeholder, "Town or postcode") and the radius list now sit over the map at its top left, the zoom, full screen and **Locate me** buttons in one bar at its bottom right, and **Show the out of stock station** at its bottom left.
 
+### Documentation
+- README: screenshots of the mini card expanded to the full list card, light and dark.
+
 ## 1.16.0 - 2026-11-15
 
 ### Features

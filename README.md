@@ -322,6 +322,10 @@ While it looks up the stations around you, the "locate me" button pulses until t
 |---|---|
 | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/mini-card.png" alt="mini card" width="312"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/mini-card-dark.png" alt="mini card, dark" width="312"> |
 
+| Mini card expanded | Mini card expanded, dark |
+|---|---|
+| <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/mini-card-zoom.png" alt="mini card expanded to the full list" width="400"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/mini-card-zoom-dark.png" alt="mini card expanded to the full list, dark" width="400"> |
+
 | Map | Map, dark |
 |---|---|
 | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map.png" alt="map card" width="618"> | <img src="https://raw.githubusercontent.com/juju35/ha-carburants-france/main/screenshots/map-dark.png" alt="map card, dark" width="618"> |
