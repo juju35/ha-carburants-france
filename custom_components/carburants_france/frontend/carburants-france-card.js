@@ -1967,9 +1967,11 @@ var CARBURANTS_SCENE_STYLE = [
   '.banner .stpill { background: color-mix(in srgb, var(--c) 18%, rgba(255,255,255,.78)); color: color-mix(in srgb, var(--c) 45%, #0d2a45); }',
   '.banner.night .stpill { background: color-mix(in srgb, var(--c) 30%, rgba(8,18,38,.55)); color: color-mix(in srgb, var(--c) 35%, #ffffff); }',
   '@container carb-titles (max-width: 210px) { .banner .tline { display: contents; } .banner .stpill { order: 3; align-self: flex-start; margin-top: 1px; } }',
-  // Half a Sections view or narrower: the sky alone, the title and the whole status pill get the room.
-  '@container carb-banner (max-width: 300px) { .cb-scene { display: none; } .banner .htext { right: 12px; } .banner:has(.btools) .htext { right: 36px; }' +
-    ' .banner:has(.btools > :nth-child(2)) .htext { right: 64px; } }',
+  // Half a Sections view or narrower: a smaller station (the buttons keep the sky above it), a smaller icon, and
+  // the status pill on its own line under the subtitle, whole.
+  '@container carb-banner (max-width: 300px) { .cb-scene { width: 34cqw; } .banner .htext { right: calc(34cqw + 2px); gap: 8px; }' +
+    ' .banner .htext .hbadge { width: 34px; height: 34px; --mdc-icon-size: 20px; } .banner .tline { display: contents; }' +
+    ' .banner .stpill { order: 3; align-self: flex-start; margin-top: 1px; max-width: none; position: relative; z-index: 1; } }',
   '@container carb-banner (max-width: 200px) { .banner .stpill { padding: 4px; } .banner .stpill .st-text { display: none; } }',
   '.banner .hname { color: inherit; font-weight: 600; }',
   // The subtitle wraps on two lines at most on a narrow card.
@@ -2502,7 +2504,10 @@ class CarburantsFranceCard extends HTMLElement {
       // Classic header: the status pill right after the title, the title ellipsising first.
       '.ctline { display: flex; align-items: center; gap: 8px; min-width: 0; }',
       '.ctline .hname { flex: 0 1 auto; min-width: 4ch; }',
-      ':host([hide-title]) .titles > .hname, :host([hide-subtitle]) .titles > .hsub { display: none; }',
+      // Short of room for the title and the whole pill: the pill on its own line under the title.
+      '.title > .titles { container: carb-ctitles / inline-size; }',
+      '@container carb-ctitles (max-width: 150px) { .ctline { display: contents; } .ctline .stpill { margin-top: 2px; } }',
+      ':host([hide-title]) .titles > .hname, :host([hide-title]) .titles > :is(.ctline, .tline) > .hname, :host([hide-subtitle]) .titles > .hsub { display: none; }',
       '.hname { font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
       // The subtitle wraps rather than being cut ("Podaci nisu dostupni" on a 234 px card).
       '.hsub { font-size: 12px; color: var(--secondary-text-color); white-space: normal; overflow-wrap: anywhere; }',
@@ -2726,7 +2731,9 @@ var CARBURANTS_MINI_STYLE = [
   // Narrow compact card: the price alone on the sky (the totem shows the chosen fuel first).
   '@container carb-banner (max-width: 340px) { .banner .mprice .fbadge { display: none; } }',
   '.mrow { display: flex; align-items: center; gap: 10px; min-width: 0; }',
-  '.mrow .titles { min-width: 4ch; }',
+  '.mrow .titles { min-width: 4ch; display: flex; flex-direction: column; container: carb-mtitles / inline-size; }',
+  // Short of room for the price, its fuel badge and the status pill: the pill on its own line under the subtitle.
+  '@container carb-mtitles (max-width: 240px) { .mrow .ctline { display: contents; } .mrow .stpill { order: 3; align-self: flex-start; margin-top: 2px; } }',
   '.mrow .hsub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
   '.mprice { display: flex; align-items: center; gap: 6px; min-width: 0; }',
   '.mprice .fprice { font-size: 16px; }',
