@@ -1869,13 +1869,13 @@ function carbUid() {
   return `cb${carbUidSeq}`;
 }
 
-// Night picture: forced by illustration_theme, else the sun below the horizon, else Home Assistant's dark mode.
+// Night picture: forced by illustration_theme, else the sun below the horizon or Home Assistant's dark theme (dark mode alone without a valid sun.sun).
 function carbIsNight(hass, config) {
   var theme = config?.illustration_theme;
   if (theme === 'night') return true;
   if (theme === 'day') return false;
   var sun = hass?.states?.['sun.sun'];
-  if (sun && !CARBURANTS_NO_VALUE.has(String(sun.state))) return sun.state === 'below_horizon';
+  if (sun && !CARBURANTS_NO_VALUE.has(String(sun.state))) return sun.state === 'below_horizon' || !!hass?.themes?.darkMode;
   return !!hass?.themes?.darkMode;
 }
 

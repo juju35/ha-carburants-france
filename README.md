@@ -141,9 +141,9 @@ type: custom:carburants-france-card
 | `show_refresh` | `true` | Refresh button |
 | `hide_out_of_stock_stations` | `true` | Hide the stations where every fuel shown is out of stock |
 | `illustration` | `true` | Illustrated header (see below); `false` keeps the classic header |
-| `illustration_theme` | `auto` | Picture of the header: `auto` (night when the sun is below the horizon, else with the dark theme), `day` or `night` |
+| `illustration_theme` | `auto` | Picture of the header: `auto` (night when the sun is below the horizon or the theme is dark, even with the sun up), `day` or `night` |
 
-The **illustrated header** is a 90 px banner: the title and the station count on the sky, a fuel station on the right — the price totem showing the cheapest price of the first three fuels shown, two pumps and a car filling up — on a road strip. The icon colour follows the data: the theme's primary colour when prices are in stock, amber when every fuel is out of stock, grey with no station to show, red when the data is unavailable; the car and the pump counter only appear while prices are in stock. The picture follows the sun (`sun.sun`) or the dark theme, and stays still when the system asks for reduced motion.
+The **illustrated header** is a 90 px banner: the title and the station count on the sky, a fuel station on the right — the price totem showing the cheapest price of the first three fuels shown, two pumps and a car filling up — on a road strip. The icon colour follows the data: the theme's primary colour when prices are in stock, amber when every fuel is out of stock, grey with no station to show, red when the data is unavailable; the car and the pump counter only appear while prices are in stock. The picture turns to night after sunset (`sun.sun`) or with the dark theme, and stays still when the system asks for reduced motion.
 
 Click a station to see its weekly opening hours, its services and a directions button. One station is expanded at a time; a click outside the card collapses it and hides the out-of-stock stations again.
 
