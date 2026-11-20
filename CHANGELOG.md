@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.17.2 - 2026-11-20
+
+### Fixes
+- Cards: a tap elsewhere on the page folds them back on iOS too (Safari and the companion app send no click for a tap on something that is not clickable): the unfolded station and the out of stock stations of the list card, the mini card's full view, the map card's station popup.
+- Cards: leaving the page (another dashboard view, a conditional card hidden) brings the list and mini cards back to their default state, and closes the map card's station popup.
+
+### Maintenance
+- Tests: the coverage of the cards is now measured (`node --test --experimental-test-coverage`).
+
 ## 1.17.1 - 2026-11-18
 
 ### Fixes
