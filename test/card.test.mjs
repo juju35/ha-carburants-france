@@ -1011,7 +1011,7 @@ test('mini card: compact grid size, the full card\'s once zoomed', () => {
   assert.match(label, /arrow-collapse/);
 });
 
-test('mini card: a click outside folds the full view back, not one inside the card or in a dialog', () => {
+test('mini card: a tap outside folds the full view back (iOS sends no click), not one inside the card or in a dialog', () => {
   const listeners = [];
   context.document.addEventListener = (type, fn, capture) => listeners.push({ type, fn, capture });
   const card = Object.create(CarburantsFranceMiniCard.prototype);
@@ -1021,14 +1021,35 @@ test('mini card: a click outside folds the full view back, not one inside the ca
   card.connectedCallback.call(Object.assign(card, { _render() {} }));
   context.document.addEventListener = () => {};
   delete context.setInterval;
-  const outside = listeners.find((l) => l.fn === card._onOutsideZoom);
-  assert.equal(outside.capture, true);
+  // The press and the release are caught, in the capture phase, besides keyboard clicks.
+  assert.deepEqual(new Set(listeners.filter((l) => l.capture).map((l) => l.type)), new Set(['pointerdown', 'pointerup', 'click']));
   card._zoomed = true;
-  outside.fn({ composedPath: () => [card] });
-  outside.fn({ composedPath: () => [{ localName: 'ha-more-info-dialog' }] });
+  card._zoomWatch.tap({ composedPath: () => [card] });
+  card._zoomWatch.tap({ composedPath: () => [{ localName: 'ha-more-info-dialog' }] });
   assert.equal(folded, 0);
-  outside.fn({ composedPath: () => [{ localName: 'div' }] });
+  card._zoomWatch.tap({ composedPath: () => [{ localName: 'div' }] });
   assert.equal(folded, 1);
+  // A mouse click outside is already handled by the press and the release; a keyboard click (no count) counts.
+  const click = listeners.filter((l) => l.type === 'click');
+  for (const l of click) l.fn({ detail: 1, composedPath: () => [{ localName: 'div' }] });
+  assert.equal(folded, 1);
+  for (const l of click) l.fn({ detail: 0, composedPath: () => [{ localName: 'div' }] });
+  assert.equal(folded, 2);
+});
+
+test('list and mini cards: leaving the page brings them back to their default state', () => {
+  const card = Object.create(CarburantsFranceMiniCard.prototype);
+  Object.assign(card, { _zoomed: true, _expandedId: 12345678, _showAll: true });
+  card.disconnectedCallback();
+  assert.equal(card._zoomed, false);
+  assert.equal(card._expandedId, null);
+  assert.equal(card._showAll, false);
+  let renders = 0;
+  context.setInterval = () => 0;
+  Object.assign(card, { _hass: {}, _config: {}, _render: () => (renders += 1) });
+  card.connectedCallback();
+  delete context.setInterval;
+  assert.equal(renders, 1);
 });
 
 test('the mini card editor adds the fuel and detail button options, the list card editor does not', () => {

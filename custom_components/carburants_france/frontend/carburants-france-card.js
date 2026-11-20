@@ -1613,12 +1613,42 @@ function carbSetSchema(form, schema) {
   form.schema = schema;
 }
 
-// Calls onOutside for a click anywhere outside the element (shadow DOM aware). A click, not a
-// pointerdown: collapsing on press would shift the layout under the pointer before the click.
-function carbOutsideListener(element, onOutside) {
-  return (ev) => {
-    var path = ev.composedPath ? ev.composedPath() : [];
-    if (path.indexOf(element) === -1) onOutside();
+// Calls onOutside for a click anywhere outside the element (shadow DOM aware), on the release, not on the press:
+// collapsing on press would shift the layout under the pointer before the click (the click keeps the target of the
+// press and the release).
+// « A click elsewhere », caught on the pointer: iOS (Safari and the companion app) sends no click for a tap on
+// something that is not clickable. It counts when the press and the release are both outside the element (a map
+// or a slider dragged out of it does not count, nor a scroll, which cancels the pointer); keyboard clicks (no click
+// count) go through the click event.
+function carbWatchOutside(element, onOutside) {
+  var downOutside = false;
+  var outside = (ev) => (ev.composedPath ? ev.composedPath() : []).indexOf(element) === -1;
+  var onDown = (ev) => {
+    downOutside = outside(ev);
+  };
+  var onUp = (ev) => {
+    if (downOutside && outside(ev)) onOutside(ev);
+    downOutside = false;
+  };
+  var onClick = (ev) => {
+    if (ev.detail === 0 && outside(ev)) onOutside(ev);
+  };
+  return {
+    on() {
+      document.addEventListener('pointerdown', onDown, true);
+      document.addEventListener('pointerup', onUp, true);
+      document.addEventListener('click', onClick, true);
+    },
+    off() {
+      document.removeEventListener('pointerdown', onDown, true);
+      document.removeEventListener('pointerup', onUp, true);
+      document.removeEventListener('click', onClick, true);
+    },
+    // A tap (press and release at the same spot), for the tests.
+    tap(ev) {
+      onDown(ev);
+      onUp(ev);
+    },
   };
 }
 
@@ -2218,20 +2248,29 @@ class CarburantsFranceCard extends HTMLElement {
     carbObserve(this);
     this._timer = setInterval(() => { this._render(); }, 60000);
     // A click elsewhere collapses the station and hides the out of stock ones again.
-    this._onOutside = this._onOutside || carbOutsideListener(this, () => {
+    this._outsideWatch = this._outsideWatch || carbWatchOutside(this, () => {
       if (this._expandedId === null && !this._showAll) return;
       this._expandedId = null;
       this._showAll = false;
       this._render();
     });
-    document.addEventListener('click', this._onOutside, true);
+    this._outsideWatch.on();
+    // Back on the page after leaving it: drawn again in its default state.
+    if (this._left && this._hass && this._config) this._render();
+    this._left = false;
   }
 
   disconnectedCallback() {
     this._resize?.disconnect();
     this._fitWidth = null;
+    if (this._fitFrame) cancelAnimationFrame(this._fitFrame);
     clearInterval(this._timer);
-    document.removeEventListener('click', this._onOutside, true);
+    this._outsideWatch?.off();
+    // Left (another dashboard view, a conditional card hidden): back to its default state, station folded and the
+    // out of stock ones hidden again.
+    this._left = true;
+    this._expandedId = null;
+    this._showAll = false;
   }
 
   getCardSize() {
@@ -2852,12 +2891,14 @@ class CarburantsFranceMiniCard extends CarburantsFranceCard {
     this._onOutsideZoom = this._onOutsideZoom || ((ev) => {
       if (this._zoomed && !ev.composedPath().includes(this) && !carbInDialog(ev)) this._setZoom(false);
     });
-    document.addEventListener('click', this._onOutsideZoom, true);
+    (this._zoomWatch = this._zoomWatch || carbWatchOutside(this, (ev) => this._onOutsideZoom(ev))).on();
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    document.removeEventListener('click', this._onOutsideZoom, true);
+    this._zoomWatch?.off();
+    // Left the page: compact again when it comes back.
+    this._zoomed = false;
   }
 
   getCardSize() {
@@ -4412,7 +4453,7 @@ class CarburantsFranceMapCard extends HTMLElement {
   connectedCallback() {
     carbObserve(this);
     // A click elsewhere closes the popup and hides the out of stock stations again.
-    this._onOutside = this._onOutside || carbOutsideListener(this, () => {
+    this._outsideWatch = this._outsideWatch || carbWatchOutside(this, () => {
       if (!this._map) return;
       this._map.closePopup();
       if (this._showAll) {
@@ -4420,7 +4461,7 @@ class CarburantsFranceMapCard extends HTMLElement {
         this._drawMarkers(window.L);
       }
     });
-    document.addEventListener('click', this._onOutside, true);
+    this._outsideWatch.on();
     // Re-attached before the delayed teardown ran (view switch, editor preview): keep the map.
     clearTimeout(this._destroyTimer);
     // Detached in native full screen: the browser left it, but fullscreenchange came after
@@ -4451,7 +4492,9 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (this._resizeObserver) this._resizeObserver.disconnect();
     clearInterval(this._tokenTimer);
     clearTimeout(this._searchTimer);
-    document.removeEventListener('click', this._onOutside, true);
+    this._outsideWatch?.off();
+    // Left the page: the station popup does not stay open.
+    this._map?.closePopup?.();
     this._unlistenFullscreen();
     if (this._pseudoFs) {
       // Escape no longer reaches the card once detached: leave the pseudo full screen now,
