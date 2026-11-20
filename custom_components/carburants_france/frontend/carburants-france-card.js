@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.17.1';
+var CARBURANTS_CARD_VERSION = '1.17.2';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -1613,12 +1613,42 @@ function carbSetSchema(form, schema) {
   form.schema = schema;
 }
 
-// Calls onOutside for a click anywhere outside the element (shadow DOM aware). A click, not a
-// pointerdown: collapsing on press would shift the layout under the pointer before the click.
-function carbOutsideListener(element, onOutside) {
-  return (ev) => {
-    var path = ev.composedPath ? ev.composedPath() : [];
-    if (path.indexOf(element) === -1) onOutside();
+// Calls onOutside for a click anywhere outside the element (shadow DOM aware), on the release, not on the press:
+// collapsing on press would shift the layout under the pointer before the click (the click keeps the target of the
+// press and the release).
+// « A click elsewhere », caught on the pointer: iOS (Safari and the companion app) sends no click for a tap on
+// something that is not clickable. It counts when the press and the release are both outside the element (a map
+// or a slider dragged out of it does not count, nor a scroll, which cancels the pointer); keyboard clicks (no click
+// count) go through the click event.
+function carbWatchOutside(element, onOutside) {
+  var downOutside = false;
+  var outside = (ev) => (ev.composedPath ? ev.composedPath() : []).indexOf(element) === -1;
+  var onDown = (ev) => {
+    downOutside = outside(ev);
+  };
+  var onUp = (ev) => {
+    if (downOutside && outside(ev)) onOutside(ev);
+    downOutside = false;
+  };
+  var onClick = (ev) => {
+    if (ev.detail === 0 && outside(ev)) onOutside(ev);
+  };
+  return {
+    on() {
+      document.addEventListener('pointerdown', onDown, true);
+      document.addEventListener('pointerup', onUp, true);
+      document.addEventListener('click', onClick, true);
+    },
+    off() {
+      document.removeEventListener('pointerdown', onDown, true);
+      document.removeEventListener('pointerup', onUp, true);
+      document.removeEventListener('click', onClick, true);
+    },
+    // A tap (press and release at the same spot), for the tests.
+    tap(ev) {
+      onDown(ev);
+      onUp(ev);
+    },
   };
 }
 
@@ -2084,6 +2114,13 @@ const carbTextWidth = (el) => {
 // and for screen readers). Measured after each render and on each new width, whatever the language: no fixed
 // width threshold.
 function carbFitPill(card, root) {
+  // A new <ha-card> lays its content out only once it has rendered (a microtask later, Lit): fitted then again,
+  // otherwise the pill keeps a place measured at 0 px.
+  for (const hc of root?.querySelectorAll?.('ha-card') || []) {
+    if (!hc.updateComplete || hc._carbFitWait) continue;
+    hc._carbFitWait = true;
+    hc.updateComplete.then(() => carbFitPill(card, root));
+  }
   if (!card.isConnected) return;
   for (const t of root?.querySelectorAll?.('.titles') || []) {
     const row = t.querySelector('.tline, .ctline');
@@ -2141,6 +2178,70 @@ function carbObserve(card) {
     card._resize.observe(card);
   }
   document.fonts?.ready?.then(() => carbFitPill(card, card._root));
+}
+
+// Patches `cur` in place to the markup `html`: kept nodes keep their size, their running animations, a loaded
+// <img> and the focus, so a state update does not make the card jump (an <img> created again has no height until
+// it is decoded, and the sections grid reflows). Children are matched by `data-id`, else by position.
+function carbPatchAttrs(cur, next) {
+  for (const { name } of [...cur.attributes]) if (!next.hasAttribute(name)) cur.removeAttribute(name);
+  for (const { name, value } of next.attributes) if (cur.getAttribute(name) !== value) cur.setAttribute(name, value);
+}
+function carbKey(n) {
+  return n?.nodeType === 1 ? n.getAttribute('data-id') : null;
+}
+// A custom element with no markup inside (ha-icon) draws itself: it is kept as it is while its markup stays the same,
+// and replaced by the new one when that changes (its own attributes and content are never compared).
+function carbLeaf(n) {
+  return n.nodeType === 1 && n.localName.includes('-') && !n.childNodes.length;
+}
+function carbSig(n) {
+  return [...n.attributes].map((a) => `${a.name}=${a.value}`).join(' ');
+}
+function carbMark(n) {
+  if (n.nodeType !== 1) return;
+  if (carbLeaf(n)) n._morphSig = carbSig(n);
+  else for (const c of n.childNodes) carbMark(c);
+}
+function carbPatchChildren(cur, next) {
+  const old = [...cur.childNodes];
+  const fresh = [...next.childNodes];
+  const byKey = new Map();
+  for (const o of old) {
+    const k = carbKey(o);
+    if (k !== null && !byKey.has(k)) byKey.set(k, o);
+  }
+  const used = new Set();
+  fresh.forEach((n, i) => {
+    const k = carbKey(n);
+    let o = k !== null ? byKey.get(k) : old[i];
+    if (!o || o.nodeType !== n.nodeType || o.nodeName !== n.nodeName || used.has(o) || (k === null && carbKey(o) !== null)) o = null;
+    const ref = cur.childNodes[i] ?? null;
+    if (o && carbLeaf(n) && o._morphSig !== carbSig(n)) o = null;
+    if (!o) {
+      carbMark(n);
+      cur.insertBefore(n, ref);
+      return;
+    }
+    used.add(o);
+    if (o !== ref) cur.insertBefore(o, ref);
+    if (n.nodeType === 1) {
+      if (carbLeaf(n)) return;
+      carbPatchAttrs(o, n);
+      carbPatchChildren(o, n);
+    } else if (o.nodeValue !== n.nodeValue) o.nodeValue = n.nodeValue;
+  });
+  while (cur.childNodes.length > fresh.length) cur.removeChild(cur.lastChild);
+}
+function carbMorph(cur, html) {
+  // Not a DOM node (a detached stand-in): written as a whole.
+  if (!cur.childNodes) {
+    cur.innerHTML = html;
+    return;
+  }
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html;
+  carbPatchChildren(cur, tpl.content);
 }
 
 // The banner: picture, road, then the icon and the titles on the sky, and `tools` at the top right.
@@ -2218,20 +2319,29 @@ class CarburantsFranceCard extends HTMLElement {
     carbObserve(this);
     this._timer = setInterval(() => { this._render(); }, 60000);
     // A click elsewhere collapses the station and hides the out of stock ones again.
-    this._onOutside = this._onOutside || carbOutsideListener(this, () => {
+    this._outsideWatch = this._outsideWatch || carbWatchOutside(this, () => {
       if (this._expandedId === null && !this._showAll) return;
       this._expandedId = null;
       this._showAll = false;
       this._render();
     });
-    document.addEventListener('click', this._onOutside, true);
+    this._outsideWatch.on();
+    // Back on the page after leaving it: drawn again in its default state.
+    if (this._left && this._hass && this._config) this._render();
+    this._left = false;
   }
 
   disconnectedCallback() {
     this._resize?.disconnect();
     this._fitWidth = null;
+    if (this._fitFrame) cancelAnimationFrame(this._fitFrame);
     clearInterval(this._timer);
-    document.removeEventListener('click', this._onOutside, true);
+    this._outsideWatch?.off();
+    // Left (another dashboard view, a conditional card hidden): back to its default state, station folded and the
+    // out of stock ones hidden again.
+    this._left = true;
+    this._expandedId = null;
+    this._showAll = false;
   }
 
   getCardSize() {
@@ -2269,6 +2379,7 @@ class CarburantsFranceCard extends HTMLElement {
       '<ha-card><div class="header"></div><div class="list"></div><div class="footer" hidden></div></ha-card>';
     this._root.querySelector('.list').addEventListener('click', this._onListClick.bind(this));
     this._root.querySelector('.list').addEventListener('keydown', this._onListKey.bind(this));
+    this._root.querySelector('.list').addEventListener('error', this._onLogoError.bind(this), true);
     this._root.querySelector('.footer').addEventListener('click', function (ev) {
       if (!ev.target.closest('.toggle')) return;
       this._showAll = !this._showAll;
@@ -2298,9 +2409,10 @@ class CarburantsFranceCard extends HTMLElement {
     if (!st) {
       this._headerHtml = null;
       this._listHtml = null;
-      header.innerHTML = this._headerMarkup({ title: title, status: 'off', pill: t.unavailable, tools: this._zoomButton() });
+      carbMorph(header, this._headerMarkup({ title: title, status: 'off', pill: t.unavailable, tools: this._zoomButton() }));
       carbFitPill(this, this._root);
-      list.innerHTML = `<div class="empty">${carbEsc(t.no_entity)}</div>`;
+      carbMorph(list, `<div class="empty">${carbEsc(t.no_entity)}</div>`);
+      this._footerHtml = null;
       this._root.querySelector('.footer').hidden = true;
       return;
     }
@@ -2313,11 +2425,16 @@ class CarburantsFranceCard extends HTMLElement {
     var stations = this._sorted(visible.shown, fuels);
     if (this._config.max_stations > 0) stations = stations.slice(0, this._config.max_stations);
     var footer = this._root.querySelector('.footer');
-    footer.hidden = !hidden;
-    footer.innerHTML = hidden
+    if (footer.hidden !== !hidden) footer.hidden = !hidden;
+    var footerHtml = hidden
       ? '<button type="button" class="toggle"><ha-icon icon="' + (this._showAll ? 'mdi:eye-off-outline' : 'mdi:eye-outline') + '"></ha-icon>' +
         carbEsc(carbToggleLabel(t, this._showAll, hidden)) + '</button>'
       : '';
+    // Patched only when it changes: no node created again on a state update.
+    if (footerHtml !== this._footerHtml) {
+      this._footerHtml = footerHtml;
+      carbMorph(footer, footerHtml);
+    }
 
     var unavailable = carbUnavailable(st);
     var status = carbStatus(st, all, fuels);
@@ -2334,10 +2451,14 @@ class CarburantsFranceCard extends HTMLElement {
     });
     if (headerHtml !== this._headerHtml) {
       this._headerHtml = headerHtml;
-      header.innerHTML = headerHtml;
+      // Patched in place: the picture keeps its nodes and running animations, the card its height.
+      carbMorph(header, headerHtml);
       carbFitPill(this, this._root);
       var refreshBtn = header.querySelector('.refresh-btn');
-      if (refreshBtn) refreshBtn.addEventListener('click', this._refresh.bind(this));
+      if (refreshBtn && !refreshBtn._carbBound) {
+        refreshBtn._carbBound = true;
+        refreshBtn.addEventListener('click', this._refresh.bind(this));
+      }
     }
 
     var now = new Date();
@@ -2348,25 +2469,22 @@ class CarburantsFranceCard extends HTMLElement {
     // changed, leave the DOM alone (keeps a text selection, no listeners to re-attach).
     if (listHtml === this._listHtml) return;
     this._listHtml = listHtml;
-    // innerHTML replaces the rows: the row that had the focus gets it back (keyboard users stay in place).
-    var active = this._root.activeElement;
-    var focusedItem = active?.closest?.('.station');
-    var focusedId = focusedItem && focusedItem.querySelector('.row') === active ? focusedItem.getAttribute('data-id') : null;
-    list.innerHTML = listHtml;
-    if (focusedId !== null) {
-      var again = Array.prototype.find.call(list.querySelectorAll('.station'), (el) => el.getAttribute('data-id') === focusedId);
-      again?.querySelector('.row')?.focus({ preventScroll: true });
-    }
-    list.querySelectorAll('img.logo').forEach((img) => {
-      img.addEventListener('error', () => {
-        CARBURANTS_FAILED_LOGOS.add(img.getAttribute('src'));
-        var badge = document.createElement('div');
-        badge.className = 'logo badge';
-        badge.style.background = img.dataset.color;
-        badge.textContent = img.dataset.initials;
-        img.replaceWith(badge);
-      });
-    });
+    // Patched in place, rows matched by station: a price that changes rewrites its text only, the logos stay
+    // loaded (no row losing its height for a frame) and the focused row keeps the focus.
+    carbMorph(list, listHtml);
+  }
+
+  // A brand logo that fails to load (listened on the list, in the capture phase: error does not bubble) becomes
+  // the brand's initials on its colour.
+  _onLogoError(ev) {
+    var img = ev.target;
+    if (img?.localName !== 'img' || !img.classList.contains('logo')) return;
+    CARBURANTS_FAILED_LOGOS.add(img.getAttribute('src'));
+    var badge = document.createElement('div');
+    badge.className = 'logo badge';
+    badge.style.background = img.dataset.color;
+    badge.textContent = img.dataset.initials;
+    img.replaceWith(badge);
   }
 
   // Hook for the mini card: its detail button at the right of the header.
@@ -2852,12 +2970,14 @@ class CarburantsFranceMiniCard extends CarburantsFranceCard {
     this._onOutsideZoom = this._onOutsideZoom || ((ev) => {
       if (this._zoomed && !ev.composedPath().includes(this) && !carbInDialog(ev)) this._setZoom(false);
     });
-    document.addEventListener('click', this._onOutsideZoom, true);
+    (this._zoomWatch = this._zoomWatch || carbWatchOutside(this, (ev) => this._onOutsideZoom(ev))).on();
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    document.removeEventListener('click', this._onOutsideZoom, true);
+    this._zoomWatch?.off();
+    // Left the page: compact again when it comes back.
+    this._zoomed = false;
   }
 
   getCardSize() {
@@ -2926,7 +3046,7 @@ class CarburantsFranceMiniCard extends CarburantsFranceCard {
     // Unchanged (the minute timer): the picture keeps its running animations.
     if (html !== this._miniCache) {
       this._miniCache = html;
-      mini.innerHTML = html;
+      carbMorph(mini, html);
       carbFitPill(this, this._root);
     }
   }
@@ -4412,7 +4532,7 @@ class CarburantsFranceMapCard extends HTMLElement {
   connectedCallback() {
     carbObserve(this);
     // A click elsewhere closes the popup and hides the out of stock stations again.
-    this._onOutside = this._onOutside || carbOutsideListener(this, () => {
+    this._outsideWatch = this._outsideWatch || carbWatchOutside(this, () => {
       if (!this._map) return;
       this._map.closePopup();
       if (this._showAll) {
@@ -4420,7 +4540,7 @@ class CarburantsFranceMapCard extends HTMLElement {
         this._drawMarkers(window.L);
       }
     });
-    document.addEventListener('click', this._onOutside, true);
+    this._outsideWatch.on();
     // Re-attached before the delayed teardown ran (view switch, editor preview): keep the map.
     clearTimeout(this._destroyTimer);
     // Detached in native full screen: the browser left it, but fullscreenchange came after
@@ -4451,7 +4571,9 @@ class CarburantsFranceMapCard extends HTMLElement {
     if (this._resizeObserver) this._resizeObserver.disconnect();
     clearInterval(this._tokenTimer);
     clearTimeout(this._searchTimer);
-    document.removeEventListener('click', this._onOutside, true);
+    this._outsideWatch?.off();
+    // Left the page: the station popup does not stay open.
+    this._map?.closePopup?.();
     this._unlistenFullscreen();
     if (this._pseudoFs) {
       // Escape no longer reaches the card once detached: leave the pseudo full screen now,
@@ -4607,12 +4729,14 @@ class CarburantsFranceMapCard extends HTMLElement {
     }
     header.classList?.toggle('illus', illus);
     // An empty title and no icon: no header.
-    header.hidden = !title && !icon;
+    if (header.hidden !== (!title && !icon)) header.hidden = !title && !icon;
+    // Patched only when it changes (an update of another entity touches nothing): the picture keeps its nodes
+    // and animations, the card its height. A new width fits the pill again through the resize observer.
     if (html !== this._headerHtml) {
       this._headerHtml = html;
-      header.innerHTML = html;
+      carbMorph(header, html);
+      carbFitPill(this, this._root);
     }
-    carbFitPill(this, this._root);
     this._renderLocate();
   }
 
@@ -4623,12 +4747,17 @@ class CarburantsFranceMapCard extends HTMLElement {
     var mt = this._mt();
     var active = this._results?.mode === 'near';
     var label = active ? mt.back_to_followed : mt.locate;
-    link.className = `locate${active ? ' active' : ''}${this._busy === 'near' ? ' busy' : ''}`;
-    link.title = label;
-    link.setAttribute('aria-label', label);
-    link.setAttribute('aria-pressed', String(active));
+    // Only what changed is written: a state update leaves the button alone.
+    var cls = `locate${active ? ' active' : ''}${this._busy === 'near' ? ' busy' : ''}`;
+    if (link.className !== cls) link.className = cls;
+    if (link.title !== label) link.title = label;
+    if (link.getAttribute('aria-label') !== label) link.setAttribute('aria-label', label);
+    if (link.getAttribute('aria-pressed') !== String(active)) link.setAttribute('aria-pressed', String(active));
     var html = `<ha-icon icon="${active ? 'mdi:crosshairs-off' : 'mdi:crosshairs-gps'}"></ha-icon>`;
-    if (link.innerHTML !== html) link.innerHTML = html;
+    if (link._carbIcon !== html) {
+      link._carbIcon = html;
+      link.innerHTML = html;
+    }
   }
 
   // The radius of the nearby search, in the search field's pill; rewritten only when it changes, so its list
