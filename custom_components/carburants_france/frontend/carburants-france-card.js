@@ -2175,16 +2175,26 @@ function carbObserve(card) {
 
 // Patches `cur` in place to the markup `html`: kept nodes keep their size, their running animations, a loaded
 // <img> and the focus, so a state update does not make the card jump (an <img> created again has no height until
-// it is decoded, and the sections grid reflows). Children are matched by `data-id`, else by position; a custom
-// element (ha-icon) keeps the attributes it set on itself and, when its new markup is empty, the content it drew.
+// it is decoded, and the sections grid reflows). Children are matched by `data-id`, else by position.
 function carbPatchAttrs(cur, next) {
-  if (!cur.localName.includes('-')) {
-    for (const { name } of [...cur.attributes]) if (!next.hasAttribute(name)) cur.removeAttribute(name);
-  }
+  for (const { name } of [...cur.attributes]) if (!next.hasAttribute(name)) cur.removeAttribute(name);
   for (const { name, value } of next.attributes) if (cur.getAttribute(name) !== value) cur.setAttribute(name, value);
 }
 function carbKey(n) {
   return n?.nodeType === 1 ? n.getAttribute('data-id') : null;
+}
+// A custom element with no markup inside (ha-icon) draws itself: it is kept as it is while its markup stays the same,
+// and replaced by the new one when that changes (its own attributes and content are never compared).
+function carbLeaf(n) {
+  return n.nodeType === 1 && n.localName.includes('-') && !n.childNodes.length;
+}
+function carbSig(n) {
+  return [...n.attributes].map((a) => `${a.name}=${a.value}`).join(' ');
+}
+function carbMark(n) {
+  if (n.nodeType !== 1) return;
+  if (carbLeaf(n)) n._morphSig = carbSig(n);
+  else for (const c of n.childNodes) carbMark(c);
 }
 function carbPatchChildren(cur, next) {
   const old = [...cur.childNodes];
@@ -2200,15 +2210,18 @@ function carbPatchChildren(cur, next) {
     let o = k !== null ? byKey.get(k) : old[i];
     if (!o || o.nodeType !== n.nodeType || o.nodeName !== n.nodeName || used.has(o) || (k === null && carbKey(o) !== null)) o = null;
     const ref = cur.childNodes[i] ?? null;
+    if (o && carbLeaf(n) && o._morphSig !== carbSig(n)) o = null;
     if (!o) {
+      carbMark(n);
       cur.insertBefore(n, ref);
       return;
     }
     used.add(o);
     if (o !== ref) cur.insertBefore(o, ref);
     if (n.nodeType === 1) {
+      if (carbLeaf(n)) return;
       carbPatchAttrs(o, n);
-      if (!(n.localName.includes('-') && !n.childNodes.length)) carbPatchChildren(o, n);
+      carbPatchChildren(o, n);
     } else if (o.nodeValue !== n.nodeValue) o.nodeValue = n.nodeValue;
   });
   while (cur.childNodes.length > fresh.length) cur.removeChild(cur.lastChild);

@@ -612,20 +612,23 @@ test('stations sorted again keep their nodes (matched by data-id), moved rather 
   assert.ok(d.log.every((x) => x === 'move'), d.log.join());
 });
 
-test('a custom element keeps what it drew itself and the attributes it set on itself', () => {
+test('an icon (custom element) is left alone while its markup stays the same, and replaced when it changes', () => {
   const d = fakeDom();
   const host = d.el('div');
   carbPatchChildren(host, d.frag(d.el('ha-icon', { icon: 'mdi:star' })));
   const icon = host.childNodes[0];
-  // What ha-icon does once connected: its own content and inline style.
+  // What ha-icon does once connected: its own content and inline style, never compared.
   icon.childNodes.push(d.el('svg'));
   icon.setAttribute('style', 'display:inline-flex');
   d.log.length = 0;
-  carbPatchChildren(host, d.frag(d.el('ha-icon', { icon: 'mdi:star-outline' })));
+  carbPatchChildren(host, d.frag(d.el('ha-icon', { icon: 'mdi:star' })));
   assert.equal(host.childNodes[0], icon);
-  assert.equal(icon.childNodes.length, 1);
   assert.equal(icon.getAttribute('style'), 'display:inline-flex');
-  assert.deepEqual(d.log, ['attr icon']);
+  assert.deepEqual(d.log, []);
+  carbPatchChildren(host, d.frag(d.el('ha-icon', { icon: 'mdi:star-outline' })));
+  assert.notEqual(host.childNodes[0], icon);
+  assert.equal(host.childNodes[0].getAttribute('icon'), 'mdi:star-outline');
+  assert.equal(host.childNodes.length, 1);
 });
 
 test('an update of another entity redraws nothing in the list card', () => {
