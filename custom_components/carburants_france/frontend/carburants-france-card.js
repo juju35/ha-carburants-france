@@ -2114,6 +2114,13 @@ const carbTextWidth = (el) => {
 // and for screen readers). Measured after each render and on each new width, whatever the language: no fixed
 // width threshold.
 function carbFitPill(card, root) {
+  // A new <ha-card> lays its content out only once it has rendered (a microtask later, Lit): fitted then again,
+  // otherwise the pill keeps a place measured at 0 px.
+  for (const hc of root?.querySelectorAll?.('ha-card') || []) {
+    if (!hc.updateComplete || hc._carbFitWait) continue;
+    hc._carbFitWait = true;
+    hc.updateComplete.then(() => carbFitPill(card, root));
+  }
   if (!card.isConnected) return;
   for (const t of root?.querySelectorAll?.('.titles') || []) {
     const row = t.querySelector('.tline, .ctline');
