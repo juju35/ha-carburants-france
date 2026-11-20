@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const source = readFileSync(new URL('../custom_components/carburants_france/frontend/carburants-france-card.js', import.meta.url), 'utf8');
@@ -22,7 +23,10 @@ const runTimers = () => {
   for (const fn of timers.splice(0)) fn?.();
 };
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbPlural, carbCheapest, CarburantsFranceCard, CarburantsFranceMapCard, CarburantsFranceMiniCard, CarburantsFranceCardEditor, CarburantsFranceMiniCardEditor };`, context);
+vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbPlural, carbCheapest, CarburantsFranceCard, CarburantsFranceMapCard, CarburantsFranceMiniCard, CarburantsFranceCardEditor, CarburantsFranceMiniCardEditor };`, context, {
+  // Named after the card file, so that node --experimental-test-coverage reports it.
+  filename: fileURLToPath(new URL('../custom_components/carburants_france/frontend/carburants-france-card.js', import.meta.url)),
+});
 const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbCheapest, CarburantsFranceCard, CarburantsFranceMapCard, CarburantsFranceMiniCard, CarburantsFranceCardEditor, CarburantsFranceMiniCardEditor } = context.carb;
 const NEW_LANGS = ['ro', 'da', 'sv', 'bg', 'ru', 'uk', 'hu', 'sk', 'cs', 'sl', 'lv', 'el'];
 
