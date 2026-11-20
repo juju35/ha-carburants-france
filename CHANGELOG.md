@@ -9,6 +9,7 @@
 
 ### Maintenance
 - Tests: the coverage of the cards is now measured (`node --test --experimental-test-coverage`).
+- Tests: the map card is tested with a Leaflet stand-in (map built once, Home Assistant tile proxy and its fallback, custom tiles, markers, out of stock toggle, popup kept over a redraw, nearby search area, home, fit).
 
 ## 1.17.1 - 2026-11-18
 
