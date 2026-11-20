@@ -23,11 +23,11 @@ const runTimers = () => {
   for (const fn of timers.splice(0)) fn?.();
 };
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.carb = { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbPlural, carbCheapest, CarburantsFranceCard, CarburantsFranceMapCard, CarburantsFranceMiniCard, CarburantsFranceCardEditor, CarburantsFranceMiniCardEditor };`, context, {
+vm.runInContext(`${source}\nthis.carb = { carbPatchChildren, carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbPlural, carbCheapest, CarburantsFranceCard, CarburantsFranceMapCard, CarburantsFranceMiniCard, CarburantsFranceCardEditor, CarburantsFranceMiniCardEditor };`, context, {
   // Named after the card file, so that node --experimental-test-coverage reports it.
   filename: fileURLToPath(new URL('../custom_components/carburants_france/frontend/carburants-france-card.js', import.meta.url)),
 });
-const { carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbCheapest, CarburantsFranceCard, CarburantsFranceMapCard, CarburantsFranceMiniCard, CarburantsFranceCardEditor, CarburantsFranceMiniCardEditor } = context.carb;
+const { carbPatchChildren, carbBestPrices, carbVisibleStations, carbSetSchema, carbOpening, carbLang, carbLocale, carbLanguageOptions, carbCheapest, CarburantsFranceCard, CarburantsFranceMapCard, CarburantsFranceMiniCard, CarburantsFranceCardEditor, CarburantsFranceMiniCardEditor } = context.carb;
 const NEW_LANGS = ['ro', 'da', 'sv', 'bg', 'ru', 'uk', 'hu', 'sk', 'cs', 'sl', 'lv', 'el'];
 
 const fuels = [{ key: 'gazole' }, { key: 'e10' }];
@@ -511,42 +511,132 @@ test('Enter and Space on a list station row expand and collapse it, other keys d
   assert.equal(card._expandedId, '1');
 });
 
-test('the focused list station row keeps the focus when the list is redrawn', () => {
-  const { card, list, focused } = listCard();
-  const k = keyOnRow(list, '2', 'Enter');
-  card._root.activeElement = k.row;
-  card._onListKey(k.ev);
-  assert.deepEqual(focused, ['2']);
-  // Nothing focused in the card (or focus elsewhere): a redraw moves no focus.
-  card._root.activeElement = null;
-  card._expandedId = null;
-  card._render();
-  assert.deepEqual(focused, ['2']);
-});
-
-test('giving the focus back to the redrawn row does not scroll the page', () => {
-  const { card, list, focused, focusOptions } = listCard();
-  const k = keyOnRow(list, '2', 'Enter');
-  card._root.activeElement = k.row;
-  card._onListKey(k.ev);
-  assert.deepEqual(focused, ['2']);
-  assert.deepEqual({ ...focusOptions[0] }, { preventScroll: true });
-});
-
 test('no focus() call in the cards may scroll the page', () => {
-  // Every focus() the cards make (row given back after a redraw, search field after clearing it) keeps the scroll.
+  // Every focus() the cards make (zoom button after a keyboard toggle, search field after clearing it) keeps the scroll.
   const calls = [...source.matchAll(/\.focus\(([^)]*)\)/g)].map((m) => m[1]);
   assert.ok(calls.length >= 2);
   for (const args of calls) assert.equal(args.replace(/\s+/g, ' '), '{ preventScroll: true }');
 });
 
-test('the focused row of a station that is gone after a redraw does not fail', () => {
-  const { card, list, focused } = listCard();
-  const k = keyOnRow(list, '2', 'Enter');
-  card._root.activeElement = k.row;
-  card._lastState = { ...card._lastState, attributes: { ...card._lastState.attributes, stations: [station(1, 1.8, 1.7)] } };
-  card._render();
-  assert.deepEqual(focused, []);
+// A minimal DOM for the in-place patch: elements and text nodes, every change counted.
+const fakeDom = () => {
+  const log = [];
+  const node = (props) => {
+    const n = {
+      childNodes: [],
+      get lastChild() { return this.childNodes[this.childNodes.length - 1] ?? null; },
+      insertBefore(child, ref) {
+        const was = child.parent;
+        if (was) was.childNodes.splice(was.childNodes.indexOf(child), 1);
+        const at = ref ? this.childNodes.indexOf(ref) : -1;
+        this.childNodes.splice(at === -1 ? this.childNodes.length : at, 0, child);
+        child.parent = this;
+        log.push(was === this ? 'move' : 'insert');
+        return child;
+      },
+      removeChild(child) {
+        this.childNodes.splice(this.childNodes.indexOf(child), 1);
+        child.parent = null;
+        log.push('remove');
+        return child;
+      },
+    };
+    // Copied with their getters and setters (a spread would read them once).
+    return Object.defineProperties(n, Object.getOwnPropertyDescriptors(props));
+  };
+  const el = (name, attrs = {}, ...children) => {
+    const map = new Map(Object.entries(attrs));
+    const e = node({
+      nodeType: 1,
+      nodeName: name.toUpperCase(),
+      localName: name,
+      get attributes() { return [...map].map(([n, value]) => ({ name: n, value })); },
+      getAttribute: (n) => (map.has(n) ? map.get(n) : null),
+      hasAttribute: (n) => map.has(n),
+      setAttribute: (n, v) => { map.set(n, String(v)); log.push(`attr ${n}`); },
+      removeAttribute: (n) => { map.delete(n); log.push(`unattr ${n}`); },
+    });
+    for (const c of children) { c.parent = e; e.childNodes.push(c); }
+    return e;
+  };
+  const text = (v) => {
+    let value = v;
+    return node({
+      nodeType: 3,
+      nodeName: '#text',
+      get nodeValue() { return value; },
+      set nodeValue(x) { value = x; log.push('text'); },
+    });
+  };
+  const frag = (...children) => el('#fragment', {}, ...children);
+  return { el, text, frag, log };
+};
+// Two stations, each with its brand logo and a price; `price` / `order` vary from one render to the next.
+const stationsMarkup = (d, price, order = ['1', '2']) => d.frag(...order.map((id) => d.el('div', { class: 'station', 'data-id': id },
+  d.el('img', { class: 'logo', src: `/logo${id}.png` }),
+  d.el('span', { class: 'price' }, d.text(id === '1' ? price : '1.900')),
+  d.el('ha-icon', { icon: 'mdi:star' }))));
+
+test('a state update that changes nothing in the list changes no node of it', () => {
+  const d = fakeDom();
+  const list = d.el('div', { class: 'list' });
+  carbPatchChildren(list, stationsMarkup(d, '1.799'));
+  d.log.length = 0;
+  carbPatchChildren(list, stationsMarkup(d, '1.799'));
+  assert.deepEqual(d.log, []);
+});
+
+test('a new price is written in place: the logos and rows are the same nodes, only the text changes', () => {
+  const d = fakeDom();
+  const list = d.el('div', { class: 'list' });
+  carbPatchChildren(list, stationsMarkup(d, '1.799'));
+  const [row1, row2] = list.childNodes;
+  const logo = row1.childNodes[0];
+  d.log.length = 0;
+  carbPatchChildren(list, stationsMarkup(d, '1.809'));
+  assert.deepEqual(d.log, ['text']);
+  assert.equal(list.childNodes[0], row1);
+  assert.equal(list.childNodes[1], row2);
+  assert.equal(row1.childNodes[0], logo);
+  assert.equal(row1.childNodes[1].childNodes[0].nodeValue, '1.809');
+});
+
+test('stations sorted again keep their nodes (matched by data-id), moved rather than drawn again', () => {
+  const d = fakeDom();
+  const list = d.el('div', { class: 'list' });
+  carbPatchChildren(list, stationsMarkup(d, '1.799'));
+  const [row1, row2] = list.childNodes;
+  d.log.length = 0;
+  carbPatchChildren(list, stationsMarkup(d, '1.799', ['2', '1']));
+  assert.deepEqual(list.childNodes, [row2, row1]);
+  assert.ok(d.log.every((x) => x === 'move'), d.log.join());
+});
+
+test('a custom element keeps what it drew itself and the attributes it set on itself', () => {
+  const d = fakeDom();
+  const host = d.el('div');
+  carbPatchChildren(host, d.frag(d.el('ha-icon', { icon: 'mdi:star' })));
+  const icon = host.childNodes[0];
+  // What ha-icon does once connected: its own content and inline style.
+  icon.childNodes.push(d.el('svg'));
+  icon.setAttribute('style', 'display:inline-flex');
+  d.log.length = 0;
+  carbPatchChildren(host, d.frag(d.el('ha-icon', { icon: 'mdi:star-outline' })));
+  assert.equal(host.childNodes[0], icon);
+  assert.equal(icon.childNodes.length, 1);
+  assert.equal(icon.getAttribute('style'), 'display:inline-flex');
+  assert.deepEqual(d.log, ['attr icon']);
+});
+
+test('an update of another entity redraws nothing in the list card', () => {
+  const { card, list } = listCard();
+  const html = list.html;
+  let renders = 0;
+  const render = card._render;
+  card._render = function () { renders += 1; return render.call(this); };
+  card.hass = { ...card._hass, states: { ...card._hass.states, 'sensor.other': { state: '1', attributes: {} } } };
+  assert.equal(renders, 0);
+  assert.equal(list.html, html);
 });
 
 const styles = (Card) => Card._styles().replace(/\s+/g, ' ');
