@@ -1,4 +1,4 @@
-var CARBURANTS_CARD_VERSION = '1.17.2';
+var CARBURANTS_CARD_VERSION = '1.17.3';
 
 // The government open data page the prices come from.
 var CARBURANTS_SOURCE_URL = 'https://data.economie.gouv.fr/explore/assets/prix-des-carburants-en-france-flux-instantane-v2/view/';
@@ -2910,7 +2910,7 @@ if (!customElements.get('carburants-france-card')) {
     type: 'carburants-france-card',
     name: 'Carburants France',
     description: 'Fuel prices and availability of the followed stations, with brand logos.',
-    preview: true,
+    preview: false,
     documentationURL: 'https://github.com/juju35/ha-carburants-france',
   });
   console.info(`%c CARBURANTS-FRANCE-CARD %c v${CARBURANTS_CARD_VERSION} `, 'color:#fff;background:#0e7c66;font-weight:700', 'color:#0e7c66;background:#fff');
@@ -3117,7 +3117,7 @@ if (!customElements.get('carburants-france-mini-card')) {
     type: 'carburants-france-mini-card',
     name: 'Carburants France Mini',
     description: 'Compact: the cheapest price of one fuel and its station, with a button to show the full card.',
-    preview: true,
+    preview: false,
     documentationURL: 'https://github.com/juju35/ha-carburants-france',
   });
 }
@@ -5771,7 +5771,7 @@ if (!customElements.get('carburants-france-map-card')) {
     type: 'carburants-france-map-card',
     name: 'Carburants France — carte',
     description: 'Map of the followed stations, with the price of a fuel on each marker.',
-    preview: true,
+    preview: false,
     documentationURL: 'https://github.com/juju35/ha-carburants-france',
   });
 }
