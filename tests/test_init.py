@@ -258,8 +258,8 @@ async def test_card_served(hass, aioclient_mock, entry, hass_client):
     resp = await client.get("/carburants_france_static/carburants-france-card.js")
     assert resp.status == 200
     text = await resp.text()
-    assert "customElements.define('carburants-france-card'" in text
-    assert "customElements.define('carburants-france-map-card'" in text
+    assert "pickerDefine('carburants-france-card'" in text
+    assert "pickerDefine('carburants-france-map-card'" in text
     # Leaflet ships with the integration, no CDN.
     # Bodies are read so each connection goes back to the pool (older aiohttp otherwise stalls).
     for path in ("leaflet/leaflet.js", "leaflet/leaflet.css"):
