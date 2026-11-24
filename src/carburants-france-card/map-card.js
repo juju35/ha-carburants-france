@@ -1,0 +1,1404 @@
+// ── carburants-france-map-card ────────────────────────────────────────────────
+// Leaflet ships with the integration: no CDN, only the map tiles come from the network.
+import { CARBURANTS_SOURCE_URL, pickerDefine } from "./card-picker.js";
+import { CARBURANTS_FAILED_LOGOS, carbBestPrices, carbBrandColor, carbEsc, carbInitials, carbLang, carbLanguageOptions, carbLocale, carbLogo, carbLogoClass, carbPlural, carbSetSchema, carbTitleCase, carbToggleLabel, carbUnavailable, carbVisibleStations, carbWatchOutside } from "./i18n-helpers.js";
+import { CARBURANTS_BADGE_STYLES, carbFuelBadge, carbOpening, carbRelative } from "./fuel-badges.js";
+import { CARBURANTS_SCENE_REDUCED, CARBURANTS_SCENE_STYLE, CARBURANTS_STATUS_STYLE, carbBanner, carbFitPill, carbIllustrationThemes, carbIsNight, carbMorph, carbObserve, carbPill, carbPillLabel, carbStatus, carbTotemRows, carbUid } from "./illustrated-header.js";
+import { CarburantsFranceCard } from "./card.js";
+import { CarburantsI18n, CarburantsMapI18n } from "./i18n/strings.js";
+
+export var CARBURANTS_STATIC = '/carburants_france_static';
+export var CARBURANTS_MAP_DEFAULTS = { language: 'auto', height: 400, show_icon: true, show_fullscreen: true, show_home: true, show_logo: true, show_name: true, map_style: 'ha', theme: 'auto', hide_out_of_stock_stations: true, show_locate: true, show_search: true, radius: 5, illustration: true, illustration_theme: 'auto' };
+// Radius choices of the nearby search, in km (the configured default is added when missing).
+export var CARBURANTS_RADII = [1, 2, 5, 10, 15, 20, 30, 50];
+// Search icons, same drawings as ha-system-monitor-card.
+export var CARBURANTS_SEARCH_PATH = 'M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z';
+export var CARBURANTS_CLOSE_PATH = 'M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z';
+export function carbSvg(path) {
+  return `<svg class="svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${path}"/></svg>`;
+}
+
+export var CARBURANTS_OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
+export var CARBURANTS_IGN_WMTS = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}';
+
+// Base maps that need no API key. "osm" goes through Home Assistant (see _tileUrl).
+// photo: aerial imagery, never darkened by the dark theme.
+export var CARBURANTS_MAP_STYLES = {
+  // Home Assistant's own map: OpenStreetMap vector tiles and the style its map card uses (2026.9+).
+  ha: { vector: true, maxZoom: 20, attribution: CARBURANTS_OSM_ATTRIBUTION },
+  osm: { maxZoom: 19, attribution: CARBURANTS_OSM_ATTRIBUTION },
+  osm_fr: {
+    url: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+    maxZoom: 20,
+    attribution: `&copy; <a href="https://www.openstreetmap.fr" target="_blank" rel="noopener">OpenStreetMap France</a> | ${CARBURANTS_OSM_ATTRIBUTION}`,
+  },
+  ign: {
+    url: `${CARBURANTS_IGN_WMTS}&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&FORMAT=image/png`,
+    maxNativeZoom: 19,
+    maxZoom: 20,
+    attribution: 'Plan IGN &copy; <a href="https://www.ign.fr" target="_blank" rel="noopener">IGN</a>',
+  },
+  ign_photo: {
+    url: `${CARBURANTS_IGN_WMTS}&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&FORMAT=image/jpeg`,
+    maxNativeZoom: 19,
+    maxZoom: 20,
+    photo: true,
+    attribution: 'Photographies aériennes &copy; <a href="https://www.ign.fr" target="_blank" rel="noopener">IGN</a>',
+  },
+  topo: {
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    maxZoom: 17,
+    attribution: `${CARBURANTS_OSM_ATTRIBUTION}, SRTM | &copy; <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA)`,
+  },
+  cyclosm: {
+    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+    maxZoom: 20,
+    attribution: `<a href="https://www.cyclosm.org" target="_blank" rel="noopener">CyclOSM</a> | ${CARBURANTS_OSM_ATTRIBUTION}`,
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    maxZoom: 19,
+    photo: true,
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+  },
+  custom: { maxZoom: 20 },
+};
+
+
+export var carbLeafletPromise = null;
+export function carbLoadLeaflet() {
+  if (window.L?.map) return Promise.resolve(window.L);
+  if (!carbLeafletPromise) {
+    carbLeafletPromise = new Promise((resolve, reject) => {
+      var script = document.createElement('script');
+      script.src = `${CARBURANTS_STATIC}/leaflet/leaflet.js?v=1.9.4`;
+      script.onload = () => { resolve(window.L); };
+      script.onerror = () => { carbLeafletPromise = null; reject(new Error('Leaflet could not be loaded')); };
+      document.head.appendChild(script);
+    });
+  }
+  return carbLeafletPromise;
+}
+
+export var CARBURANTS_FS_SELECTORS = [':fullscreen', ':-webkit-full-screen'];
+
+// MapLibre GL draws Home Assistant's vector map; the adapter puts it in Leaflet, as the native
+// map card does. Both ship with the integration, at the versions Home Assistant uses.
+export var carbMaplibrePromise = null;
+export function carbLoadMaplibre() {
+  if (!carbMaplibrePromise) {
+    carbMaplibrePromise = import(`${CARBURANTS_STATIC}/maplibre/maplibre-gl.mjs?v=6.14.0`).then((module) => {
+      window.maplibregl = window.maplibregl || module;
+      if (window.MaplibreGLLeaflet?.maplibreGL) return window.MaplibreGLLeaflet.maplibreGL;
+      return new Promise((resolve, reject) => {
+        var script = document.createElement('script');
+        script.src = `${CARBURANTS_STATIC}/maplibre/leaflet-maplibre-gl.js?v=0.1.4`;
+        script.onload = () => { resolve(window.MaplibreGLLeaflet.maplibreGL); };
+        script.onerror = () => { reject(new Error('MapLibre adapter could not be loaded')); };
+        document.head.appendChild(script);
+      });
+    }).catch((err) => {
+      carbMaplibrePromise = null;
+      throw err;
+    });
+  }
+  return carbMaplibrePromise;
+}
+
+export function carbSupportsWebGL2() {
+  try {
+    return !!document.createElement('canvas').getContext('webgl2');
+  } catch (_err) {
+    return false;
+  }
+}
+
+export class CarburantsFranceMapCard extends HTMLElement {
+  static getConfigElement() {
+    return document.createElement('carburants-france-map-card-editor');
+  }
+
+  static getStubConfig(hass) {
+    var entity = CarburantsFranceCard._findEntity(hass);
+    return entity ? { entity: entity } : {};
+  }
+
+  setConfig(config) {
+    var previous = this._config;
+    this._config = Object.assign({}, CARBURANTS_MAP_DEFAULTS, config || {});
+    if (previous && this._tilesKey(previous) !== this._tilesKey(this._config)) this._vectorFailed = false;
+    // A new default radius in the editor replaces the one picked in the header.
+    if (previous && previous.radius !== this._config.radius) this._radius = null;
+    if (previous && !!previous.show_fullscreen !== !!this._config.show_fullscreen) this._applyFullscreenOption();
+    else if (previous && !!previous.show_locate !== !!this._config.show_locate) this._syncTools(window.L);
+    this._syncLanguage();
+    this._reloadTilesIfNeeded();
+    // Read the current state now: a config change must redraw at once, not at the next hass update.
+    this._lastState = this._hass && this._entityId() ? this._hass.states[this._entityId()] || null : null;
+    this._fitted = false;
+    if (this._hass) this._update();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    // language: auto follows the Home Assistant language, which can change without a reload.
+    this._syncLanguage();
+    var entityId = this._entityId();
+    var st = entityId ? hass.states[entityId] : null;
+    if (st !== this._lastState || !this._map) {
+      this._lastState = st;
+      this._update();
+    } else if (this._root) {
+      // Theme switched in Home Assistant: dark filter and light / dark vector style follow, so does the picture.
+      this._root.querySelector('.map').classList.toggle('dark', this._darkTiles());
+      this._reloadTilesIfNeeded();
+      this._renderHeader();
+    }
+  }
+
+  connectedCallback() {
+    carbObserve(this);
+    // A click elsewhere closes the popup and hides the out of stock stations again.
+    this._outsideWatch = this._outsideWatch || carbWatchOutside(this, () => {
+      if (!this._map) return;
+      this._map.closePopup();
+      if (this._showAll) {
+        this._showAll = false;
+        this._drawMarkers(window.L);
+      }
+    });
+    this._outsideWatch.on();
+    // Re-attached before the delayed teardown ran (view switch, editor preview): keep the map.
+    clearTimeout(this._destroyTimer);
+    // Detached in native full screen: the browser left it, but fullscreenchange came after
+    // disconnectedCallback removed the listener.
+    var card = this._root?.querySelector('ha-card');
+    if (card && card.classList.contains('fullscreen') !== this._isFullscreen()) this._fullscreenChanged();
+    if (!this._map) {
+      // Torn down while detached, or never built: build it now.
+      if (this._config && this._hass) this._update();
+      return;
+    }
+    // Removed by disconnectedCallback: Home Assistant reuses card elements across views.
+    if (this._config.show_fullscreen) this._listenFullscreen();
+    if (this._resizeObserver) this._resizeObserver.observe(this._root.querySelector('.map'));
+    this._scheduleTokenRefresh();
+    // The token may have expired while the card was detached.
+    if (this._tiles?.getMaplibreMap) {
+      this._hass.callWS({ type: 'map_tiles/access_token' }).then((res) => { this._mapToken = res.token; }, () => {});
+    } else if (this._tiles && this._tiles._url.indexOf('/api/map_tiles/') === 0) {
+      this._tileUrl().then((url) => { if (this._tiles) this._tiles.setUrl(url); });
+    }
+    setTimeout(this._invalidate.bind(this), 0);
+  }
+
+  disconnectedCallback() {
+    this._resize?.disconnect();
+    this._fitWidth = null;
+    if (this._resizeObserver) this._resizeObserver.disconnect();
+    clearInterval(this._tokenTimer);
+    clearTimeout(this._searchTimer);
+    this._outsideWatch?.off();
+    // Left the page: the station popup does not stay open.
+    this._map?.closePopup?.();
+    this._unlistenFullscreen();
+    if (this._pseudoFs) {
+      // Escape no longer reaches the card once detached: leave the pseudo full screen now,
+      // otherwise the card comes back covering the window with nothing to close it.
+      this._pseudoFs = false;
+      this._fullscreenChanged();
+    }
+    // Frees Leaflet and the WebGL context of the vector map unless the card comes straight back.
+    clearTimeout(this._destroyTimer);
+    this._destroyTimer = setTimeout(() => {
+      if (!this.isConnected) this._destroyMap();
+    }, 1000);
+  }
+
+  getCardSize() {
+    return Math.ceil((this._config ? this._config.height : 400) / 50) + 1;
+  }
+
+  // jscpd:ignore-start
+  getGridOptions() {
+    return { columns: 12, min_columns: 6, rows: 'auto' };
+  }
+
+  _entityId() {
+    return (this._config?.entity) || CarburantsFranceCard._findEntity(this._hass);
+  }
+
+  _t() {
+    return CarburantsI18n[carbLang(this._hass, this._config?.language)];
+  }
+
+  _locale() {
+    return carbLocale(this._hass, this._config?.language);
+  }
+  // jscpd:ignore-end
+
+  _dark(config) {
+    var theme = (config || this._config).theme;
+    if (theme === 'dark') return true;
+    if (theme === 'light') return false;
+    return !!(this._hass?.themes?.darkMode);
+  }
+
+  _style() {
+    var style = this._config.map_style;
+    if (style === 'custom' && !this._config.tile_url) style = 'osm';
+    return CARBURANTS_MAP_STYLES[style] ? style : 'osm';
+  }
+
+  // What the base layer depends on; the vector style also has a light and a dark version.
+  _tilesKey(config) {
+    var vector = CARBURANTS_MAP_STYLES[config.map_style || CARBURANTS_MAP_DEFAULTS.map_style]?.vector;
+    return [config.map_style, config.tile_url, config.tile_attribution, vector && this._dark(config)].join('|');
+  }
+
+  // Raster tiles are darkened with a filter; aerial imagery and the vector style (dark version) are not.
+  _darkTiles() {
+    var spec = CARBURANTS_MAP_STYLES[this._style()];
+    return this._dark() && !spec.photo && !spec.vector && !this._vectorFailed;
+  }
+
+  _ensureShell() {
+    if (this._root) return;
+    this._root = this.attachShadow({ mode: 'open' });
+    this._root.innerHTML =
+      '<link rel="stylesheet" href="' + CARBURANTS_STATIC + '/leaflet/leaflet.css?v=1.9.4">' +
+      '<link rel="stylesheet" href="' + CARBURANTS_STATIC + '/maplibre/maplibre-gl.css?v=6.14.0">' +
+      '<style>' + CarburantsFranceMapCard._styles() + '</style>' +
+      '<ha-card><div class="header" hidden></div><div class="message" hidden></div>' +
+      // The search field and its radius over the map, at its top left.
+      '<div class="mapwrap"><div class="map"></div><div class="searchbar" hidden></div></div></ha-card>';
+    var bar = this._root.querySelector('.searchbar');
+    // A marker logo that fails to load becomes its initials. error does not bubble: capture phase.
+    this._root.querySelector('.map').addEventListener('error', (ev) => {
+      var img = ev.target;
+      if (img.tagName !== 'IMG' || !img.closest('.pin')) return;
+      CARBURANTS_FAILED_LOGOS.add(img.getAttribute('src'));
+      var badge = document.createElement('span');
+      badge.className = 'ini';
+      badge.textContent = img.dataset.initials || '';
+      img.replaceWith(badge);
+    }, true);
+    bar.addEventListener('change', (ev) => {
+      if (!ev.target.classList.contains('radius')) return;
+      this._radius = Number(ev.target.value);
+      if (this._results?.mode === 'near') this._searchNearby();
+    });
+  }
+
+  _mt() {
+    return CarburantsMapI18n[carbLang(this._hass, this._config?.language)];
+  }
+
+  // Radius of the nearby search: picked in the header, else the configured default.
+  _currentRadius() {
+    return this._radius || Number(this._config.radius) || CARBURANTS_MAP_DEFAULTS.radius;
+  }
+
+  _title(mt) {
+    var results = this._results;
+    if (results?.mode === 'near') {
+      return (results.home ? mt.near_home_title : mt.near_title).replace('{r}', String(results.radius));
+    }
+    if (results?.mode === 'city') return mt.city_title.replace('{q}', results.place || results.query);
+    return this._config.title === undefined ? mt.default_title : this._config.title;
+  }
+
+  // Number of stations shown on the map (in the status pill).
+  _mapCount() {
+    var data = this._data();
+    return carbVisibleStations((data.stations || []).filter((x) => x.latitude != null), data.fuels || [], this._config, this._showAll).shown.length;
+  }
+
+  // The subtitle: the radius of a nearby search (the stations count is in the status pill).
+  _subtitle(_mt) {
+    return this._results?.mode === 'near' ? `${this._results.radius} km` : '';
+  }
+
+  // Rewritten only when something in it changes, so the picture keeps its running animations.
+  _renderHeader() {
+    var mt = this._mt();
+    var header = this._root.querySelector('.header');
+    if (!header) return;
+    var title = this._title(mt);
+    var data = this._data();
+    var unavailable = !this._results && (!this._lastState || carbUnavailable(this._lastState));
+    var status = unavailable ? 'off' : carbStatus(this._lastState || { state: 'ok' }, data.stations, data.fuels);
+    var illus = this._config.illustration !== false;
+    // Same icon as the list card, opening the government data page.
+    var icon = this._config.show_icon
+      ? '<a class="icon-link" href="' + CARBURANTS_SOURCE_URL + '" target="_blank" rel="noopener" title="data.economie.gouv.fr">' +
+        `<span class="icon hbadge st-${status}"><ha-icon icon="mdi:gas-station"></ha-icon></span></a>`
+      : '';
+    var html;
+    if (illus) {
+      this._uid = this._uid || carbUid();
+      var mapN = unavailable ? 0 : this._mapCount();
+      var mapPill = carbPill(status, status === 'ok' || status === 'idle' ? `${mapN} ${carbPlural(this._t(), 'stations', mapN, this._locale())}` : carbPillLabel(this._t(), status, 0, this._locale()));
+      var sub = unavailable ? '' : this._subtitle(mt);
+      html = carbBanner({
+        uid: this._uid,
+        night: carbIsNight(this._hass, this._config),
+        status: status,
+        rows: carbTotemRows(data.fuels, unavailable ? null : carbBestPrices(data.stations || [], data.fuels || []), this._locale()),
+        icon: icon,
+        titles: `<div class="tline"><div class="hname">${carbEsc(title || '')}</div>${mapPill}</div>${sub ? `<div class="hsub">${carbEsc(sub)}</div>` : ''}`,
+      });
+    } else {
+      var classicN = unavailable ? 0 : this._mapCount();
+      html = `${icon}<div class="titles"><div class="ctline"><span class="hname">${carbEsc(title || '')}</span>` +
+        carbPill(status, status === 'ok' || status === 'idle' ? `${classicN} ${carbPlural(this._t(), 'stations', classicN, this._locale())}` : carbPillLabel(this._t(), status, 0, this._locale())) +
+        '</div></div>';
+    }
+    header.classList?.toggle('illus', illus);
+    // An empty title and no icon: no header.
+    if (header.hidden !== (!title && !icon)) header.hidden = !title && !icon;
+    // Patched only when it changes (an update of another entity touches nothing): the picture keeps its nodes
+    // and animations, the card its height. A new width fits the pill again through the resize observer.
+    if (html !== this._headerHtml) {
+      this._headerHtml = html;
+      carbMorph(header, html);
+      carbFitPill(this, this._root);
+    }
+    this._renderLocate();
+  }
+
+  // The "locate me" button of the map's tools (bottom right).
+  _renderLocate() {
+    var link = this._locateLink;
+    if (!link) return;
+    var mt = this._mt();
+    var active = this._results?.mode === 'near';
+    var label = active ? mt.back_to_followed : mt.locate;
+    // Only what changed is written: a state update leaves the button alone.
+    var cls = `locate${active ? ' active' : ''}${this._busy === 'near' ? ' busy' : ''}`;
+    if (link.className !== cls) link.className = cls;
+    if (link.title !== label) link.title = label;
+    if (link.getAttribute('aria-label') !== label) link.setAttribute('aria-label', label);
+    if (link.getAttribute('aria-pressed') !== String(active)) link.setAttribute('aria-pressed', String(active));
+    var html = `<ha-icon icon="${active ? 'mdi:crosshairs-off' : 'mdi:crosshairs-gps'}"></ha-icon>`;
+    if (link._carbIcon !== html) {
+      link._carbIcon = html;
+      link.innerHTML = html;
+    }
+  }
+
+  // The radius of the nearby search, in the search field's pill; rewritten only when it changes, so its list
+  // stays open across updates.
+  _renderRadius() {
+    var slot = this._root.querySelector('.searchbar .rad');
+    if (!slot) return;
+    var html = '';
+    if (this._config.show_locate) {
+      var mt = this._mt();
+      var radius = this._currentRadius();
+      var radii = CARBURANTS_RADII.indexOf(radius) === -1
+        ? CARBURANTS_RADII.concat(radius).sort((a, b) => a - b)
+        : CARBURANTS_RADII;
+      html = `<select class="radius" title="${carbEsc(mt.radius)}" aria-label="${carbEsc(mt.radius)}">` +
+        radii.map((r) => `<option value="${r}"${r === radius ? ' selected' : ''}>${r} km</option>`).join('') + '</select>';
+    }
+    if (html !== this._radiusHtml) {
+      this._radiusHtml = html;
+      slot.innerHTML = html;
+    }
+  }
+
+  // Language changed (editor option, or Home Assistant's with language: auto): relabel what is
+  // built only once, in place, keeping the focus and the text typed in the search bar.
+  // The header and the rest are redrawn by _update.
+  _syncLanguage() {
+    var lang = carbLang(this._hass, this._config?.language);
+    if (lang === this._labelsLang) return;
+    this._labelsLang = lang;
+    var mt = CarburantsMapI18n[lang];
+    var bar = this._root?.querySelector('.searchbar');
+    var input = bar?.querySelector('input');
+    if (input) {
+      input.placeholder = mt.search_city;
+      input.setAttribute('aria-label', mt.search_city);
+    }
+    var clear = bar?.querySelector('.clear');
+    if (clear) {
+      clear.title = mt.clear_search;
+      clear.setAttribute('aria-label', mt.clear_search);
+    }
+    this._updateFullscreenButton(mt);
+  }
+
+  // Built once: re-rendering would lose the focus and the caret while typing.
+  _renderSearchbar() {
+    var bar = this._root.querySelector('.searchbar');
+    bar.hidden = !this._config.show_search && !this._config.show_locate;
+    bar.classList.toggle('nosearch', !this._config.show_search);
+    if (bar.firstChild) {
+      this._renderRadius();
+      return;
+    }
+    var mt = this._mt();
+    bar.innerHTML = `<label class="search">${carbSvg(CARBURANTS_SEARCH_PATH)}` +
+      `<input type="search" placeholder="${carbEsc(mt.search_city)}" aria-label="${carbEsc(mt.search_city)}" autocomplete="off" spellcheck="false">` +
+      `<span class="clear empty" role="button" tabindex="-1" title="${carbEsc(mt.clear_search)}" aria-label="${carbEsc(mt.clear_search)}">${carbSvg(CARBURANTS_CLOSE_PATH)}</span></label><span class="rad"></span>`;
+    this._renderRadius();
+    var input = bar.querySelector('input');
+    var clear = bar.querySelector('.clear');
+    var sync = () => {
+      var empty = !input.value;
+      clear.classList.toggle('empty', empty);
+      clear.tabIndex = empty ? -1 : 0;
+    };
+    input.addEventListener('input', () => {
+      sync();
+      clearTimeout(this._searchTimer);
+      var query = input.value.trim();
+      if (!query) {
+        if (this._results?.mode === 'city') this._resetResults();
+        return;
+      }
+      // Typing a town turns "Locate me" off at once, before the search answers.
+      this._stopNearby();
+      // Waits for a pause in typing: one request per word, not per letter.
+      if (query.length >= 2) this._searchTimer = setTimeout(() => { this._searchCity(query); }, 600);
+    });
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' && input.value.trim()) {
+        clearTimeout(this._searchTimer);
+        this._searchCity(input.value.trim());
+      } else if (ev.key === 'Escape' && input.value) {
+        ev.preventDefault();
+        this._clearSearch();
+      }
+    });
+    var onClear = (ev) => {
+      if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+      ev.preventDefault();
+      this._clearSearch();
+      input.focus({ preventScroll: true });
+    };
+    clear.addEventListener('click', onClear);
+    clear.addEventListener('keydown', onClear);
+    this._searchInput = input;
+    this._syncClear = sync;
+  }
+
+  _clearSearch() {
+    clearTimeout(this._searchTimer);
+    if (!this._searchInput) return;
+    this._searchInput.value = '';
+    this._syncClear();
+    if (this._results?.mode === 'city') this._resetResults();
+  }
+
+  // Back to the followed stations, as stored in the integration.
+  _resetResults() {
+    this._seq = (this._seq || 0) + 1;
+    this._results = null;
+    this._busy = null;
+    this._error = null;
+    this._fitted = false;
+    this._update();
+  }
+
+  _nearbyOn() {
+    return this._results?.mode === 'near' || this._busy === 'near';
+  }
+
+  // Leaves "Locate me": back to the followed stations, position forgotten, a pending locate ignored.
+  _stopNearby() {
+    if (!this._nearbyOn()) return;
+    this._position = null;
+    this._resetResults();
+  }
+
+  _toggleNearby() {
+    if (this._nearbyOn()) {
+      this._stopNearby();
+      return;
+    }
+    // "Locate me" replaces the town search: field emptied, a search being typed or running dropped.
+    this._clearSearch();
+    if (this._busy === 'city') this._resetResults();
+    this._busy = 'near';
+    this._position = null;
+    this._error = null;
+    this._update();
+    var seq = (this._seq = (this._seq || 0) + 1);
+    this._locate().then((pos) => {
+      if (seq !== this._seq) return;
+      this._position = pos;
+      this._searchNearby();
+    }, () => {
+      if (seq !== this._seq) return;
+      this._busy = null;
+      this._showError(this._mt().no_position);
+    });
+  }
+
+  // The browser position (HTTPS or the companion app), else the user's person entity, else home.
+  _locate() {
+    var hass = this._hass;
+    var fallback = () => {
+      var person = Object.values(hass.states).find((st) => st.entity_id.indexOf('person.') === 0 &&
+        st.attributes.user_id === hass.user?.id && st.attributes.latitude != null);
+      if (person) return { latitude: person.attributes.latitude, longitude: person.attributes.longitude };
+      var home = hass.states['zone.home'];
+      if (home?.attributes.latitude != null) return { latitude: home.attributes.latitude, longitude: home.attributes.longitude, home: true };
+      throw new Error('no position');
+    };
+    if (!navigator.geolocation) return Promise.resolve().then(fallback);
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (p) => { resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }); },
+        () => { try { resolve(fallback()); } catch (err) { reject(err); } },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+      );
+    });
+  }
+
+  _searchNearby() {
+    var pos = this._position;
+    if (!pos) return;
+    var radius = this._currentRadius();
+    this._busy = 'near';
+    this._renderHeader();
+    this._search({ latitude: pos.latitude, longitude: pos.longitude, radius: radius },
+      { mode: 'near', radius: radius, home: !!pos.home, latitude: pos.latitude, longitude: pos.longitude });
+  }
+
+  _searchCity(query) {
+    this._busy = 'city';
+    this._search({ query: query }, { mode: 'city', query: query });
+  }
+
+  // Asks the integration (it knows the community names and the followed stations' logos):
+  // nothing is added to it, the stations are only shown until the map is reset.
+  _search(params, results) {
+    var seq = (this._seq = (this._seq || 0) + 1);
+    this._error = null;
+    var fuels = (this._lastState?.attributes.fuels || []).map((f) => f.key);
+    var msg = Object.assign({ type: 'carburants_france/search' }, params);
+    if (fuels.length) msg.fuels = fuels;
+    this._hass.callWS(msg).then((res) => {
+      if (seq !== this._seq) return;
+      this._busy = null;
+      // The town as the feed spells it ("Rennes" for "renn"), the map then focuses on its stations.
+      this._results = Object.assign(results, { stations: res.stations, fuels: res.fuels, place: res.place });
+      this._showAll = false;
+      this._fitted = false;
+      this._signature = null;
+      this._update();
+    }, (err) => {
+      if (seq !== this._seq) return;
+      this._busy = null;
+      this._showError(String(err?.message || err));
+    });
+  }
+
+  // Kept until the next search or reset, so a sensor update does not wipe it.
+  _showError(text) {
+    this._error = text;
+    this._update();
+  }
+
+  // Stations and fuels shown: the search results, else the integration's Stations sensor.
+  _data() {
+    if (this._results) return this._results;
+    var attrs = this._lastState?.attributes || {};
+    return { stations: attrs.stations || [], fuels: attrs.fuels || [] };
+  }
+
+  _update() {
+    if (!this._config || !this._hass) return;
+    this._ensureShell();
+    this._renderHeader();
+    this._renderSearchbar();
+    var mapEl = this._root.querySelector('.map');
+    mapEl.style.height = `${Math.max(150, Number(this._config.height) || 400)}px`;
+    // Follows the Home Assistant theme live when theme is auto.
+    mapEl.classList.toggle('dark', this._darkTiles());
+    this._reloadTilesIfNeeded();
+    var message = this._root.querySelector('.message');
+    if (!this._lastState && !this._results) {
+      message.hidden = false;
+      message.textContent = this._t().no_entity;
+      return;
+    }
+    var text = this._error || (this._results
+      ? (!this._results.stations.length ? this._mt().no_results : '')
+      : (carbUnavailable(this._lastState) ? this._t().unavailable_hint : ''));
+    message.hidden = !text;
+    message.textContent = text;
+    carbLoadLeaflet().then((L) => {
+      // Detached: no new map (and WebGL context) until connectedCallback comes back.
+      if (!this._map && !this.isConnected) return;
+      this._ensureMap(L);
+      this._drawMarkers(L);
+    }).catch((err) => {
+      message.hidden = false;
+      message.textContent = String((err?.message) || err);
+    });
+  }
+
+  _ensureMap(L) {
+    if (this._map) return;
+    var mapEl = this._root.querySelector('.map');
+    // Zoom, full screen and "locate me" together at the bottom right (_syncTools).
+    this._map = L.map(mapEl, { zoomControl: false, attributionControl: true, scrollWheelZoom: false, zoomSnap: 0.25 });
+    mapEl.classList.toggle('dark', this._darkTiles());
+    this._loadTiles(L);
+    this._layer = L.layerGroup().addTo(this._map);
+    var Toggle = L.Control.extend({
+      onAdd: () => {
+        var el = L.DomUtil.create('button', 'carb-toggle');
+        el.type = 'button';
+        L.DomEvent.disableClickPropagation(el);
+        L.DomEvent.on(el, 'click', () => {
+          this._showAll = !this._showAll;
+          this._drawMarkers(L);
+        });
+        return el;
+      },
+    });
+    this._toggle = new Toggle({ position: 'bottomleft' }).addTo(this._map);
+    if (this._config.show_fullscreen) this._listenFullscreen();
+    this._syncTools(L);
+    this._fitted = false;
+    if (window.ResizeObserver) {
+      this._resizeObserver = new ResizeObserver(() => { this._invalidate(); });
+      this._resizeObserver.observe(mapEl);
+    }
+  }
+
+  // OpenStreetMap tiles through Home Assistant's own Map tiles proxy (2026.9+), like the
+  // native map card. Its access token rotates every 30 minutes, two being valid at once.
+  _tileUrl() {
+    var hass = this._hass;
+    return Promise.resolve()
+      .then(() => hass.callWS({ type: 'map_tiles/access_token' }))
+      .then((res) => `/api/map_tiles/raster/{z}/{x}/{y}.png?token=${encodeURIComponent(res.token)}`)
+      .catch(() => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+  }
+
+  _loadTiles(L) {
+    var map = this._map;
+    var style = this._style();
+    var spec = CARBURANTS_MAP_STYLES[style];
+    var options = { maxZoom: spec.maxZoom, attribution: spec.attribution };
+    if (spec.maxNativeZoom) options.maxNativeZoom = spec.maxNativeZoom;
+    var key = this._tilesKey(this._config);
+    this._tilesLoadedKey = key;
+    if (spec.vector && !this._vectorFailed) {
+      this._loadVector(L, map, key);
+      return;
+    }
+    if (spec.vector) {
+      style = 'osm';
+      spec = CARBURANTS_MAP_STYLES.osm;
+      options = { maxZoom: spec.maxZoom, attribution: spec.attribution };
+    }
+    var url;
+    if (style === 'osm') {
+      url = this._tileUrl();
+    } else if (style === 'custom') {
+      options.attribution = this._config.tile_attribution || '';
+      url = Promise.resolve(this._config.tile_url);
+    } else {
+      url = Promise.resolve(spec.url);
+    }
+    this._root.querySelector('.map').classList.toggle('dark', this._darkTiles());
+    url.then((resolved) => {
+      // The map was rebuilt or the style changed while the token was loading.
+      if (this._map !== map || this._tilesKey(this._config) !== key) return;
+      this._tiles = L.tileLayer(resolved, options).addTo(map);
+      this._tiles.bringToBack();
+      this._scheduleTokenRefresh();
+    });
+  }
+
+  // Home Assistant's style, fetched from the instance like its map card does: /static/map/light.json
+  // or dark.json, tiles and glyphs through /api/map_tiles with the rotating token in a header.
+  // Anything missing (WebGL2, Home Assistant before 2026.9) falls back to raster OpenStreetMap.
+  // The base layer no longer matches the config or the theme (light / dark vector style): swap it.
+  _reloadTilesIfNeeded() {
+    if (!this._map || this._tilesLoadedKey === this._tilesKey(this._config)) return;
+    if (this._tiles) this._map.removeLayer(this._tiles);
+    this._tiles = null;
+    this._loadTiles(window.L);
+  }
+
+  _loadVector(L, map, key) {
+    var dark = this._dark();
+    var hass = this._hass;
+    var fallback = (err) => {
+      if (this._map !== map || this._tilesKey(this._config) !== key) return;
+      // eslint-disable-next-line no-console
+      console.info('carburants-france-map-card: Home Assistant map style unavailable, using raster tiles', err);
+      this._vectorFailed = true;
+      this._loadTiles(L);
+    };
+    if (!carbSupportsWebGL2()) {
+      fallback(new Error('WebGL2 not supported'));
+      return;
+    }
+    Promise.all([
+      carbLoadMaplibre(),
+      hass.callWS({ type: 'map_tiles/access_token' }),
+      fetch(`/static/map/${dark ? 'dark' : 'light'}.json`).then((resp) => {
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return resp.json();
+      }),
+    ]).then((results) => {
+      if (this._map !== map || this._tilesKey(this._config) !== key) return;
+      var maplibreGL = results[0];
+      var style = results[2];
+      this._mapToken = results[1].token;
+      var absolute = (url) => new URL(url, location.href).href;
+      if (typeof style.sprite === 'string') style.sprite = absolute(style.sprite);
+      else if (Array.isArray(style.sprite)) {
+        style.sprite = style.sprite.map((sprite) => Object.assign({}, sprite, { url: absolute(sprite.url) }));
+      }
+      this._tiles = maplibreGL({
+        style: style,
+        attributionControl: { customAttribution: CARBURANTS_OSM_ATTRIBUTION },
+        // Same as the native map card: the token in a header keeps tile URLs, and the cache, stable.
+        transformRequest: (url) => {
+          var full = new URL(url, location.href);
+          if (full.origin === location.origin && full.pathname.indexOf('/api/map_tiles/') === 0) {
+            return { url: full.href, headers: { 'X-Map-Tiles-Token': this._mapToken } };
+          }
+          return { url: full.href };
+        },
+      });
+      this._tiles.addTo(map);
+      this._scheduleTokenRefresh();
+    }).catch(fallback);
+  }
+
+  _scheduleTokenRefresh() {
+    clearInterval(this._tokenTimer);
+    if (!this._tiles) return;
+    if (this._tiles.getMaplibreMap) {
+      // Vector: the request hook reads the current token.
+      this._tokenTimer = setInterval(() => {
+        this._hass.callWS({ type: 'map_tiles/access_token' }).then((res) => { this._mapToken = res.token; }, () => {});
+      }, 20 * 60 * 1000);
+      return;
+    }
+    if (this._tiles._url.indexOf('/api/map_tiles/') !== 0) return;
+    this._tokenTimer = setInterval(() => {
+      this._tileUrl().then((url) => {
+        // No redraw: tiles already shown stay, new ones use the new token.
+        if (this._tiles) this._tiles.setUrl(url, true);
+      });
+    }, 20 * 60 * 1000);
+  }
+
+  _destroyMap() {
+    if (this._resizeObserver) this._resizeObserver.disconnect();
+    clearInterval(this._tokenTimer);
+    if (this._map) this._map.remove();
+    this._map = null;
+    this._layer = null;
+    this._tiles = null;
+    this._tilesLoadedKey = null;
+    this._toggle = null;
+    this._tools = null;
+    this._zoomCtl = null;
+    this._fsLink = null;
+    this._locateLink = null;
+    this._resizeObserver = null;
+    this._signature = null;
+  }
+
+  // The map's tools at the bottom right, one bar from top to bottom: zoom in and out (Leaflet's), full screen and
+  // "locate me" (shown by their options). Rebuilt when an option changes, so the order stays the same.
+  _syncTools(L) {
+    if (!this._map || !L) return;
+    if (this._zoomCtl) this._zoomCtl.remove();
+    if (this._tools) this._tools.remove();
+    this._tools = null;
+    this._fsLink = null;
+    this._locateLink = null;
+    var mt = this._mt();
+    var fs = this._config.show_fullscreen;
+    var locate = this._config.show_locate;
+    if (fs || locate) {
+      var Tools = L.Control.extend({
+        onAdd: () => {
+          var bar = L.DomUtil.create('div', 'leaflet-bar carb-tools');
+          L.DomEvent.disableClickPropagation(bar);
+          var button = (cls, fn) => {
+            var link = L.DomUtil.create('a', cls, bar);
+            link.href = '#';
+            link.setAttribute('role', 'button');
+            L.DomEvent.on(link, 'click', (ev) => {
+              L.DomEvent.preventDefault(ev);
+              fn();
+            });
+            return link;
+          };
+          // Real full screen where the browser allows it on an element; elsewhere (iPhone Safari and
+          // the iOS app) the card covers the window instead.
+          if (fs) this._fsLink = button('carb-fs', () => { this._toggleFullscreen(); });
+          if (locate) this._locateLink = button('locate', () => { this._toggleNearby(); });
+          return bar;
+        },
+      });
+      // Bottom corners stack upwards: the tools first, then the zoom above them.
+      this._tools = new Tools({ position: 'bottomright' }).addTo(this._map);
+      this._updateFullscreenButton(mt);
+      this._renderLocate();
+    }
+    this._zoomCtl = L.control.zoom({ position: 'bottomright' }).addTo(this._map);
+  }
+
+  // show_fullscreen or show_locate changed in the editor: rebuild the tools of the map already built.
+  _applyFullscreenOption() {
+    if (!this._map) return;
+    if (this._config.show_fullscreen) {
+      this._listenFullscreen();
+      this._syncTools(window.L);
+      return;
+    }
+    if (this._isNativeFullscreen()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    if (this._isFullscreen()) {
+      // The listeners go away below: leave full screen now rather than on fullscreenchange.
+      this._pseudoFs = false;
+      this._root.querySelector('ha-card').classList.remove('fullscreen', 'pseudo');
+      setTimeout(this._invalidate.bind(this), 50);
+    }
+    this._syncTools(window.L);
+    this._unlistenFullscreen();
+  }
+
+  _unlistenFullscreen() {
+    if (!this._onFsChange) return;
+    document.removeEventListener('fullscreenchange', this._onFsChange);
+    document.removeEventListener('webkitfullscreenchange', this._onFsChange);
+    document.removeEventListener('keydown', this._onFsKey);
+    this._onFsChange = null;
+  }
+
+  _listenFullscreen() {
+    if (!this._onFsChange) {
+      this._onFsChange = () => { this._fullscreenChanged(); };
+      this._onFsKey = (ev) => { if (ev.key === 'Escape' && this._pseudoFs) this._toggleFullscreen(); };
+      document.addEventListener('fullscreenchange', this._onFsChange);
+      document.addEventListener('webkitfullscreenchange', this._onFsChange);
+      document.addEventListener('keydown', this._onFsKey);
+    }
+  }
+
+  _isFullscreen() {
+    return this._pseudoFs || this._isNativeFullscreen();
+  }
+
+  // Not document.fullscreenElement: on a dashboard the card is deep in shadow roots, and the
+  // document only sees the outermost host. The pseudo-class matches the card itself.
+  _isNativeFullscreen() {
+    for (var i = 0; i < CARBURANTS_FS_SELECTORS.length; i++) {
+      try {
+        if (this.matches(CARBURANTS_FS_SELECTORS[i])) return true;
+      } catch (_err) {
+        // Selector unknown to this browser.
+      }
+    }
+    return false;
+  }
+
+  _toggleFullscreen() {
+    if (this._pseudoFs) {
+      this._pseudoFs = false;
+      this._fullscreenChanged();
+      return;
+    }
+    if (this._isFullscreen()) {
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      return;
+    }
+    var request = this.requestFullscreen || this.webkitRequestFullscreen;
+    var pseudo = () => {
+      this._pseudoFs = true;
+      this._fullscreenChanged();
+    };
+    if (!request) {
+      pseudo();
+      return;
+    }
+    try {
+      var result = request.call(this);
+      if (result?.catch) result.catch(pseudo);
+    } catch (_err) {
+      pseudo();
+    }
+  }
+
+  _fullscreenChanged() {
+    var on = this._isFullscreen();
+    var card = this._root?.querySelector('ha-card');
+    if (!card) return;
+    card.classList.toggle('fullscreen', on);
+    card.classList.toggle('pseudo', !!this._pseudoFs);
+    this._updateFullscreenButton(CarburantsMapI18n[carbLang(this._hass, this._config?.language)]);
+    // Leaflet and MapLibre resize to the new box, then the stations are fitted again.
+    setTimeout(() => {
+      this._fitted = false;
+      this._invalidate();
+    }, 50);
+  }
+
+  _updateFullscreenButton(mt) {
+    if (!this._fsLink) return;
+    var on = this._isFullscreen();
+    var label = on ? mt.exit_fullscreen : mt.fullscreen;
+    var path = on
+      ? 'M14,14H19V16H16V19H14V14M5,14H10V19H8V16H5V14M8,5H10V10H5V8H8V5M19,8V10H14V5H16V8H19Z'
+      : 'M5,5H10V7H7V10H5V5M14,5H19V10H17V7H14V5M17,14H19V19H14V17H17V14M10,17V19H5V14H7V17H10Z';
+    this._fsLink.title = label;
+    this._fsLink.setAttribute('aria-label', label);
+    this._fsLink.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="${path}"/></svg>`;
+  }
+
+  _invalidate() {
+    if (!this._map) return;
+    this._map.invalidateSize();
+    if (!this._fitted && this._bounds) this._fit();
+  }
+
+  _fit() {
+    var mapEl = this._root.querySelector('.map');
+    if (!mapEl.clientWidth) return; // Not laid out yet: the resize observer comes back.
+    if (this._config.zoom && this._bounds) {
+      this._map.setView(this._bounds.getCenter(), this._config.zoom);
+    } else if (this._bounds) {
+      // Pins are centred on their point and ~120 px wide: leave room on every side.
+      var side = this._config.show_name ? 110 : 80;
+      this._map.fitBounds(this._bounds, { paddingTopLeft: [side, 56], paddingBottomRight: [side, 48], maxZoom: 15 });
+    }
+    this._fitted = true;
+  }
+
+  // The fuel chosen in the editor, or null: each marker then shows its cheapest fuel in stock.
+  _fuelKey(fuels) {
+    var wanted = this._config.fuel;
+    return wanted && fuels.some((f) => f.key === wanted) ? wanted : null;
+  }
+
+  // The fuel a marker shows: the chosen one, else the cheapest in stock, else the most telling
+  // unavailable one (shortage before no price), so "Rupture" only shows when nothing is in stock.
+  _markerFuel(s, fuels, key) {
+    if (key) return { key: key, fuel: s.fuels?.[key] };
+    var cheapest = null;
+    var fallback = null;
+    fuels.forEach((f) => {
+      var fuel = s.fuels?.[f.key];
+      if (!fuel || fuel.rupture === 'definitive') return;
+      if (fuel.available) {
+        if (!cheapest || fuel.price < cheapest.fuel.price) cheapest = { key: f.key, fuel: fuel };
+      } else if (!fallback || (fuel.rupture && !fallback.fuel.rupture)) {
+        fallback = { key: f.key, fuel: fuel };
+      }
+    });
+    return cheapest || fallback || { key: null, fuel: null };
+  }
+
+  _drawMarkers(L) {
+    var t = this._t();
+    var data = this._data();
+    var fuels = data.fuels || [];
+    var key = this._fuelKey(fuels);
+    var stations = (data.stations || []).filter((s) => s.latitude != null && s.longitude != null);
+    var best = carbBestPrices(stations, fuels);
+    var visible = carbVisibleStations(stations, fuels, this._config, this._showAll);
+    var hidden = visible.hidden;
+    stations = visible.shown;
+    var toggle = this._toggle.getContainer();
+    toggle.hidden = !hidden;
+    toggle.textContent = carbToggleLabel(t, this._showAll, hidden);
+    var names = {};
+    fuels.forEach((f) => { names[f.key] = f.name; });
+    var now = new Date();
+    var points = [];
+    var signature = stations.map((s) => s.station_id).join(',');
+    if (signature !== this._signature) this._fitted = false;
+    this._signature = signature;
+
+    // The open popup survives the redraw (sensor update every 15 min by default).
+    var openId = null;
+    this._layer.eachLayer((layer) => {
+      if (layer.isPopupOpen?.() && layer.options.stationId != null) openId = layer.options.stationId;
+    });
+    var reopen = null;
+    this._layer.clearLayers();
+    stations.forEach((s) => {
+      var shown = this._markerFuel(s, fuels, key);
+      var fuel = shown.fuel;
+      var fuelName = names[shown.key] || '';
+      var state = !fuel || fuel.rupture === 'definitive' ? 'none'
+        : !fuel.available ? (fuel.rupture ? 'out' : 'nodata')
+        : best[shown.key] === fuel.price && stations.length > 1 ? 'best' : 'ok';
+      var label = state === 'ok' || state === 'best' ? this._price(fuel.price)
+        : state === 'out' ? t.out_of_stock : state === 'nodata' ? t.no_price : '—';
+      // Without a chosen fuel, say which one the price is for.
+      var priceHtml = (!key && fuelName && (state === 'ok' || state === 'best') ? `<span class="pfuel">${carbFuelBadge(shown.key, fuelName)}</span> ` : '') + carbEsc(label);
+      var logo = '';
+      if (this._config.show_logo) {
+        var name = s.brand || s.station_name || '';
+        var known = carbLogo(s);
+        if (known && CARBURANTS_FAILED_LOGOS.has(known.src)) known = null;
+        logo = known
+          ? '<img class="' + carbLogoClass(known).trim() + '" src="' + carbEsc(known.src) + '" alt="" referrerpolicy="no-referrer" data-initials="' +
+            carbEsc(carbInitials(name)) + '">'
+          : `<span class="ini" style="background:${carbBrandColor(name || 'station')}">${carbEsc(carbInitials(name) || '⛽')}</span>`;
+      }
+      var icon = L.divIcon({
+        className: 'carb-marker',
+        html: '<div class="pin ' + state + '" title="' + carbEsc(`${s.station_name} · ${fuelName}`) + '">' + logo +
+          (this._config.show_name
+            ? `<span class="ptext"><span class="pname-pin">${carbEsc(s.station_name)}</span><span class="price">${priceHtml}</span></span>`
+            : `<span class="price">${priceHtml}</span>`) +
+          '</div>',
+        iconSize: null,
+        iconAnchor: [0, 0],
+      });
+      var marker = L.marker([s.latitude, s.longitude], {
+        icon: icon, riseOnHover: true, zIndexOffset: state === 'best' ? 1000 : 0, stationId: String(s.station_id),
+      });
+      marker.bindPopup(this._popup(s, fuels, best, t, now, stations.length), { maxWidth: 280, minWidth: 220 });
+      marker.addTo(this._layer);
+      if (openId === String(s.station_id)) reopen = marker;
+      points.push([s.latitude, s.longitude]);
+    });
+
+    var mt = this._mt();
+    var results = this._results;
+    var bounds = null;
+    if (results?.mode === 'near') {
+      // The search area, and where the search started from.
+      var circle = L.circle([results.latitude, results.longitude], {
+        // Colours in the styles: SVG attributes don't take the theme's CSS variables.
+        radius: results.radius * 1000, interactive: false, className: 'carb-area',
+      }).addTo(this._layer);
+      bounds = circle.getBounds();
+      L.marker([results.latitude, results.longitude], {
+        icon: L.divIcon({ className: 'carb-marker', html: `<div class="me" title="${carbEsc(results.home ? mt.home : mt.you)}"></div>`, iconSize: null, iconAnchor: [0, 0] }),
+        zIndexOffset: -1000,
+        keyboard: false,
+      }).addTo(this._layer);
+    }
+    var home = this._hass.states['zone.home'];
+    // Home only with the followed stations: a town far away would be zoomed out to fit it.
+    if (this._config.show_home && !results && home && home.attributes.latitude != null) {
+      L.marker([home.attributes.latitude, home.attributes.longitude], {
+        icon: L.divIcon({ className: 'carb-marker', html: `<div class="home" title="${carbEsc(mt.home)}"><ha-icon icon="mdi:home"></ha-icon></div>`, iconSize: null, iconAnchor: [0, 0] }),
+        zIndexOffset: -1000,
+        keyboard: false,
+      }).addTo(this._layer);
+      points.push([home.attributes.latitude, home.attributes.longitude]);
+    }
+
+    // The subtitle counts the stations shown.
+    this._renderHeader();
+    this._bounds = points.length ? L.latLngBounds(points) : null;
+    if (bounds) this._bounds = this._bounds ? this._bounds.extend(bounds) : bounds;
+    if (!this._fitted) this._fit();
+    if (reopen) reopen.openPopup();
+  }
+
+  _price(value) {
+    return `${new Intl.NumberFormat(this._locale(), { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(value)} €`;
+  }
+
+  // `count`: stations shown on the map. A lone station is not "the best price", as for its pin.
+  _popup(s, fuels, best, t, now, count) {
+    var opening = carbOpening(s, t, now, this._locale());
+    var rows = fuels.map((f) => {
+      var fuel = s.fuels?.[f.key];
+      if (!fuel || fuel.rupture === 'definitive') return '';
+      var value = fuel.available
+        ? `<b${best[f.key] === fuel.price && count > 1 ? ' class="best"' : ''}>${this._price(fuel.price)}</b>`
+        : fuel.rupture
+          ? `<span class="out">${carbEsc(t.out_of_stock)}</span>`
+          : `<span class="nodata">${carbEsc(t.no_price)}</span>`;
+      var age = fuel.available ? carbRelative(fuel.updated, this._locale())
+        : carbRelative(fuel.rupture ? fuel.rupture_since : fuel.rupture_end, this._locale());
+      return `<tr><td>${carbFuelBadge(f.key, f.name)}</td><td>${value}</td><td class="age">${carbEsc(age)}</td></tr>`;
+    }).join('');
+    return '<div class="popup">' +
+      '<div class="pname">' + carbEsc(s.station_name) + '</div>' +
+      (s.brand ? `<div class="pbrand">${carbEsc(s.brand)}</div>` : '') +
+      (this._results && s.followed ? `<div class="pfollowed"><ha-icon icon="mdi:star"></ha-icon>${carbEsc(this._mt().followed)}</div>` : '') +
+      '<div class="paddr">' + carbEsc(s.address) + ', ' + carbEsc(carbTitleCase(s.city)) +
+      (s.distance != null ? ` · ${new Intl.NumberFormat(this._locale(), { maximumFractionDigits: 1 }).format(s.distance)} km` : '') + '</div>' +
+      (opening ? `<div class="popening ${opening.key}">${carbEsc(opening.text)}</div>` : '') +
+      (rows ? `<table>${rows}</table>` : '') +
+      '<a class="pdir" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=' +
+      encodeURIComponent(`${s.latitude},${s.longitude}`) + '"><ha-icon icon="mdi:directions"></ha-icon>' + carbEsc(t.directions) + '</a></div>';
+  }
+
+  static _styles() {
+    return [
+      ':host { display: block; }',
+      // Natural width (inline-block, `auto` grid column) when the header and search bar give none: an empty grid
+      // track minmax(0, 280px) has a max-content width of 280 px and a min-content width of 0, so the card still
+      // shrinks in a `1fr 1fr` grid, wrapped in a div or not.
+      ':host::before { content: ""; display: grid; grid-template-columns: minmax(0, 280px); height: 0; }',
+      // Status texts: the state colour mixed with the text colour, so that they reach 4.5:1 on the card in light
+      // and dark themes (the plain colours stay on borders, pins and dots).
+      ':host { --carb-success-text: color-mix(in srgb, var(--success-color, #43a047) 55%, var(--primary-text-color, #212121)); --carb-info-text: color-mix(in srgb, var(--info-color, #039be5) 55%, var(--primary-text-color, #212121)); --carb-error-text: color-mix(in srgb, var(--error-color, #db4437) 55%, var(--primary-text-color, #212121)); --carb-warning-text: color-mix(in srgb, var(--warning-color, #ffa600) 50%, var(--primary-text-color, #212121)); }',
+      'ha-card { overflow: hidden; }',
+      // Classic header (illustration: false): the icon and the title; the title keeps 5 letters on a narrow card.
+      '.header { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-height: 36px; padding: 12px 12px 8px; }',
+      // Illustrated header: the banner edge to edge, the map right under its road.
+      '.header.illus { display: block; padding: 0; min-height: 0; }',
+      CARBURANTS_SCENE_STYLE,
+      CARBURANTS_STATUS_STYLE,
+      '.banner .hname { font-size: 16px; }',
+      '.header > .titles { flex: 1 1 0; min-width: 0; }',
+      '.banner .hsub { font-size: 12px; }',
+      '.hname { flex: 1 1 0; min-width: 5ch; font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+      '.icon-link { display: flex; flex: none; }',
+      // Generic fuel pump in a round badge tinted with the theme's primary colour.
+      '.hbadge { --c: var(--primary-color, #03a9f4); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); --mdc-icon-size: 24px; }',
+      '.header[hidden], .message[hidden] { display: none; }',
+      '.message { padding: 12px 16px; color: var(--secondary-text-color); }',
+      '.mapwrap { position: relative; display: flex; flex-direction: column; }',
+      '.map { width: 100%; background: var(--secondary-background-color, #e5e5e5); z-index: 0; }',
+      // Full screen: the card fills the screen, the map takes what the title leaves.
+      ':host(:fullscreen) { background: var(--card-background-color, #fff); }',
+      'ha-card.fullscreen { display: flex !important; flex-direction: column; width: 100%; height: 100vh; height: 100dvh; border-radius: 0; box-sizing: border-box; }',
+      'ha-card.fullscreen .mapwrap { flex: 1; }',
+      'ha-card.fullscreen .map { flex: 1; height: auto !important; }',
+      'ha-card.pseudo { position: fixed; inset: 0; z-index: 9999; height: 100vh; height: 100dvh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }',
+      // The tools at the bottom right: zoom, full screen and "locate me" in one bar, above the attribution.
+      '.carb-tools a { display: flex; align-items: center; justify-content: center; cursor: pointer; --mdc-icon-size: 20px; }',
+      '.leaflet-bottom.leaflet-right .leaflet-control-zoom:has(+ .carb-tools) { margin-bottom: 0; border-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }',
+      '.leaflet-bottom.leaflet-right .leaflet-control-zoom:has(+ .carb-tools) a:last-child { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 1px solid var(--divider-color, #ccc); }',
+      '.leaflet-bottom.leaflet-right .carb-tools { margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }',
+      '.leaflet-bottom.leaflet-right .carb-tools a:first-child { border-top-left-radius: 0; border-top-right-radius: 0; }',
+      '.leaflet-bottom.leaflet-right .leaflet-bar { margin-bottom: 6px; }',
+      // Leaflet's controls (zoom, full screen, attribution) in the theme's colours, light or dark.
+      '.leaflet-bar a { background-color: var(--card-background-color, #fff); color: var(--primary-text-color, #000); border-bottom-color: var(--divider-color, #ccc); }',
+      '.leaflet-bar a:hover, .leaflet-bar a:focus { background-color: var(--secondary-background-color, #f4f4f4); }',
+      '.leaflet-bar a.leaflet-disabled { background-color: var(--secondary-background-color, #f4f4f4); color: var(--disabled-text-color, #bbb); }',
+      '.leaflet-touch .leaflet-bar { border-color: var(--divider-color, rgba(0,0,0,.2)); }',
+      // Leaflet's small print: `.leaflet-container { font: inherit; }` below would give it the card's text size.
+      '.leaflet-container .leaflet-control-attribution { background: color-mix(in srgb, var(--card-background-color, #fff) 80%, transparent); color: var(--primary-text-color, #333); font-size: 11px; }',
+      '.leaflet-container .leaflet-control-attribution a { color: color-mix(in srgb, var(--primary-color, #03a9f4) 60%, var(--primary-text-color, #212121)); }',
+      '.leaflet-container a.leaflet-popup-close-button { color: var(--secondary-text-color, #757575); }',
+      '.leaflet-container a.leaflet-popup-close-button:hover, .leaflet-container a.leaflet-popup-close-button:focus { color: var(--primary-text-color, #585858); }',
+      '.leaflet-container { font: inherit; }',
+      '.map.dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }',
+      '.carb-marker { background: none; border: none; }',
+      '.ptext { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }',
+      '.pfuel { display: inline-flex; margin-right: 2px; }',
+      ...CARBURANTS_BADGE_STYLES,
+      // Compact badge on the markers, so they stay about as tall as with plain text.
+      '.pin .fbadge { height: 14px; padding-left: 5px; gap: 2px; border-radius: 7px; font-size: 9px; box-shadow: none; }',
+      '.pin .fbadge:not(:has(.fcode)) { padding-right: 5px; }',
+      '.pin .fcode { min-width: 11px; height: 11px; border-radius: 6px; font-size: 7px; }',
+      '.pname-pin { max-width: 130px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--primary-text-color, #212121); }',
+      '.pin { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 16px; background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); border: 2px solid var(--secondary-text-color, #727272); box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }',
+      '.pin.best { border-color: var(--success-color, #43a047); color: var(--carb-success-text); }',
+      '.pin.out { border-color: var(--warning-color, #ffa600); color: var(--carb-warning-text); }',
+      '.pin.none { opacity: .6; }',
+      // Leaflet forces width:auto and max-width:none on marker images: these selectors must outrank it.
+      // Rounded corners stay small: a pill shape would cut the corners of wide logos (Avia).
+      '.leaflet-container .leaflet-marker-pane .pin img { flex: none; box-sizing: border-box; height: 22px !important; width: auto !important; max-width: 52px !important; max-height: 22px !important; padding: 3px 5px !important; border-radius: 6px; object-fit: contain; background: #fff; }',
+      '.leaflet-container .leaflet-marker-pane .pin img.own { width: 22px !important; padding: 0 !important; border-radius: 0; background: none; }',
+      '.leaflet-container .leaflet-marker-pane .pin img.dark { background: #1f2a37; }',
+      '.pin .ini { width: 22px; height: 22px; border-radius: 50%; flex: none; }',
+      '.pin .ini { display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700; background: #607d8b; }',
+      '.home { position: absolute; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--primary-color, #03a9f4); color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); --mdc-icon-size: 18px; }',
+      '.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121); }',
+      '.leaflet-popup-content { margin: 10px 12px; font-size: 13px; }',
+      '.pname { font-weight: 500; font-size: 14px; }',
+      '.pbrand { font-size: 12px; font-weight: 500; color: var(--secondary-text-color, #727272); }',
+      '.paddr { color: var(--secondary-text-color, #727272); margin-top: 2px; }',
+      '.popening { margin-top: 4px; font-size: 12px; }',
+      '.popening.open, .popening.always { color: var(--carb-success-text); }',
+      '.popening.automate { color: var(--carb-info-text); }',
+      '.popening.closed { color: var(--carb-error-text); }',
+      '.popup table { margin-top: 6px; border-collapse: collapse; width: 100%; }',
+      '.popup td { padding: 2px 8px 2px 0; }',
+      '.popup td.age { color: var(--secondary-text-color, #727272); font-size: 11px; text-align: right; padding-right: 0; }',
+      '.popup b.best { color: var(--carb-success-text); }',
+      '.popup .out { color: var(--carb-warning-text); font-weight: 500; }',
+      '.popup .nodata { color: var(--secondary-text-color, #727272); }',
+      // "Show the out of stock stations": a pill at the bottom left of the map.
+      '.leaflet-bottom.leaflet-left .carb-toggle { margin: 0 0 8px 10px; }',
+      '.carb-toggle { font: inherit; font-size: 12px; font-weight: 500; height: 30px; padding: 0 12px; border-radius: 15px; border: 0; background: color-mix(in srgb, var(--card-background-color, #fff) 95%, transparent); color: var(--primary-color, #03a9f4); box-shadow: 0 1px 4px rgba(0,0,0,.3); cursor: pointer; white-space: nowrap; }',
+      '.carb-toggle:hover { background: var(--card-background-color, #fff); }',
+      '.carb-toggle[hidden] { display: none; }',
+      // "Locate me" in the tools: tinted when on, pulsing while the position is looked up.
+      '.leaflet-bar a.locate { flex: none; color: var(--primary-color, #03a9f4); }',
+      '.leaflet-bar a.locate.active { background-color: color-mix(in srgb, var(--primary-color, #03a9f4) 18%, var(--card-background-color, #fff)); }',
+      '.locate.busy ha-icon { animation: carb-pulse 1s ease-in-out infinite; }',
+      '@keyframes carb-pulse { 50% { opacity: .3; } }',
+      // Search field and radius: one narrow pill over the map, at its top left.
+      '.searchbar { position: absolute; z-index: 1000; top: 10px; left: 10px; width: 210px; max-width: calc(100% - 20px); box-sizing: border-box; display: flex; align-items: center; gap: 4px; height: 34px; padding: 0 4px 0 10px; border-radius: 17px; background: color-mix(in srgb, var(--card-background-color, #fff) 95%, transparent); box-shadow: 0 1px 4px rgba(0,0,0,.3); color: var(--secondary-text-color); }',
+      '.searchbar[hidden] { display: none; }',
+      '.searchbar.nosearch { width: auto; padding-left: 4px; }',
+      '.searchbar.nosearch .search { display: none; }',
+      '.searchbar:focus-within { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: -2px; }',
+      '.search { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; height: 100%; cursor: text; }',
+      '.search .svg { width: 16px; height: 16px; flex: none; }',
+      '.search input { width: 0; flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 13px; color: var(--primary-text-color); text-overflow: ellipsis; }',
+      '.search input::placeholder { color: var(--secondary-text-color); }',
+      '.search input::-webkit-search-cancel-button { display: none; }',
+      '.search .clear { flex: none; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: var(--secondary-text-color); }',
+      '.search .clear.empty { display: none; }',
+      '.search .clear:hover { background: var(--divider-color, rgba(127,127,127,.25)); color: var(--primary-text-color); }',
+      '.search .clear .svg { width: 16px; height: 16px; }',
+      '.rad { flex: none; display: flex; }',
+      '.rad:empty { display: none; }',
+      '.radius { font: inherit; font-size: 12px; height: 26px; padding: 0 4px; border-radius: 13px; border: 0; background: var(--secondary-background-color, rgba(127,127,127,.12)); color: var(--primary-text-color); cursor: pointer; }',
+      // Nearby search: area and starting point.
+      '.leaflet-container path.carb-area { stroke: var(--primary-color, #03a9f4); stroke-width: 1.5; stroke-opacity: .7; fill: var(--primary-color, #03a9f4); fill-opacity: .06; }',
+      '.me { position: absolute; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: var(--primary-color, #03a9f4); border: 3px solid #fff; box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary-color, #03a9f4) 25%, transparent), 0 1px 4px rgba(0,0,0,.35); }',
+      '.pfollowed { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 12px; color: var(--primary-color, #03a9f4); --mdc-icon-size: 14px; }',
+      // Leaflet colours every link in the map: the selector must outrank '.leaflet-container a'.
+      '.leaflet-container a.pdir { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 8px 14px; border-radius: 10px; background: color-mix(in srgb, var(--primary-color, #03a9f4) 16%, transparent); color: var(--primary-color, #03a9f4); text-decoration: none; font-weight: 500; font-size: 14px; }',
+      '.leaflet-container a.pdir:hover { background: color-mix(in srgb, var(--primary-color, #03a9f4) 24%, transparent); }',
+      '.pdir ha-icon { --mdc-icon-size: 18px; }',
+      // Last, so that it outranks the rules above. Reduced motion: no pulse; a dimmed icon still says the position is being looked up.
+      `@media (prefers-reduced-motion: reduce) { .locate.busy ha-icon { animation: none; opacity: .5; } ${CARBURANTS_SCENE_REDUCED} }`,
+    ].join('\n');
+  }
+}
+
+export class CarburantsFranceMapCardEditor extends HTMLElement {
+  // jscpd:ignore-start
+  setConfig(config) {
+    this._config = Object.assign({}, config);
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (this._form) {
+      this._form.hass = hass;
+      this._setSchema();
+    } else {
+      this._render();
+    }
+  }
+  // jscpd:ignore-end
+
+  _setSchema() {
+    carbSetSchema(this._form, this._schema());
+  }
+
+  _schema() {
+    var mt = CarburantsMapI18n[carbLang(this._hass, this._config?.language)];
+    var entity = this._config.entity || CarburantsFranceCard._findEntity(this._hass);
+    var st = entity && this._hass.states[entity];
+    var fuels = ((st?.attributes.fuels) || []).map((f) => ({ value: f.key, label: f.name }));
+    var themes = ['auto', 'light', 'dark'].map((k) => ({ value: k, label: mt.themes[k] }));
+    var languages = carbLanguageOptions(mt.editor.language_auto);
+    var styles = Object.keys(CARBURANTS_MAP_STYLES).map((k) => ({ value: k, label: mt.styles[k] }));
+    var custom = this._config.map_style === 'custom'
+      ? [
+          { name: 'tile_url', selector: { text: { type: 'url' } } },
+          { name: 'tile_attribution', selector: { text: {} } },
+        ]
+      : [];
+    return [
+      { name: 'entity', selector: { entity: { domain: 'sensor', integration: 'carburants_france' } } },
+      { name: 'title', selector: { text: {} } },
+      { name: 'language', selector: { select: { mode: 'dropdown', options: languages } } },
+      {
+        type: 'grid',
+        name: '',
+        schema: [
+          { name: 'map_style', selector: { select: { mode: 'dropdown', options: styles } } },
+          { name: 'theme', selector: { select: { mode: 'dropdown', options: themes } } },
+        ],
+      },
+      {
+        type: 'grid',
+        name: '',
+        schema: [
+          { name: 'illustration', selector: { boolean: {} } },
+          { name: 'illustration_theme', selector: { select: { mode: 'dropdown', options: carbIllustrationThemes(mt.editor) } } },
+        ],
+      },
+    ].concat(custom, [
+      {
+        type: 'grid',
+        name: '',
+        schema: [
+          { name: 'fuel', selector: { select: { mode: 'dropdown', options: fuels } } },
+          { name: 'height', selector: { number: { min: 150, max: 1200, step: 10, mode: 'box', unit_of_measurement: 'px' } } },
+          { name: 'zoom', selector: { number: { min: 5, max: 18, mode: 'box' } } },
+          { name: 'show_icon', selector: { boolean: {} } },
+          { name: 'show_fullscreen', selector: { boolean: {} } },
+          { name: 'show_home', selector: { boolean: {} } },
+          { name: 'show_logo', selector: { boolean: {} } },
+          { name: 'show_name', selector: { boolean: {} } },
+          { name: 'hide_out_of_stock_stations', selector: { boolean: {} } },
+          { name: 'show_search', selector: { boolean: {} } },
+          { name: 'show_locate', selector: { boolean: {} } },
+        ],
+      },
+    ], this._config.show_locate === false ? [] : [
+      { name: 'radius', selector: { number: { min: 1, max: 50, step: 1, mode: 'box', unit_of_measurement: 'km' } } },
+    ]);
+  }
+
+  // jscpd:ignore-start
+  _render() {
+    if (!this._hass || !this._config) return;
+    if (!this._form) {
+      this._form = document.createElement('ha-form');
+      // Read at each render: the labels follow the `language` option picked in this editor.
+      this._form.computeLabel = (field) => CarburantsMapI18n[carbLang(this._hass, this._config?.language)].editor[field.name] || field.name;
+      this._form.addEventListener('value-changed', this._valueChanged.bind(this));
+      this.appendChild(this._form);
+    }
+    this._form.hass = this._hass;
+    this._setSchema();
+    this._form.data = Object.assign({}, CARBURANTS_MAP_DEFAULTS, this._config);
+  }
+  // jscpd:ignore-end
+
+  _valueChanged(ev) {
+    var value = Object.assign({}, ev.detail.value);
+    Object.keys(CARBURANTS_MAP_DEFAULTS).forEach((key) => {
+      if (value[key] === CARBURANTS_MAP_DEFAULTS[key]) delete value[key];
+    });
+    ['entity', 'fuel', 'zoom', 'tile_url', 'tile_attribution'].forEach((key) => { if (!value[key]) delete value[key]; });
+    if (value.map_style !== 'custom') {
+      delete value.tile_url;
+      delete value.tile_attribution;
+    }
+    // An empty title hides the header: keep it as "" rather than dropping it.
+    var rebuild = value.entity !== this._config.entity || value.map_style !== this._config.map_style ||
+      value.show_locate !== this._config.show_locate || value.language !== this._config.language;
+    // jscpd:ignore-start
+    this._config = value;
+    if (rebuild) this._setSchema();
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: value }, bubbles: true, composed: true }));
+  }
+}
+// jscpd:ignore-end
+
+if (!customElements.get('carburants-france-map-card-editor')) {
+  pickerDefine('carburants-france-map-card-editor', CarburantsFranceMapCardEditor);
+}
+
+if (!customElements.get('carburants-france-map-card')) {
+  pickerDefine('carburants-france-map-card', CarburantsFranceMapCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: 'carburants-france-map-card',
+    name: 'Carburants France — carte',
+    description: 'Map of the followed stations, with the price of a fuel on each marker.',
+    preview: true,
+    documentationURL: 'https://github.com/juju35/ha-carburants-france',
+  });
+}

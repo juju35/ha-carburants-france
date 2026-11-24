@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.17.5 - 2026-11-24
+
+### Maintenance
+- The frontend sources (`carburants-france-card.js`) are split into ES modules (`src/carburants-france-card/`, translations one file per language), assembled at build by `scripts/build-frontend.mjs` into the same single files, which are no longer committed. No behaviour change.
+
 ## 1.17.4 - 2026-11-22
 
 ### Performance
