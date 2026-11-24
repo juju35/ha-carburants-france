@@ -1,11 +1,13 @@
 // The map card with a Leaflet stand-in: map built once, tiles (Home Assistant's proxy, fallback, custom), markers,
 // out-of-stock toggle, popup kept over a redraw, nearby search area, home and fit. No browser needed.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
+// The frontend files as scripts/build-frontend.mjs assembles them from their ES modules in src/.
+import { bundle } from '../scripts/bundle.mjs';
 
+// The card file's name, for the coverage report (assembled from src/ by scripts/build-frontend.mjs).
 const url = new URL('../custom_components/carburants_france/frontend/carburants-france-card.js', import.meta.url);
 const context = {
   HTMLElement: class {},
@@ -20,7 +22,7 @@ const context = {
   clearInterval() {},
 };
 vm.createContext(context);
-vm.runInContext(`${readFileSync(url, 'utf8')}\nthis.carb = { CarburantsFranceMapCard, CARBURANTS_MAP_DEFAULTS };`, context, { filename: fileURLToPath(url) });
+vm.runInContext(`${bundle('src/carburants-france-card/index.js')}\nthis.carb = { CarburantsFranceMapCard, CARBURANTS_MAP_DEFAULTS };`, context, { filename: fileURLToPath(url) });
 const { CarburantsFranceMapCard, CARBURANTS_MAP_DEFAULTS } = context.carb;
 const tick = () => new Promise((r) => setTimeout(r, 0));
 

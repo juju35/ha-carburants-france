@@ -20,6 +20,8 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
+# The frontend files are assembled from their ES modules in src/ (build output, not committed).
+subprocess.run(["node", "scripts/build-frontend.mjs"], cwd=ROOT, check=True)
 FRONTEND = ROOT / "custom_components/carburants_france/frontend"
 CARD_JS = (FRONTEND / "carburants-france-card.js").read_text()
 TILES_DIR = Path(__file__).resolve().parent / "tiles"

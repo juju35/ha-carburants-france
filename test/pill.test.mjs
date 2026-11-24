@@ -3,10 +3,11 @@
 // banner, with its dot alone (.dot-only) when the text still does not fit above the ground strip. Decided by
 // measurement only: no fixed width threshold, no share cap, no title cut down to a few characters.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
+// The frontend files as scripts/build-frontend.mjs assembles them from their ES modules in src/.
+import { bundle } from "../scripts/bundle.mjs";
 
-const src = readFileSync(new URL("../custom_components/carburants_france/frontend/carburants-france-card.js", import.meta.url), "utf8");
+const src = bundle('src/carburants-france-card/index.js');
 const method = src.match(/\nfunction carbFitPill\(card, root\) \{[\s\S]*?\n\}\n/)[0].trim();
 const textWidth = src.match(/(?:const|var) \w*[tT]extWidth = [\s\S]*?\n\};\n/)[0];
 const CLS = {"titles":  "titles",  "row":  "tline",  "pill":  "stpill",  "name":  "hname",  "sub":  "hsub"};
