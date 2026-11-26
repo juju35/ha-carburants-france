@@ -4,5 +4,6 @@
   "render_readme": true,
   "zip_release": true,
   "filename": "carburants_france.zip",
-  "homeassistant": "2024.12.0"
+  "homeassistant": "2024.12.0",
+  "country": ["FR"]
 }
